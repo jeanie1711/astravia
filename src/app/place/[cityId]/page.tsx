@@ -2,12 +2,12 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { BackHeader } from "../../components/BackHeader.js";
-import { PillButton } from "../../components/PillButton.js";
-import { ScreenShell } from "../../components/ScreenShell.js";
-import { StarRating } from "../../components/StarRating.js";
-import { useJourney } from "../../journey/JourneyContext.js";
-import { confidenceLabel } from "../../../interpretation/display.js";
+import { BackHeader } from "../../components/BackHeader";
+import { PillButton } from "../../components/PillButton";
+import { ScreenShell } from "../../components/ScreenShell";
+import { StarRating } from "../../components/StarRating";
+import { useJourney } from "../../journey/JourneyContext";
+import { confidenceLabel } from "../../../interpretation/display";
 
 const INFLUENCE_LABEL: Record<string, string> = {
   MC: "public life / career direction",

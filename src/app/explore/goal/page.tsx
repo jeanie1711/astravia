@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BackHeader } from "../../components/BackHeader.js";
-import { PillButton } from "../../components/PillButton.js";
-import { ScreenShell } from "../../components/ScreenShell.js";
-import { useJourney } from "../../journey/JourneyContext.js";
-import type { Goal } from "../../../scoring/types.js";
+import { BackHeader } from "../../components/BackHeader";
+import { PillButton } from "../../components/PillButton";
+import { ScreenShell } from "../../components/ScreenShell";
+import { useJourney } from "../../journey/JourneyContext";
+import type { Goal } from "../../../scoring/types";
 
 // Copy verbatim from 02-user-flow-screen-spec.md S04.
 const GOALS: Array<{ id: Goal; name: string; desc: string }> = [

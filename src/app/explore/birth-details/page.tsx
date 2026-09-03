@@ -2,12 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BackHeader } from "../../components/BackHeader.js";
-import { errorTextStyle, FieldLabel, inputStyle } from "../../components/FieldLabel.js";
-import { PillButton } from "../../components/PillButton.js";
-import { ScreenShell } from "../../components/ScreenShell.js";
-import { useJourney } from "../../journey/JourneyContext.js";
-import type { PlaceSearchResult } from "../../api/place-search/route.js";
+import { BackHeader } from "../../components/BackHeader";
+import { errorTextStyle, FieldLabel, inputStyle } from "../../components/FieldLabel";
+import { PillButton } from "../../components/PillButton";
+import { ScreenShell } from "../../components/ScreenShell";
+import { useJourney } from "../../journey/JourneyContext";
+import type { PlaceSearchResult } from "../../api/place-search/route";
 
 export default function BirthDetailsPage() {
   const router = useRouter();

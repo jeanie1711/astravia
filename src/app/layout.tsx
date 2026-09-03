@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Lora } from "next/font/google";
 import type { ReactNode } from "react";
-import { JourneyProvider } from "./journey/JourneyContext.js";
+import { JourneyProvider } from "./journey/JourneyContext";
 import "./globals.css";
 
 const lora = Lora({ subsets: ["latin"], weight: ["500", "600"], variable: "--font-lora" });

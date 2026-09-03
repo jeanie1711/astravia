@@ -2,13 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { PillButton } from "../components/PillButton.js";
-import { ScreenShell } from "../components/ScreenShell.js";
-import { StarRating } from "../components/StarRating.js";
-import { useJourney } from "../journey/JourneyContext.js";
-import type { CalculateRequest, CalculateResponse } from "../journey/types.js";
-import type { Goal } from "../../scoring/types.js";
-import { confidenceLabel } from "../../interpretation/display.js";
+import { PillButton } from "../components/PillButton";
+import { ScreenShell } from "../components/ScreenShell";
+import { StarRating } from "../components/StarRating";
+import { useJourney } from "../journey/JourneyContext";
+import type { CalculateRequest, CalculateResponse } from "../journey/types";
+import type { Goal } from "../../scoring/types";
+import { confidenceLabel } from "../../interpretation/display";
 
 const GOAL_TABS: Array<{ id: Goal; name: string }> = [
   { id: "CAREER", name: "Career" },

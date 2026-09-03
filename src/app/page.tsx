@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ScreenShell } from "./components/ScreenShell.js";
-import { PillButton } from "./components/PillButton.js";
-import { useJourney } from "./journey/JourneyContext.js";
+import { ScreenShell } from "./components/ScreenShell";
+import { PillButton } from "./components/PillButton";
+import { useJourney } from "./journey/JourneyContext";
 
 export default function LandingPage() {
   const router = useRouter();

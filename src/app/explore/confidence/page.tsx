@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BackHeader } from "../../components/BackHeader.js";
-import { PillButton } from "../../components/PillButton.js";
-import { ScreenShell } from "../../components/ScreenShell.js";
-import { useJourney } from "../../journey/JourneyContext.js";
-import type { UncertaintyMinutes } from "../../journey/types.js";
+import { BackHeader } from "../../components/BackHeader";
+import { PillButton } from "../../components/PillButton";
+import { ScreenShell } from "../../components/ScreenShell";
+import { useJourney } from "../../journey/JourneyContext";
+import type { UncertaintyMinutes } from "../../journey/types";
 
 type Mode = "exact" | "range";
 

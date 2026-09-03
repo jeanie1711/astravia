@@ -1,6 +1,6 @@
-import type { City } from "../../astro/types.js";
-import type { CityResult } from "../../interpretation/types.js";
-import type { CountryResult, Goal, RankedCity } from "../../scoring/types.js";
+import type { City } from "../../astro/types";
+import type { CityResult } from "../../interpretation/types";
+import type { CountryResult, Goal, RankedCity } from "../../scoring/types";
 
 export type UncertaintyMinutes = 0 | 15 | 30 | 60;
 

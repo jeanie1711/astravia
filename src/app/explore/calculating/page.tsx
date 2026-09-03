@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { PillButton } from "../../components/PillButton.js";
-import { ScreenShell } from "../../components/ScreenShell.js";
-import { useJourney } from "../../journey/JourneyContext.js";
-import type { CalculateRequest, CalculateResponse } from "../../journey/types.js";
+import { PillButton } from "../../components/PillButton";
+import { ScreenShell } from "../../components/ScreenShell";
+import { useJourney } from "../../journey/JourneyContext";
+import type { CalculateRequest, CalculateResponse } from "../../journey/types";
 
 // Spec S05: rotating messages reflecting real stages, no fake delay.
 const CALC_MESSAGES = [

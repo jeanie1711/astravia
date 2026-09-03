@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { INITIAL_JOURNEY_STATE, type JourneyState } from "./types.js";
+import { INITIAL_JOURNEY_STATE, type JourneyState } from "./types";
 
 const STORAGE_KEY = "astravia-journey";
 

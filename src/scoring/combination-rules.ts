@@ -1,5 +1,5 @@
-import type { Angle, Body } from "../astro/types.js";
-import type { CoherenceLabel, Influence, ScorableGoal } from "./types.js";
+import type { Angle, Body } from "../astro/types";
+import type { CoherenceLabel, Influence, ScorableGoal } from "./types";
 
 // Coherence classification extracted from 06-interpretation-library.md §3's
 // 25 combination rules. Only the *classification* (which goals, which

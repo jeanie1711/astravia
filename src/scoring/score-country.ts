@@ -1,5 +1,5 @@
-import { scoreToStars, STAR_LABELS } from "./score-city.js";
-import type { CountryNarrative, CountryResult, RankedCity, StabilityLabel } from "./types.js";
+import { scoreToStars, STAR_LABELS } from "./score-city";
+import type { CountryNarrative, CountryResult, RankedCity, StabilityLabel } from "./types";
 
 // Country ranking (spec §11): "never score a country from its capital
 // only." Takes the top (already de-duplicated, see dedupe.ts) distinct-

@@ -1,8 +1,8 @@
-import { computeAscDscLines } from "./asc-dsc.js";
-import { equatorialOfDate } from "./ephemeris.js";
-import { icLongitude, mcLongitude } from "./mc-ic.js";
-import { greenwichSiderealTimeDeg } from "./sidereal.js";
-import { BODIES, type AstroLine } from "./types.js";
+import { computeAscDscLines } from "./asc-dsc";
+import { equatorialOfDate } from "./ephemeris";
+import { icLongitude, mcLongitude } from "./mc-ic";
+import { greenwichSiderealTimeDeg } from "./sidereal";
+import { BODIES, type AstroLine } from "./types";
 
 // Computes all 40 planet-angle astrocartography lines for a single UTC
 // instant. This is the composition point for the calculation layer's

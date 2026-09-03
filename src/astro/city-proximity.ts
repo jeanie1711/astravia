@@ -1,5 +1,5 @@
-import { distanceToMeridianKm, distanceToPolylineKm } from "./geo-distance.js";
-import type { Angle, AstroLine, Body, City } from "./types.js";
+import { distanceToMeridianKm, distanceToPolylineKm } from "./geo-distance";
+import type { Angle, AstroLine, Body, City } from "./types";
 
 export type InstantCityDistance = {
   cityId: string;

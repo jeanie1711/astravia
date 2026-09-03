@@ -1,7 +1,7 @@
-import { computeCityDistancesAtInstant } from "./city-proximity.js";
-import { classifyStrengthBand } from "./geo-distance.js";
-import { computeAllLinesAtInstant } from "./lines.js";
-import type { City, CityInfluence, Sensitivity, UncertaintyScenarios } from "./types.js";
+import { computeCityDistancesAtInstant } from "./city-proximity";
+import { classifyStrengthBand } from "./geo-distance";
+import { computeAllLinesAtInstant } from "./lines";
+import type { City, CityInfluence, Sensitivity, UncertaintyScenarios } from "./types";
 
 const NOT_USED_THRESHOLD_KM = 750;
 

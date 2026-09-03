@@ -1,10 +1,10 @@
-import type { Angle, Body } from "../astro/types.js";
-import { MODEL_VERSIONS } from "../config/versions.js";
-import type { RankedCity } from "../scoring/types.js";
-import { lookupSynthesis } from "./combinations.js";
-import { confidenceExplanation, goalDisplayName, influenceLabel, starWording } from "./display.js";
-import { getInterpretation } from "./library.js";
-import type { CityResult, TechnicalDetail } from "./types.js";
+import type { Angle, Body } from "../astro/types";
+import { MODEL_VERSIONS } from "../config/versions";
+import type { RankedCity } from "../scoring/types";
+import { lookupSynthesis } from "./combinations";
+import { confidenceExplanation, goalDisplayName, influenceLabel, starWording } from "./display";
+import { getInterpretation } from "./library";
+import type { CityResult, TechnicalDetail } from "./types";
 
 export type InfluenceDistance = {
   body: Body;

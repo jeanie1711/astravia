@@ -1,6 +1,6 @@
-import { resolveCoherence } from "./coherence.js";
-import { buildCandidateInfluences, selectInfluences, type RawInfluenceDistance } from "./select-influences.js";
-import type { CandidateInfluence, CoherenceLabel, ScorableGoal } from "./types.js";
+import { resolveCoherence } from "./coherence";
+import { buildCandidateInfluences, selectInfluences, type RawInfluenceDistance } from "./select-influences";
+import type { CandidateInfluence, CoherenceLabel, ScorableGoal } from "./types";
 
 const SECONDARY_WEIGHTS = [0.45, 0.25, 0.15] as const;
 const SECONDARY_SUPPORT_CAP = 0.35;

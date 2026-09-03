@@ -4,7 +4,7 @@ import type {
   LocalTimeResolution,
   UncertaintyMinutes,
   UncertaintyScenarios
-} from "./types.js";
+} from "./types";
 
 // Parses "YYYY-MM-DD" + "HH:mm[:ss]" into a Temporal.PlainDateTime without
 // attaching any timezone/offset meaning yet.

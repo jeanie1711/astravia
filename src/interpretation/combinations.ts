@@ -1,6 +1,6 @@
-import { influenceKey, pairKey } from "../scoring/combination-rules.js";
-import type { Body } from "../astro/types.js";
-import type { Influence } from "../scoring/types.js";
+import { influenceKey, pairKey } from "../scoring/combination-rules";
+import type { Body } from "../astro/types";
+import type { Influence } from "../scoring/types";
 
 // Narrative synthesis phrases for the 25 combination rules
 // (06-interpretation-library.md §3), keyed by the same pair identity as

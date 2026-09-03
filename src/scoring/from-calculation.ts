@@ -1,6 +1,6 @@
-import type { CityInfluenceSensitivity } from "../astro/sensitivity.js";
-import type { RawInfluenceDistance } from "./select-influences.js";
-import type { ScenarioInfluences } from "./stability.js";
+import type { CityInfluenceSensitivity } from "../astro/sensitivity";
+import type { RawInfluenceDistance } from "./select-influences";
+import type { ScenarioInfluences } from "./stability";
 
 // Adapts src/astro/sensitivity.ts's per-city calculation output into the
 // ScenarioInfluences shape the scoring layer consumes. This is the one

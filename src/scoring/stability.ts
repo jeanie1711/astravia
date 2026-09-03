@@ -1,6 +1,6 @@
-import { computeScoreComponents, type ScoreComponents } from "./internal-score.js";
-import type { RawInfluenceDistance } from "./select-influences.js";
-import type { ScorableGoal, StabilityLabel } from "./types.js";
+import { computeScoreComponents, type ScoreComponents } from "./internal-score";
+import type { RawInfluenceDistance } from "./select-influences";
+import type { ScorableGoal, StabilityLabel } from "./types";
 
 const HIGH_MAX_PRIMARY_DISTANCE_KM = 500;
 const NOT_USED_THRESHOLD_KM = 750;

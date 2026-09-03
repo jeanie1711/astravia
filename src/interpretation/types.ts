@@ -1,5 +1,5 @@
-import type { Angle, Body } from "../astro/types.js";
-import type { Goal, Influence, StabilityLabel, Stars } from "../scoring/types.js";
+import type { Angle, Body } from "../astro/types";
+import type { Goal, Influence, StabilityLabel, Stars } from "../scoring/types";
 
 export type Tone = "outward" | "inward" | "relational" | "transformative" | "mixed";
 

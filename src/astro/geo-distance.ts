@@ -1,6 +1,6 @@
-import type { Point } from "./asc-dsc.js";
-import { normalizeLon } from "./normalize.js";
-import type { StrengthBand } from "./types.js";
+import type { Point } from "./asc-dsc";
+import { normalizeLon } from "./normalize";
+import type { StrengthBand } from "./types";
 
 // Mean Earth radius per spec §11.
 export const EARTH_RADIUS_KM = 6371.0088;

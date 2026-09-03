@@ -1,5 +1,5 @@
-import type { Angle, Body } from "../astro/types.js";
-import type { ScorableGoal } from "./types.js";
+import type { Angle, Body } from "../astro/types";
+import type { ScorableGoal } from "./types";
 
 // Editorial goal-relevance matrix (04-scoring-ranking-spec.md §3.2).
 // "This matrix is an editorial product hypothesis, not an astronomical

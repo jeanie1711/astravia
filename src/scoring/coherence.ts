@@ -1,5 +1,5 @@
-import { lookupCombinationRule } from "./combination-rules.js";
-import type { CandidateInfluence, CoherenceLabel, ScorableGoal } from "./types.js";
+import { lookupCombinationRule } from "./combination-rules";
+import type { CandidateInfluence, CoherenceLabel, ScorableGoal } from "./types";
 
 const HIGH_TENSION_THRESHOLD = 0.4;
 

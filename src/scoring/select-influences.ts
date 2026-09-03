@@ -1,8 +1,8 @@
-import { classifyStrengthBand } from "../astro/geo-distance.js";
-import type { Angle, Body } from "../astro/types.js";
-import { distanceStrength } from "./distance-strength.js";
-import { baselineTension, goalRelevance } from "./relevance.js";
-import type { CandidateInfluence, ScorableGoal, SelectedInfluences } from "./types.js";
+import { classifyStrengthBand } from "../astro/geo-distance";
+import type { Angle, Body } from "../astro/types";
+import { distanceStrength } from "./distance-strength";
+import { baselineTension, goalRelevance } from "./relevance";
+import type { CandidateInfluence, ScorableGoal, SelectedInfluences } from "./types";
 
 const NOT_USED_THRESHOLD_KM = 750;
 const PRIMARY_MIN_SUPPORT = 0.35;

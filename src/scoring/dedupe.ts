@@ -1,6 +1,6 @@
-import { haversineDistanceKm } from "../astro/geo-distance.js";
-import type { City } from "../astro/types.js";
-import type { RankedCity } from "./types.js";
+import { haversineDistanceKm } from "../astro/geo-distance";
+import type { City } from "../astro/types";
+import type { RankedCity } from "./types";
 
 const CLUSTER_RADIUS_KM = 100;
 

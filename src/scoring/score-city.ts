@@ -1,6 +1,6 @@
-import { selectArchetype } from "./archetype.js";
-import { classifyStability, type ScenarioInfluences } from "./stability.js";
-import type { Goal, RatingLabel, RankedCity, ScorableGoal, Stars } from "./types.js";
+import { selectArchetype } from "./archetype";
+import { classifyStability, type ScenarioInfluences } from "./stability";
+import type { Goal, RatingLabel, RankedCity, ScorableGoal, Stars } from "./types";
 
 const RAW_CLAMP_MIN = 0;
 const RAW_CLAMP_MAX = 1.2;

@@ -1,5 +1,5 @@
-import type { Angle, Body } from "../astro/types.js";
-import type { Interpretation, Tone } from "./types.js";
+import type { Angle, Body } from "../astro/types";
+import type { Interpretation, Tone } from "./types";
 
 // The 40 primary interpretation objects (06-interpretation-library.md §2),
 // transcribed verbatim from the approved content library. Content only --

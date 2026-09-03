@@ -1,5 +1,5 @@
-import { SCORABLE_GOALS, type RankedCity, type ScorableGoal, type StabilityLabel } from "./types.js";
-import { scoreToStars, STAR_LABELS } from "./score-city.js";
+import { SCORABLE_GOALS, type RankedCity, type ScorableGoal, type StabilityLabel } from "./types";
+import { scoreToStars, STAR_LABELS } from "./score-city";
 
 // Overall rating (spec §10): explicitly NOT the arithmetic mean of the four
 // goal stars. This module implements the spec's "suggested internal

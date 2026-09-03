@@ -1,4 +1,4 @@
-import type { City } from "../astro/types.js";
+import type { City } from "../astro/types";
 import raw from "./cities.json" with { type: "json" };
 
 // Curated destination/ranking dataset (docs/DECISIONS.md, approved

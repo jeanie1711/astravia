@@ -1,4 +1,4 @@
-import { normalizeLon } from "./normalize.js";
+import { normalizeLon } from "./normalize";
 
 // MC/IC longitude formulas. Spec: 03-astro-calculation-spec.md §8.
 //

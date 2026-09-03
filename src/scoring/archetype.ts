@@ -1,5 +1,5 @@
-import type { Body } from "../astro/types.js";
-import type { CandidateInfluence, CoherenceLabel } from "./types.js";
+import type { Body } from "../astro/types";
+import type { CandidateInfluence, CoherenceLabel } from "./types";
 
 // The 12 narrative archetype categories (06-interpretation-library.md §4).
 // Selection here is a structural classification only (primary body/angle +

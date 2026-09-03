@@ -1,4 +1,4 @@
-import type { ArchetypeId } from "../scoring/archetype.js";
+import type { ArchetypeId } from "../scoring/archetype";
 
 // Display copy for the 12 narrative archetype categories
 // (06-interpretation-library.md §4 / 05-result-content-framework.md §9).

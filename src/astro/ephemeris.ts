@@ -1,5 +1,5 @@
 import * as AstronomyEngine from "astronomy-engine";
-import type { Body, BodyEquatorial } from "./types.js";
+import type { Body, BodyEquatorial } from "./types";
 
 // Adapter around the astronomy-engine dependency (CLAUDE.md §6, §15):
 // isolates the rest of the calculation layer from this specific library so

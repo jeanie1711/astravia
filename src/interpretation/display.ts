@@ -1,5 +1,5 @@
-import type { Angle, Body } from "../astro/types.js";
-import type { Goal } from "../scoring/types.js";
+import type { Angle, Body } from "../astro/types";
+import type { Goal } from "../scoring/types";
 
 // Presentation-only lookups: no business logic, just approved display copy.
 const GOAL_DISPLAY_NAME: Record<Goal, string> = {

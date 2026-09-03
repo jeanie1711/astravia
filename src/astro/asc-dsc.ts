@@ -1,5 +1,5 @@
-import { normalizeLon } from "./normalize.js";
-import type { AstroLine, Body } from "./types.js";
+import { normalizeLon } from "./normalize";
+import type { AstroLine, Body } from "./types";
 
 const DEG_TO_RAD = Math.PI / 180;
 const RAD_TO_DEG = 180 / Math.PI;

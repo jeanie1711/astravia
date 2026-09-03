@@ -1,4 +1,4 @@
-import type { Angle, Body, CityInfluence, Sensitivity, StrengthBand } from "../astro/types.js";
+import type { Angle, Body, CityInfluence, Sensitivity, StrengthBand } from "../astro/types";
 
 export type Goal = "CAREER" | "LOVE" | "HOME" | "GROWTH" | "OVERALL";
 export type ScorableGoal = Exclude<Goal, "OVERALL">;

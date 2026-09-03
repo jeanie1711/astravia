@@ -1,4 +1,4 @@
-import type { Influence, RankedCity, StabilityLabel } from "../scoring/types.js";
+import type { Influence, RankedCity, StabilityLabel } from "../scoring/types";
 
 // "Your Pattern" (06-interpretation-library.md §8): derived only from
 // aggregate structured calculation/scoring data, never claims a fixed

@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# TypeScript build cache
+tsconfig.tsbuildinfo
+
+# Raw import source dumps (large, regeneratable -- see data/raw/geonames/SOURCES.md).
+# The compiled outputs (src/data/cities.json, src/data/birthplaces.json) ARE committed.
+data/raw/
+
+# Environment variables
+.env
+.env.local
+.env*.local
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
+
+# Vitest/coverage
+coverage/

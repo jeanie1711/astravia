@@ -29,6 +29,11 @@ export type CalculateResult = {
 export type CalculateResponse = {
   goal: Goal;
   results: CalculateResult[];
+  // Cities referenced only via a Country card's topCityIds (§11: a
+  // country's best cities need not crack the global top-20 `results` list
+  // to drive that country's own score). Composed here too so every city
+  // named anywhere in the response is actually clickable.
+  extraResults: CalculateResult[];
   stories: Record<string, CityResult>;
   pattern: string | undefined;
   countries: CountryResult[];

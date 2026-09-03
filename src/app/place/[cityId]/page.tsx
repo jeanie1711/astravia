@@ -24,7 +24,9 @@ export default function CityStoryPage() {
 
   const results = journey.results;
   const story = results?.stories[params.cityId];
-  const ranked = results?.results.find((r) => r.ranked.cityId === params.cityId)?.ranked;
+  const ranked = [...(results?.results ?? []), ...(results?.extraResults ?? [])].find(
+    (r) => r.ranked.cityId === params.cityId
+  )?.ranked;
 
   if (!hydrated) {
     return <ScreenShell maxWidth={640}>{null}</ScreenShell>;

@@ -289,7 +289,27 @@ export default function ResultsPage() {
                   <StarRating stars={co.stars} size={13} />
                 </div>
                 <div style={{ font: "400 13px var(--font-body)", color: "var(--color-muted)", marginTop: 4 }}>
-                  Best matches: {co.topCityIds.map((id) => results.cityNames[id]?.name ?? id).join(" · ")}
+                  Best matches:{" "}
+                  {co.topCityIds.map((id, i) => (
+                    <span key={id}>
+                      {i > 0 && " · "}
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/place/${id}`)}
+                        style={{
+                          border: "none",
+                          background: "none",
+                          padding: 0,
+                          font: "inherit",
+                          color: "var(--color-accent-strong)",
+                          cursor: "pointer",
+                          textDecoration: "underline"
+                        }}
+                      >
+                        {results.cityNames[id]?.name ?? id}
+                      </button>
+                    </span>
+                  ))}
                 </div>
               </div>
             ))}

@@ -13,7 +13,7 @@ import { toScenarioInfluences } from "../../../scoring/from-calculation";
 import { computeCountryResult } from "../../../scoring/score-country";
 import { scoreCity } from "../../../scoring/score-city";
 import { SCORABLE_GOALS, type RankedCity, type ScorableGoal } from "../../../scoring/types";
-import type { CalculateRequest, CalculateResponse } from "../../journey/types";
+import type { CalculateRequest, CalculateResponse, CalculateResult } from "../../journey/types";
 
 const TOP_RESULTS_COUNT = 20;
 const TOP_COUNTRIES_COUNT = 5;
@@ -81,8 +81,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const top = deduped.slice(0, TOP_RESULTS_COUNT);
 
-  const stories: Record<string, CityResult> = {};
-  for (const rankedCity of top) {
+  function composeStoryFor(rankedCity: RankedCity): CityResult {
     const city = citiesById.get(rankedCity.cityId)!;
     const group = byCity.get(rankedCity.cityId) ?? [];
     const influenceDistances: InfluenceDistance[] = group.map((g) => ({
@@ -91,7 +90,12 @@ export async function POST(request: Request): Promise<NextResponse> {
       distanceKm: g.cityInfluence.distanceKm,
       scenarioDistancesKm: g.cityInfluence.scenarioDistancesKm
     }));
-    stories[rankedCity.cityId] = composeCityStory(rankedCity, city.name, city.countryName, influenceDistances);
+    return composeCityStory(rankedCity, city.name, city.countryName, influenceDistances);
+  }
+
+  const stories: Record<string, CityResult> = {};
+  for (const rankedCity of top) {
+    stories[rankedCity.cityId] = composeStoryFor(rankedCity);
   }
 
   const pattern = detectPattern(top.slice(0, PATTERN_SAMPLE_SIZE));
@@ -108,9 +112,24 @@ export async function POST(request: Request): Promise<NextResponse> {
     .sort((a, b) => b.internalScore - a.internalScore)
     .slice(0, TOP_COUNTRIES_COUNT);
 
+  // A country's best cities (spec §11) needn't crack the global top-20 to
+  // drive that country's own score. Compose+expose those too so every city
+  // named in the Countries section is actually clickable, not just listed.
+  const topIds = new Set(top.map((r) => r.cityId));
+  const rankedById = new Map(deduped.map((r) => [r.cityId, r]));
+  const extraCityIds = new Set(countries.flatMap((co) => co.topCityIds).filter((id) => !topIds.has(id)));
+  const extraResults: CalculateResult[] = [];
+  for (const id of extraCityIds) {
+    const rankedCity = rankedById.get(id);
+    const city = citiesById.get(id);
+    if (!rankedCity || !city) continue;
+    stories[id] = composeStoryFor(rankedCity);
+    extraResults.push({ city, ranked: rankedCity });
+  }
+
   const cityNames: CalculateResponse["cityNames"] = {};
   const countryNames: CalculateResponse["countryNames"] = {};
-  const referencedCityIds = new Set<string>([...top.map((r) => r.cityId), ...countries.flatMap((co) => co.topCityIds)]);
+  const referencedCityIds = new Set<string>([...topIds, ...extraCityIds]);
   for (const id of referencedCityIds) {
     const city = citiesById.get(id);
     if (!city) continue;
@@ -121,6 +140,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   const response: CalculateResponse = {
     goal,
     results: top.map((r) => ({ city: citiesById.get(r.cityId)!, ranked: r })),
+    extraResults,
     stories,
     pattern,
     countries,

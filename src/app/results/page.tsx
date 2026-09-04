@@ -8,7 +8,6 @@ import { StarRating } from "../components/StarRating";
 import { useJourney } from "../journey/JourneyContext";
 import type { CalculateRequest, CalculateResponse } from "../journey/types";
 import type { Goal } from "../../scoring/types";
-import { confidenceLabel } from "../../interpretation/display";
 
 const GOAL_TABS: Array<{ id: Goal; name: string }> = [
   { id: "CAREER", name: "Career" },
@@ -17,6 +16,11 @@ const GOAL_TABS: Array<{ id: Goal; name: string }> = [
   { id: "GROWTH", name: "Personal Growth" },
   { id: "OVERALL", name: "Overall" }
 ];
+
+// Kept deliberately small (§ product feedback 2026-09-04): a focused,
+// convincing shortlist beats a long, noisy one.
+const MAX_CITIES_SHOWN = 3;
+const MAX_COUNTRIES_SHOWN = 3;
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -48,7 +52,9 @@ export default function ResultsPage() {
   if (!results) return null;
 
   const goalName = GOAL_TABS.find((g) => g.id === results.goal)?.name ?? results.goal;
-  const topStars = results.results[0]?.ranked.stars ?? 1;
+  const topCities = results.results.slice(0, MAX_CITIES_SHOWN);
+  const topCountries = results.countries.slice(0, MAX_COUNTRIES_SHOWN);
+  const topStars = topCities[0]?.ranked.stars ?? 1;
   const isMixed = topStars <= 3;
 
   return (
@@ -91,16 +97,20 @@ export default function ResultsPage() {
           Your strongest places for {goalName}
         </h2>
         {isMixed ? (
-          <p style={{ margin: "0 0 20px", font: "400 14px/1.5 var(--font-body)", color: "var(--color-muted)" }}>
+          <p style={{ margin: "0 0 8px", font: "400 14px/1.5 var(--font-body)", color: "var(--color-muted)" }}>
             <strong style={{ color: "var(--color-ink)" }}>Your map is more mixed for this goal.</strong> These are
             the locations with the clearest signals, even though none are exceptionally strong in the current
             model.
           </p>
         ) : (
-          <p style={{ margin: "0 0 20px", font: "400 14px var(--font-body)", color: "var(--color-muted)" }}>
+          <p style={{ margin: "0 0 8px", font: "400 14px var(--font-body)", color: "var(--color-muted)" }}>
             Based on the birth details and time range you entered.
           </p>
         )}
+        <p style={{ margin: "0 0 20px", font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
+          ★ shows how strongly a place fits {goalName}. Open a place to see how much that could shift if your birth
+          time isn't exact.
+        </p>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
           {GOAL_TABS.map((g) => (
@@ -163,10 +173,10 @@ export default function ResultsPage() {
             marginBottom: 14
           }}
         >
-          Strongest matches
+          Your top places
         </div>
 
-        {results.results.slice(0, 5).map((r, i) => {
+        {topCities.map((r, i) => {
           const story = results.stories[r.ranked.cityId];
           return (
             <div
@@ -182,7 +192,7 @@ export default function ResultsPage() {
             >
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
                 <div style={{ font: "600 11px var(--font-body)", color: "var(--color-faint)" }}>#{i + 1}</div>
-                <StarRating stars={r.ranked.stars} />
+                <StarRating stars={r.ranked.stars} showLabel />
               </div>
               <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)", marginTop: 2 }}>
                 {r.city.name}, {r.city.countryName}
@@ -204,11 +214,6 @@ export default function ResultsPage() {
                   <div style={{ font: "400 14px/1.5 var(--font-body)", color: "#3E5865", marginTop: 10 }}>
                     {story.hook}
                   </div>
-                  <div style={{ font: "500 12px var(--font-body)", color: "var(--color-muted)", marginTop: 14 }}>
-                    {story.primaryInfluence ? `${story.primaryInfluence.body}–${story.primaryInfluence.angle}` : ""}
-                    {" · Confidence: "}
-                    {confidenceLabel(r.ranked.stability)}
-                  </div>
                 </>
               )}
               <PillButton variant="accent" style={{ marginTop: 14 }} onClick={() => router.push(`/place/${r.ranked.cityId}`)}>
@@ -218,7 +223,7 @@ export default function ResultsPage() {
           );
         })}
 
-        {results.results.length > 5 && (
+        {topCountries.length > 0 && (
           <>
             <div
               style={{
@@ -229,49 +234,9 @@ export default function ResultsPage() {
                 margin: "28px 0 12px"
               }}
             >
-              More places
+              Top countries
             </div>
-            {results.results.slice(5, 10).map((r) => (
-              <div
-                key={r.ranked.cityId}
-                onClick={() => router.push(`/place/${r.ranked.cityId}`)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "12px 16px",
-                  background: "var(--color-surface)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 12,
-                  marginBottom: 8,
-                  cursor: "pointer"
-                }}
-              >
-                <div>
-                  <div style={{ font: "600 14px var(--font-body)", color: "var(--color-ink)" }}>
-                    {r.city.name}, {r.city.countryName}
-                  </div>
-                </div>
-                <StarRating stars={r.ranked.stars} size={13} />
-              </div>
-            ))}
-          </>
-        )}
-
-        {results.countries.length > 0 && (
-          <>
-            <div
-              style={{
-                font: "600 12px var(--font-body)",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "var(--color-faint)",
-                margin: "28px 0 12px"
-              }}
-            >
-              Countries
-            </div>
-            {results.countries.map((co) => (
+            {topCountries.map((co) => (
               <div
                 key={co.countryCode}
                 style={{

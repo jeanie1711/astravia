@@ -86,7 +86,7 @@ export default function CityStoryPage() {
           <h1 style={{ margin: 0, font: "600 32px var(--font-display)", color: "var(--color-ink)" }}>
             {story.city}
           </h1>
-          <StarRating stars={story.stars} size={18} />
+          <StarRating stars={story.stars} size={18} showLabel />
         </div>
         <div
           style={{
@@ -161,6 +161,10 @@ export default function CityStoryPage() {
         )}
 
         <SectionHeading>Birth-time confidence</SectionHeading>
+        <p style={{ margin: "0 0 10px", font: "400 12px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
+          This is different from the star rating above -- it tells you how much this result could change if your
+          exact birth time isn't certain.
+        </p>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--color-accent)" }} />
           <div style={{ font: "600 14px var(--font-body)", color: "var(--color-ink)" }}>

@@ -15,8 +15,11 @@ import { scoreCity } from "../../../scoring/score-city";
 import { SCORABLE_GOALS, type RankedCity, type ScorableGoal } from "../../../scoring/types";
 import type { CalculateRequest, CalculateResponse, CalculateResult } from "../../journey/types";
 
-const TOP_RESULTS_COUNT = 20;
-const TOP_COUNTRIES_COUNT = 5;
+// Kept small on purpose (product feedback 2026-09-04): the UI only ever
+// shows the top 3 of each, but we keep a little headroom server-side for
+// pattern detection and de-duplication overlap, not for display.
+const TOP_RESULTS_COUNT = 10;
+const TOP_COUNTRIES_COUNT = 3;
 const PATTERN_SAMPLE_SIZE = 10;
 
 function groupByCity(all: CityInfluenceSensitivity[]): Map<string, CityInfluenceSensitivity[]> {

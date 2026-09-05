@@ -2,7 +2,7 @@
 
 **Status: APPROVED 2026-09-05.** Written at the Product Owner's request to fully specify, for review, what the scoring and interpretation layers would look like if redesigned to minimize invented/arbitrary elements and rely as much as possible on real, broadly-taught Astrocartography (ACG) and traditional astrology knowledge — even where that means overriding policy already in `04-scoring-ranking-spec.md` and `06-interpretation-library.md`.
 
-The Product Owner has approved this direction. **`docs/03-astro-calculation-spec.md`, `docs/04-scoring-ranking-spec.md`, and `docs/06-interpretation-library.md` have been updated to v0.2 to reflect it** — those documents are now the source of truth for the approved methodology. This document remains as the rationale/background record. **No production code has been changed yet** — see `04-scoring-ranking-spec.md` §16 (Implementation status) for exactly what's implemented vs. still pending, and §8/§9 below for why implementation is sequenced as its own milestone with a new Golden Test suite, per CLAUDE.md §3/§8/§9/§19.
+The Product Owner has approved this direction. **`docs/03-astro-calculation-spec.md`, `docs/04-scoring-ranking-spec.md`, and `docs/06-interpretation-library.md` have been updated to v0.2 to reflect it** — those documents are now the source of truth for the approved methodology. **As of 2026-09-05, the framework is implemented and shipped** (`MODEL_VERSIONS.scoring/interpretation = "1.0"`), with one gap remaining: parans (§3.3) are fully specified (`03-astro-calculation-spec.md` §19) but not yet coded. See `04-scoring-ranking-spec.md` §16 (Implementation status) for the exact tracker, and §9 below for the sequence that was followed.
 
 ---
 
@@ -166,7 +166,8 @@ This is sized as a **full rewrite of Milestone 1 and most of Milestone 2**, not 
 
 Sequence, per CLAUDE.md §19:
 1. ~~Write the dedicated paran geometry spec.~~ **Done 2026-09-05** — full algorithm (closed-form MC/IC×ASC/DSC, numerical root-finding for ASC/DSC×ASC/DSC, city-to-paran distance) in `03-astro-calculation-spec.md` §19.
-2. Author and get approval for a new Golden Test suite against the v0.2 formulas *before* touching production scoring/interpretation code (`04-scoring-ranking-spec.md` §16 tracks this).
-3. Implement, in this order: planetary category classification → richness formula/coherence tiers → paran calculation module (`03` §19) + its own Golden Tests → wire parans into scoring.
+2. ~~Author the v0.2 Golden Test suite.~~ **Done 2026-09-05** — `07-golden-test-cases.md` §10.
+3. ~~Implement planetary category classification, richness formula, and coherence tiers.~~ **Done 2026-09-05** — `MODEL_VERSIONS.scoring/interpretation` bumped to `"1.0"`. All 140 tests pass. One design correction made during implementation: secondary selection excludes the primary's own body (04 §5's note on MC/IC sharing a meridian great circle).
+4. **Remaining:** the paran calculation module (`src/astro/parans.ts` per `03` §19) and its own Golden Tests, then wiring parans into scoring as a reinforcing signal. This is the only piece of the approved framework not yet implemented.
 
 **Status: APPROVED, implementation pending.** No production code has been changed by this document or by the `03`/`04`/`06` doc updates that followed its approval.

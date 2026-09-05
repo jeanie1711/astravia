@@ -4,7 +4,12 @@ import type { Goal, RatingLabel, RankedCity, ScorableGoal, Stars } from "./types
 
 const RAW_CLAMP_MIN = 0;
 const RAW_CLAMP_MAX = 1.2;
-const SCORE_NORMALIZER = 1.05;
+// v0.2: without a per-goal relevance discount, richness alone from a
+// single close primary already nears 1.0 -- this normalizer keeps a lone
+// close primary (no reinforcement) just under the 5-star threshold, so
+// genuine reinforcement/coherence is required to clear it. Provisional,
+// tuned during Golden Test authoring (04-scoring-ranking-spec.md §8).
+const SCORE_NORMALIZER = 1.3;
 
 const STABILITY_ADJUSTMENT = {
   EXACT: 0,
@@ -13,7 +18,7 @@ const STABILITY_ADJUSTMENT = {
   TIME_SENSITIVE: -0.1
 } as const;
 
-const HIGH_TENSION_THRESHOLD = 0.4;
+const CHALLENGING_CATEGORIES = new Set(["Malefic", "Transformative"]);
 const FIVE_STAR_MAX_DISTANCE_KM = 500;
 
 export const STAR_LABELS: Record<Stars, RatingLabel> = {
@@ -84,11 +89,12 @@ export function scoreToDisplayValue(internalScore: number, stars: Stars): number
   return Math.round((stars + fraction) * 10) / 10;
 }
 
-// Computes the full scoring result for one city/goal (spec §5-§9), applying
-// the guardrails directly to the score: S001 (no relevant line prevents
-// tier 3+), S002 (five stars requires an influence within 500km), S003
-// (time-sensitive prevents tier 5), and the documented "tension-heavy
-// primary + low coherence" soft cap preventing tier 4+.
+// Computes the full scoring result for one city/goal (04-scoring-ranking-
+// spec.md v0.2 §5-§9), applying the guardrails directly to the score: S001
+// (no relevant line prevents tier 3+), S002 (five stars requires an
+// influence within 500km), S003 (time-sensitive prevents tier 5), and the
+// documented "Malefic/Transformative primary + Complex/effortful
+// coherence" soft cap preventing tier 4+.
 export function scoreCity(cityId: string, goal: ScorableGoal, scenarios: ScenarioInfluences, uncertaintyMinutes: number): RankedCity {
   const { stability, baselineComponents } = classifyStability(goal, scenarios, uncertaintyMinutes);
 
@@ -112,10 +118,16 @@ export function scoreCity(cityId: string, goal: ScorableGoal, scenarios: Scenari
     internalScore = Math.min(internalScore, preventTierAndAbove(5));
   }
 
-  // Documented soft guardrail: a primarily tension-heavy, low-coherence
-  // story is capped at 3 stars rather than described as effortlessly
-  // strong (spec §9: "may be capped at ★★★☆☆").
-  if (baselineComponents.primary && baselineComponents.primary.tension >= HIGH_TENSION_THRESHOLD && baselineComponents.coherence === "LOW") {
+  // Documented soft guardrail (spec §9): a primary from the Malefic or
+  // Transformative category, paired with a Complex/effortful coherence
+  // (meaning the secondary is ALSO Malefic/Transformative -- see
+  // coherence.ts), is capped at 3 stars rather than described as
+  // effortlessly strong.
+  if (
+    baselineComponents.primary &&
+    CHALLENGING_CATEGORIES.has(baselineComponents.primary.category) &&
+    baselineComponents.coherence === "COMPLEX_EFFORTFUL"
+  ) {
     internalScore = Math.min(internalScore, preventTierAndAbove(4));
   }
 

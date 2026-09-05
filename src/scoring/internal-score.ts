@@ -2,15 +2,13 @@ import { resolveCoherence } from "./coherence";
 import { buildCandidateInfluences, selectInfluences, type RawInfluenceDistance } from "./select-influences";
 import type { CandidateInfluence, CoherenceLabel, ScorableGoal } from "./types";
 
-const SECONDARY_WEIGHTS = [0.45, 0.25, 0.15] as const;
-const SECONDARY_SUPPORT_CAP = 0.35;
-const TENSION_PENALTY_CAP = 0.25;
-const TENSION_WEIGHTS = [0.18, 0.1] as const;
+const REINFORCEMENT_WEIGHT = 0.5;
 
 const COHERENCE_ADJUSTMENT: Record<CoherenceLabel, number> = {
-  HIGH: 0.12,
-  MEDIUM: 0.04,
-  LOW: -0.08
+  REINFORCING: 0.12,
+  LAYERED: 0.04,
+  COMPLEX_EFFORTFUL: -0.08,
+  NONE: 0
 };
 
 export type ScoreComponents = {
@@ -18,63 +16,44 @@ export type ScoreComponents = {
   primary: CandidateInfluence | undefined;
   secondary: CandidateInfluence[];
   coherence: CoherenceLabel;
-  primarySupport: number; // P
-  secondarySupport: number; // S
+  richness: number;
   coherenceAdj: number;
-  tensionPenalty: number; // T
-  rawWithoutStability: number; // P + S + coherenceAdj - T
+  rawWithoutStability: number; // richness + coherenceAdj
 };
 
-// tensionContribution_i = distanceStrength_i * R_i * tension_i (spec §8) --
-// deliberately does not include the (1 - 0.35*tension) dampening that
-// `support` applies; it isolates how much of a candidate's presence is
-// "tension-driven" for the penalty term.
-function tensionContribution(candidate: CandidateInfluence): number {
-  return candidate.strength * (candidate.relevance / 5) * candidate.tension;
-}
-
 // Computes the pre-stability internal score components for one city/goal
-// at one scenario's set of influence distances (spec §5-§8). Stability
-// (which requires comparing across all three scenarios) is layered on top
-// by score-city.ts / stability.ts.
+// at one scenario's set of influence distances (04-scoring-ranking-spec.md
+// v0.2 §5-§8). Stability (which requires comparing across all three
+// scenarios) is layered on top by score-city.ts / stability.ts.
+//
+// Replaces v0.1's five-term P + S + coherenceAdj + stabilityAdj - T
+// formula with a two-term richness formula: no separate tension penalty --
+// a body's traditional category (category.ts) shapes narrative tone and
+// coherence tier, never a hidden score discount (04 §4).
 export function computeScoreComponents(
   goal: ScorableGoal,
   influences: RawInfluenceDistance[]
 ): ScoreComponents {
-  const candidates = buildCandidateInfluences(goal, influences);
-  const { primary, secondary } = selectInfluences(candidates);
-  const coherence = resolveCoherence(goal, primary, secondary);
+  const candidates = buildCandidateInfluences(influences);
+  const { primary, secondary } = selectInfluences(candidates, goal);
+  const reinforcement = secondary[0];
 
-  const primarySupport = primary?.support ?? 0;
+  const richness = primary
+    ? primary.strength + (reinforcement ? REINFORCEMENT_WEIGHT * reinforcement.strength : 0)
+    : 0;
 
-  const secondarySupportRaw = secondary.reduce(
-    (sum, candidate, index) => sum + (SECONDARY_WEIGHTS[index] ?? 0) * candidate.support,
-    0
-  );
-  const secondarySupport = Math.min(SECONDARY_SUPPORT_CAP, secondarySupportRaw);
-
+  const coherence = primary && reinforcement ? resolveCoherence(primary, reinforcement) : "NONE";
   const coherenceAdj = COHERENCE_ADJUSTMENT[coherence];
 
-  const tensionContributions = candidates
-    .map(tensionContribution)
-    .sort((a, b) => b - a);
-  const [t1 = 0, t2 = 0] = tensionContributions;
-  const tensionPenalty = Math.min(
-    TENSION_PENALTY_CAP,
-    TENSION_WEIGHTS[0] * t1 + TENSION_WEIGHTS[1] * t2
-  );
-
-  const rawWithoutStability = primarySupport + secondarySupport + coherenceAdj - tensionPenalty;
+  const rawWithoutStability = richness + coherenceAdj;
 
   return {
     candidates,
     primary,
     secondary,
     coherence,
-    primarySupport,
-    secondarySupport,
+    richness,
     coherenceAdj,
-    tensionPenalty,
     rawWithoutStability
   };
 }

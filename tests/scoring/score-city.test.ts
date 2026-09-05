@@ -65,55 +65,57 @@ describe("S006 goal differentiation", () => {
   });
 });
 
-describe("synthetic fixtures (07-golden-test-cases.md §8)", () => {
-  it("1. Clean Career: Sun-MC 40 + Jupiter-MC 90 -> Career 5-star, HIGH coherence", () => {
+// v0.2 replaces the v0.1 fixtures below (see docs/DECISIONS.md 2026-09-05
+// "Guardrails cap internalScore..." entries and docs/07-golden-test-
+// cases.md §10, which these fixtures are transcribed from verbatim,
+// including the worked arithmetic). Fixture 4 in particular could not
+// carry over: Venus-ASC + Saturn-ASC for LOVE relied on v0.1's per-goal
+// relevance matrix giving an ASC-angle line partial credit toward Love;
+// v0.2's strict angle-domain filtering (§5) means an ASC line now
+// contributes nothing to LOVE (its domain is Growth, not Love) -- this is
+// the single most significant, intentional behavior change in the
+// rewrite, and DOM-01 below locks it in explicitly.
+describe("synthetic fixtures (07-golden-test-cases.md §10, v0.2)", () => {
+  it("RICH-01 Clean Reinforcing Career: Sun-MC 40 + Jupiter-MC 200 -> 5 stars, REINFORCING", () => {
     const scenarios = exactScenarios([
       { body: "Sun", angle: "MC", distanceKm: 40 },
-      { body: "Jupiter", angle: "MC", distanceKm: 90 }
+      { body: "Jupiter", angle: "MC", distanceKm: 200 }
     ]);
     const result = scoreCity("city", "CAREER", scenarios, 0);
-    expect(result.stars).toBe(5);
-    expect(result.coherence).toBe("HIGH");
-  });
-
-  it("2. Layered Career: Sun-MC 50 + Neptune-ASC 40 -> MEDIUM coherence, still strong", () => {
-    const scenarios = exactScenarios([
-      { body: "Sun", angle: "MC", distanceKm: 50 },
-      { body: "Neptune", angle: "ASC", distanceKm: 40 }
-    ]);
-    const result = scoreCity("city", "CAREER", scenarios, 0);
-    expect(result.coherence).toBe("MEDIUM");
-    expect(result.stars).toBeGreaterThanOrEqual(4);
-  });
-
-  it("3. Home Base: Moon-IC 60 + Jupiter-IC 100 -> Home 5-star candidate, HIGH coherence", () => {
-    const scenarios = exactScenarios([
-      { body: "Moon", angle: "IC", distanceKm: 60 },
-      { body: "Jupiter", angle: "IC", distanceKm: 100 }
-    ]);
-    const result = scoreCity("city", "HOME", scenarios, 0);
-    expect(result.coherence).toBe("HIGH");
+    expect(result.coherence).toBe("REINFORCING");
     expect(result.stars).toBe(5);
   });
 
-  it("4. Connection + Structure: Venus-ASC 30 + Saturn-ASC 80 -> Love strong but MEDIUM coherence (not effortless)", () => {
+  it("RICH-02 Layered Career, mid-range: Sun-MC 600 + Saturn-ASC 500 -> 3 stars, LAYERED (secondary need not share the primary's domain)", () => {
     const scenarios = exactScenarios([
-      { body: "Venus", angle: "ASC", distanceKm: 30 },
-      { body: "Saturn", angle: "ASC", distanceKm: 80 }
-    ]);
-    const result = scoreCity("city", "LOVE", scenarios, 0);
-    expect(result.coherence).toBe("MEDIUM");
-    expect(result.stars).toBeGreaterThanOrEqual(3);
-  });
-
-  it("5. High Intensity: Mars-MC 30 + Pluto-MC 50 -> LOW coherence, capped at 3 stars despite a strong raw score", () => {
-    const scenarios = exactScenarios([
-      { body: "Mars", angle: "MC", distanceKm: 30 },
-      { body: "Pluto", angle: "MC", distanceKm: 50 }
+      { body: "Sun", angle: "MC", distanceKm: 600 },
+      { body: "Saturn", angle: "ASC", distanceKm: 500 }
     ]);
     const result = scoreCity("city", "CAREER", scenarios, 0);
-    expect(result.coherence).toBe("LOW");
+    expect(result.coherence).toBe("LAYERED");
     expect(result.stars).toBe(3);
+  });
+
+  it("RICH-03 Complex/effortful guardrail: Mars-MC 100 + Pluto-MC 150, Exact stability -> naturally 5-star, capped to 3", () => {
+    const scenarios = exactScenarios([
+      { body: "Mars", angle: "MC", distanceKm: 100 },
+      { body: "Pluto", angle: "MC", distanceKm: 150 }
+    ]);
+    const result = scoreCity("city", "CAREER", scenarios, 0);
+    expect(result.coherence).toBe("COMPLEX_EFFORTFUL");
+    // Guardrail: Malefic/Transformative primary + Complex/effortful
+    // coherence caps below 4 stars even though richness alone would clear 5.
+    expect(result.stars).toBe(3);
+  });
+
+  it("DOM-01 strict angle-domain filtering: same Sun-IC 50km line scores Weak for Career, Strong for Home", () => {
+    const scenarios = exactScenarios([{ body: "Sun", angle: "IC", distanceKm: 50 }]);
+    const career = scoreCity("city", "CAREER", scenarios, 0);
+    const home = scoreCity("city", "HOME", scenarios, 0);
+    expect(career.primaryInfluence).toBeUndefined(); // IC doesn't match Career's domain (MC)
+    expect(career.stars).toBe(1);
+    expect(home.primaryInfluence).toEqual({ body: "Sun", angle: "IC" });
+    expect(home.stars).toBe(4);
   });
 
   it("6. Weak City: all relevant lines beyond 900 km -> 1 or 2 stars", () => {

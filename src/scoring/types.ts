@@ -1,4 +1,5 @@
 import type { Angle, Body, CityInfluence, Sensitivity, StrengthBand } from "../astro/types";
+import type { PlanetCategory } from "./category";
 
 export type Goal = "CAREER" | "LOVE" | "HOME" | "GROWTH" | "OVERALL";
 export type ScorableGoal = Exclude<Goal, "OVERALL">;
@@ -10,22 +11,26 @@ export type Influence = {
   angle: Angle;
 };
 
-export type CoherenceLabel = "HIGH" | "MEDIUM" | "LOW";
+// v0.2 (04-scoring-ranking-spec.md §6): a pure function of the primary and
+// secondary/paran's PlanetCategory pair, unrelated to angle/domain. "NONE"
+// covers a lone primary with no secondary/paran at all -- nothing to
+// cohere or conflict with.
+export type CoherenceLabel = "REINFORCING" | "LAYERED" | "COMPLEX_EFFORTFUL" | "NONE";
 export type StabilityLabel = "EXACT" | "HIGH" | "MEDIUM" | "TIME_SENSITIVE";
 export type Stars = 1 | 2 | 3 | 4 | 5;
 export type RatingLabel = "Weak" | "Challenging" | "Mixed" | "Strong" | "Exceptional";
 
-// A candidate influence for one city/goal, carrying everything the scoring
-// formula needs at one scenario instant.
+// A candidate influence for one city, carrying everything the scoring
+// formula needs at one scenario instant. Not goal-specific -- a candidate's
+// category is intrinsic to its body; domain-matching against the current
+// goal happens at selection time (select-influences.ts), not here.
 export type CandidateInfluence = {
   body: Body;
   angle: Angle;
   distanceKm: number;
   strengthBand: StrengthBand;
-  relevance: number; // 1-5, from the goal relevance matrix
-  tension: number; // baseline tension multiplier for the body
-  strength: number; // distanceStrength(distanceKm), 0-1
-  support: number; // strength * (relevance/5) * (1 - 0.35*tension)
+  category: PlanetCategory;
+  strength: number; // distanceStrength(distanceKm), 0-1 -- also this candidate's richness contribution
 };
 
 export type SelectedInfluences = {

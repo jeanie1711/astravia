@@ -95,11 +95,7 @@ export function composeCityStory(
   ];
   if (firstSecondary && firstSecondaryInterp) {
     const synthesis = lookupSynthesis(primary, firstSecondary);
-    sentences.push(
-      synthesis
-        ? `${synthesis.synthesis} ${synthesis.story}`
-        : `A ${influenceLabel(firstSecondary.body, firstSecondary.angle)} influence adds ${firstSecondaryInterp.coreTheme}, and ${firstSecondaryInterp.tradeOff[0]} is worth keeping in mind.`
-    );
+    sentences.push(`${synthesis.synthesis} ${synthesis.story}`);
   }
 
   const tradeOffs = [...primaryInterp.tradeOff];

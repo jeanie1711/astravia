@@ -16,7 +16,7 @@ function city(
     label: "Strong",
     primaryInfluence,
     secondaryInfluences,
-    coherence: "MEDIUM",
+    coherence: "LAYERED",
     stability,
     archetypeId: "VISIBILITY"
   };

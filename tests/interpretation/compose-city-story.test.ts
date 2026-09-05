@@ -12,7 +12,7 @@ function baseRankedCity(overrides: Partial<RankedCity>): RankedCity {
     label: "Exceptional",
     primaryInfluence: { body: "Sun", angle: "MC" },
     secondaryInfluences: [{ body: "Neptune", angle: "ASC" }],
-    coherence: "MEDIUM",
+    coherence: "LAYERED",
     stability: "HIGH",
     archetypeId: "VISIBILITY",
     ...overrides
@@ -36,10 +36,13 @@ describe("composeCityStory", () => {
     expect(result.whyItStandsOut.startsWith("Your ☉ Sun–MC influence is especially strong here.")).toBe(true);
   });
 
-  it("I002: uses the documented synthesis phrase instead of concatenating two independent definitions", () => {
+  it("I002: uses the category-tier synthesis pattern instead of concatenating two independent definitions", () => {
+    // Sun (Personal) + Neptune (Transformative) is a mixed pair -> Layered
+    // tier (04-scoring-ranking-spec.md v0.2 §6).
     const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
-    expect(result.whyItStandsOut).toContain("Visibility meets inspiration -- and ambiguity.");
-    expect(result.whyItStandsOut).toContain("The career opportunity remains, with more importance placed on clarity and boundaries.");
+    expect(result.whyItStandsOut).toContain("a layered story, opportunity alongside effort");
+    expect(result.whyItStandsOut).toContain("visibility, professional identity, recognition");
+    expect(result.whyItStandsOut).toContain("sensitivity, imagination, porous identity");
   });
 
   it("I003: a 5-star result still has a non-empty trade-off", () => {
@@ -72,7 +75,7 @@ describe("composeCityStory", () => {
 
   it("falls back to the weak-result copy when there is no primary influence", () => {
     const result = composeCityStory(
-      baseRankedCity({ primaryInfluence: undefined, secondaryInfluences: [], stars: 1, coherence: "MEDIUM", archetypeId: "UNCLASSIFIED" }),
+      baseRankedCity({ primaryInfluence: undefined, secondaryInfluences: [], stars: 1, coherence: "NONE", archetypeId: "UNCLASSIFIED" }),
       "Nowhere",
       "Nowhereland",
       []

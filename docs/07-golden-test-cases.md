@@ -1,6 +1,6 @@
-# Golden Test Cases v0.1
+# Golden Test Cases v0.1 (+ v0.2 addendum, §10)
 
-> **2026-09-05:** `docs/04-scoring-ranking-spec.md` and `docs/06-interpretation-library.md` were approved and rewritten to v0.2 (see `docs/PROPOSAL-canonical-framework.md`). **This document's scoring/interpretation fixtures (levels B and C below) still reflect v0.1** and remain the correct regression contract for the code currently running (scoring v0.3, which is a guardrail refinement of v0.1's formula — see `04-scoring-ranking-spec.md` §16). They will need a companion v0.2 suite, authored and approved *before* any v0.2 scoring/interpretation code is written (CLAUDE.md §8/§9/§19) — do not edit the expected values below to match v0.2 output; author new fixtures alongside them instead. Level A (mathematical invariants — ephemeris, MC/IC/ASC/DSC, timezone) is calculation-layer and unaffected either way.
+> **2026-09-05, updated:** `docs/04-scoring-ranking-spec.md` v0.2 (the canonical framework) is now implemented (`MODEL_VERSIONS.scoring/interpretation = "1.0"`). §10 below is the live regression suite (`tests/scoring/score-city.test.ts`, `tests/interpretation/combinations.test.ts`). **§§6-8's v0.1 fixtures below are retired, not deleted** — kept for historical reference and because Level A (§5, mathematical invariants) is unaffected and still fully live. §4's real-city (Golden Case 001) narrative fixtures were written against v0.1 and have only been spot-checked against v0.2 where noted inline (Stockholm, Lisbon) — the rest have not been re-verified and may no longer match exactly, since primary/secondary selection changed from relevance-weighted to pure-proximity (§10.2/§16 of `04`).
 
 **Purpose:** Prevent calculation/scoring regressions and stop Claude Code from “fixing” the engine by intuition.
 
@@ -81,6 +81,7 @@ Behavior:
 - Archetype: VISIBILITY or LAYERED.
 - Narrative must include career visibility/direction AND clarity/idealisation/boundary trade-off.
 - Must not describe Stockholm as purely easy/beneficial.
+- **Re-verified against v0.2 2026-09-05** (`tests/golden/case-001-scoring-behavior.test.ts`): still holds exactly as written above -- Sun-MC primary, Neptune-ASC secondary, HIGH stability, coherence is now labeled LAYERED (was MEDIUM).
 
 ### Turku, Finland
 Expected:
@@ -151,6 +152,7 @@ Behavior:
 - Do NOT return “stable five-star home base” across the full 17:15–17:45 range.
 - Career/Momentum may remain meaningful because of Mars-MC, but must include intensity/burnout/conflict trade-off.
 - This test is a hard regression guard.
+- **Re-checked against v0.2 2026-09-05** (`tests/golden/case-001-scoring-behavior.test.ts`): the Home *primary* itself changed from Jupiter-IC to Mars-IC. v0.1 selected Jupiter-IC because its relevance-weighted `support` outscored the closer Mars-IC; v0.2 has no relevance weighting, so primary is always the closest domain-matching line, and Mars-IC wins on proximity. The underlying "do not overclaim a stable 5-star result here" intent still holds (stars stay below 5), but the specific body/stability-label claims above are v0.1-only and should not be re-asserted for v0.2 without re-deriving them from actual output.
 
 ### Reykjavik, Iceland
 Expected:
@@ -282,9 +284,9 @@ A scoring/content change may intentionally change Golden outputs, but the develo
 3. increment the relevant version,
 4. receive product-owner approval.
 
-## 10. v0.2 Canonical Framework fixtures (new suite — step 2/3 of the approved rewrite, 2026-09-05)
+## 10. v0.2 Canonical Framework fixtures (implemented 2026-09-05 — this is now the live suite)
 
-**Status of this section: authored, not yet implementable.** These fixtures are written against `04-scoring-ranking-spec.md` v0.2 and `06-interpretation-library.md` v0.2, none of which exist in `src/` yet (§16 there tracks this). They are a companion to §§6–8 above, not a replacement — §§6–8 remain the correct, currently-passing contract for the code running today (scoring v0.3). Do not touch `src/scoring/relevance.ts`, `internal-score.ts`, or `coherence.ts` to satisfy these fixtures until they're formally moved into `tests/`; that move is step 3.
+**Status: implemented.** These fixtures are the live regression suite for `04-scoring-ranking-spec.md` v0.2 / `06-interpretation-library.md` v0.2 (`MODEL_VERSIONS.scoring/interpretation = "1.0"`), encoded in `tests/scoring/score-city.test.ts` (RICH-01/02/03, DOM-01) and `tests/interpretation/combinations.test.ts`. §§6–8 above are retired (v0.1) but kept for history. One correction made during implementation, not caught during authoring: secondary selection must exclude the primary's own body (a body's MC and IC are always exactly 180° apart, so they sit on the same meridian great circle and are always equidistant from any city — see `04` §5's note). RICH-01/02/03's numbers below were re-verified against the actual implementation and are unchanged; DOM-01's Home-side star count was corrected from ★★★★★ to ★★★★☆ (the worked arithmetic below always used Exact stability, not High as an earlier draft said).
 
 Two formula constants were fixed **during the authoring of this section**, not before — writing worked examples surfaced that they mattered:
 - The coherence-tier definition was corrected from an angle/domain-based rule (ambiguous, and didn't match v0.1's own examples) to a pure category-pair rule — see `04-scoring-ranking-spec.md` §6's own note about this correction.
@@ -305,9 +307,9 @@ Both are recorded as provisional, Golden-Test-tunable constants, exactly like v0
 
 ### 10.2 Strict angle-domain filtering (DOM) — the most significant behavior change from v0.1
 
-**DOM-01.** Fixture: a city with exactly one relevant line, Sun–IC at 50 km, and nothing else within 750 km.
+**DOM-01.** Fixture: a city with exactly one relevant line, Sun–IC at 50 km, and nothing else within 750 km, exact birth time (Exact stability).
 - Career (domain = MC): Sun-IC does not match → **no primary candidate at all** → richness = 0 → ★☆☆☆☆ (Weak).
-- Home (domain = IC): Sun-IC matches → primary, `distanceStrength(50) ≈ 0.996`, no secondary (None coherence, 0), High stability (+0.10) → `raw = 1.096`, `score = clamp(1.096/1.3, 0, 1) ≈ 0.843` → ★★★★★ (Exceptional).
+- Home (domain = IC): Sun-IC matches → primary, `distanceStrength(50) ≈ 0.996`, no secondary (None coherence, 0), Exact stability (0) → `raw = 0.996`, `score = clamp(0.996/1.3, 0, 1) ≈ 0.766` → ★★★★☆ (Strong).
 
 Same city, same single line, same distance — Career and Home diverge from ★☆☆☆☆ to ★★★★★ purely because of angle-domain match. **This must never regress toward v0.1's soft behavior** (where a non-matching angle still contributed a small non-zero amount via its relevance-1 entry) — that soft behavior was the *editorial hypothesis* this rewrite specifically removed.
 
@@ -315,20 +317,18 @@ Same city, same single line, same distance — Career and Home diverge from ★�
 
 All use the formula and constants in `04-scoring-ranking-spec.md` §8. `distanceStrength(km) = 1 − (km/750)²` (unchanged from v0.1).
 
-**RICH-01 — Reinforcing, saturates to 5 stars.** Sun-MC 40 km (Personal, primary) + Jupiter-MC 200 km (Benefic, secondary), High stability.
-`richness = 0.997 + 0.5×0.929 = 1.461`; `raw = 1.461 + 0.12 + 0.10 = 1.681`; `score = clamp(1.681/1.3, 0,1) = 1.0` → ★★★★★, coherence Reinforcing.
+**RICH-01 — Reinforcing, saturates to 5 stars.** Sun-MC 40 km (Personal, primary) + Jupiter-MC 200 km (Benefic, secondary), Exact stability.
+`richness = 0.997 + 0.5×0.929 = 1.461`; `raw = 1.461 + 0.12 + 0 = 1.581`; `score = clamp(1.581/1.3, 0,1) = 1.0` → ★★★★★, coherence Reinforcing.
 
-**RICH-02 — Layered, mid-range (shows secondary need not share the primary's domain).** Sun-MC 600 km (Personal, primary, Career) + Saturn-ASC 500 km (Malefic, secondary — different angle, irrelevant to tier), Medium stability.
-`richness = 0.36 + 0.5×0.556 = 0.638`; `raw = 0.638 + 0.04 + 0.03 = 0.708`; `score = clamp(0.708/1.3,0,1) ≈ 0.545` → ★★★☆☆ (Mixed), coherence Layered.
+**RICH-02 — Layered, mid-range (shows secondary need not share the primary's domain).** Sun-MC 600 km (Personal, primary, Career) + Saturn-ASC 500 km (Malefic, secondary — different angle, irrelevant to tier), Exact stability.
+`richness = 0.36 + 0.5×0.556 = 0.638`; `raw = 0.638 + 0.04 + 0 = 0.678`; `score = clamp(0.678/1.3,0,1) ≈ 0.521` → ★★★☆☆ (Mixed), coherence Layered.
 
 **RICH-03 — Complex/effortful, guardrail actually changes the outcome.** Mars-MC 100 km (Malefic, primary) + Pluto-MC 150 km (Transformative, secondary), Exact stability.
 `richness = 0.982 + 0.5×0.96 = 1.462`; `raw = 1.462 − 0.08 + 0 = 1.382`; `score = clamp(1.382/1.3,0,1) = 1.0` — **but** the guardrail (primary category Malefic/Transformative + Complex/effortful coherence, §9 of `04`) caps the score at `preventTierAndAbove(4) ≈ 0.6199` before mapping to stars → ★★★☆☆ (Mixed), not ★★★★★. This is the fixture that proves the guardrail is doing real work, not just capping an already-weak result.
 
-**RICH-04 — S002-equivalent: guardrail caps an otherwise-5-star result because nothing is within 500 km.** Sun-MC 501 km (Personal, primary) + Jupiter-MC 501 km (Benefic, secondary), Reinforcing, High stability.
-`richness = 0.553 + 0.5×0.553 = 0.830`; `raw = 0.830 + 0.12 + 0.10 = 1.050`; `score = clamp(1.050/1.3,0,1) ≈ 0.808` (naturally ★★★★★) — capped to `preventTierAndAbove(5) ≈ 0.7799` since no candidate is ≤500 km → ★★★★☆ (Strong).
+**RICH-04/S002 — checked, but currently unreachable as a "would-have-been-5-star" case.** Worked out during authoring: with only 2 richness terms (primary + 0.5×secondary), the maximum richness achievable when *nothing* is within 500 km is `distanceStrength(500⁺) × 1.5 ≈ 0.833`; even with the best-case Reinforcing (+0.12) and the best stability bonus actually reachable in that situation (Medium, +0.03 — High stability itself requires a primary ≤500 km, so it's mutually exclusive with this case), the ceiling is `(0.833+0.12+0.03)/1.3 ≈ 0.756`, already below the 0.78 five-star threshold on its own. **So under today's constants, S002's score-cap is never the binding constraint** — it's still implemented (`preventTierAndAbove(5)`, `tests/scoring/score-city.test.ts`'s "S002 five-star proximity") as the direct, honest expression of the product rule ("never call something Exceptional without genuine sub-500km proximity") and as defense-in-depth if `SCORE_NORMALIZER`/coherence weights are retuned later, not because it's currently load-bearing. Recorded here rather than silently discovered later.
 
-**RICH-05 — Time-sensitive cap.** Same inputs as RICH-01 but Time-sensitive stability instead of High.
-`raw = 1.461 + 0.12 − 0.10 = 1.481`; naturally `score = clamp(1.481/1.3,0,1)=1.0` (★★★★★) — capped to `preventTierAndAbove(5)` for the same reason as S003 in v0.1 → ★★★★☆ (Strong).
+**RICH-05/S003 — same finding for Time-sensitive.** Time-sensitive stability applies a −0.10 penalty, which only ever *lowers* richness+coherence further below the 5-star ceiling than Exact (0) would — so it's arithmetically impossible for richness+coherence alone (max 1.461+0.12=1.581, `/1.3=1.216`, already clamps to 1.0 before the stability term even applies) to depend on the guardrail either... except richness CAN exceed the normalizer on its own (as RICH-01 shows), meaning Time-sensitive's guardrail *is* reachable: take RICH-01's inputs with Time-sensitive stability instead of Exact -- `raw = 1.461 + 0.12 − 0.10 = 1.481`, `score = clamp(1.481/1.3,0,1) = 1.0` naturally (★★★★★) — capped to `preventTierAndAbove(5) ≈ 0.7799` → ★★★★☆ (Strong). Unlike S002, this one **is** load-bearing today; see `tests/scoring/score-city.test.ts`'s "S003 time-sensitive cap".
 
 **RICH-06 — Weak city.** No candidate line within 750 km for the selected goal → richness = 0 → ★☆☆☆☆ regardless of stability/coherence (nothing to adjust).
 

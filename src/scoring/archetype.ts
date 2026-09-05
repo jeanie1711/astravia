@@ -39,10 +39,11 @@ const BODY_ARCHETYPE: Partial<Record<Body, ArchetypeId>> = {
 };
 
 // Selects a city/goal's narrative archetype from its primary influence and
-// coherence label (spec §4). LOW coherence (a strong supportive signal
-// alongside a strong tension signal) takes priority over the body-based
-// category, matching the spec's own "VISIBILITY or LAYERED" acceptance for
-// exactly this kind of case (e.g. Sun-MC with a high-tension secondary).
+// coherence label (spec §4). Complex/effortful coherence (a primary paired
+// with an equally challenging secondary) takes priority over the
+// body-based category, matching the spec's own "VISIBILITY or LAYERED"
+// acceptance for exactly this kind of case (e.g. Sun-MC with a
+// Malefic/Transformative secondary).
 export function selectArchetype(
   primary: CandidateInfluence | undefined,
   coherence: CoherenceLabel
@@ -51,7 +52,7 @@ export function selectArchetype(
     return "UNCLASSIFIED";
   }
 
-  if (coherence === "LOW") {
+  if (coherence === "COMPLEX_EFFORTFUL") {
     return "LAYERED";
   }
 

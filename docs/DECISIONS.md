@@ -76,7 +76,7 @@ Format per CLAUDE.md §17: Date / Decision needed / Context / Options / Recommen
 
 **Context:** Implemented in `src/scoring/coherence.ts`. Falls back to a tension-based heuristic generalized from the documented examples' own pattern: two low-tension bodies (both <0.40 baseline tension) → HIGH; one high-tension body → MEDIUM; two high-tension bodies → LOW. A lone primary with no meaningful secondary → MEDIUM (nothing to cohere or conflict with). Also, where the source doc lists an ambiguous double label for one goal (e.g. "HIGH/MEDIUM Career"), the lower/more conservative label was picked; where labels visibly pair positionally with goals (e.g. "HIGH/MEDIUM Career/Love"), that pairing was used instead.
 
-**Status:** IMPLEMENTED AS DEFAULT — not blocking, but worth product review since it materially affects most cities' coherence classification, not just the 25 documented examples. Revise `src/scoring/coherence.ts`'s `fallbackCoherence()` and the ambiguous-label choices in `src/scoring/combination-rules.ts` if the Product Owner wants different generalization rules.
+**Status:** SUPERSEDED 2026-09-05 by the canonical framework rewrite (see the "Step 3/3" entry below) — `src/scoring/combination-rules.ts` no longer exists, and coherence is now a pure category-pair rule with no fallback/lookup-miss case at all. Kept here for history only; do not use this entry to guide current code.
 
 ---
 
@@ -179,3 +179,24 @@ Also reverted the same-day ombre-bar and printed-decimal star experiments: `Star
 **Update, same day:** Product Owner approved the proposal in full. `docs/03-astro-calculation-spec.md`, `docs/04-scoring-ranking-spec.md`, and `docs/06-interpretation-library.md` were rewritten to v0.2 to reflect it (relevance matrix + tension table → 4-category classification; 25-pair coherence table → 3-tier rule; 5-term score → 2-term richness formula; parans moved from out-of-scope to approved-pending-its-own-geometry-spec).
 
 **Status: APPROVED, implementation pending.** No production code changed by the doc updates. `04-scoring-ranking-spec.md` §16 tracks exactly which pieces are implemented (only the score-level guardrail mechanism, already shipped in v0.3 scoring — see the entry above) vs. still pending a dedicated Golden Test suite per CLAUDE.md §8/§9/§19 before any further code changes. Full detail in `docs/PROPOSAL-canonical-framework.md`.
+
+---
+
+## 2026-09-05 — Step 3/3: canonical framework implemented (scoring/interpretation v1.0)
+
+**Decision needed:** none -- final implementation step of the Product Owner-approved rewrite (see the two entries above and `docs/PROPOSAL-canonical-framework.md`).
+
+**Change:** Implemented `04-scoring-ranking-spec.md` v0.2 and `06-interpretation-library.md` v0.2 in full, except parans (still spec-only, `03-astro-calculation-spec.md` §19):
+- `src/scoring/category.ts` (new, replaces `relevance.ts`): `planetCategory()` (4-category classification) and `angleDomain()` (angle -> life-domain, the 4 scorable goals).
+- `src/scoring/select-influences.ts`: primary must match the goal's domain (strict, no partial credit for a non-matching angle -- the single most significant behavior change from v0.1); secondary has no domain restriction.
+- `src/scoring/internal-score.ts`: 2-term richness formula (`primary.strength + 0.5*secondary.strength`) replaces the 5-term v0.1 formula. No per-candidate tension discount anywhere.
+- `src/scoring/coherence.ts`: 3-tier category-pair rule (Reinforcing/Layered/Complex-effortful) replaces the 25-pair lookup table. `combination-rules.ts` deleted.
+- `src/scoring/score-city.ts`: `1.3` score normalizer added (`docs/07-golden-test-cases.md` §10 explains why); guardrail conditions updated to key off category instead of the removed tension number.
+- `src/interpretation/combinations.ts`: category-tier synthesis templates (built from each influence's own already-approved `coreTheme`/`tradeOff` text) replace the 25 hand-authored phrases. Always returns a value now (category-pair coverage is exhaustive), so `compose-city-story.ts`'s fallback-on-undefined branch was removed as dead code.
+- `MODEL_VERSIONS.scoring` and `.interpretation` bumped to `"1.0"` (a full methodology generation, not an incremental bump).
+
+**Real design correction found during implementation, not during spec authoring:** secondary selection must exclude the primary's own body. A body's MC and IC longitudes are always exactly 180° apart, placing them on the *same* meridian great circle -- so a city's distance to a body's MC line and to that same body's IC line are always identical. Without excluding same-body candidates, whenever a body was selected as primary via MC (or IC), its own IC (or MC) counterpart would mechanically tie for the strongest remaining candidate and become "the secondary" -- not a second signal, just the same line from its other angle. v0.1 avoided this by accident (the opposite angle's per-goal relevance was usually low, suppressing it); v0.2 has no such accidental suppression since candidate strength no longer depends on goal at all. Found by running the real Golden Case 001 birth chart against the new code (Stockholm's secondary was initially "Sun-IC" instead of the expected "Neptune-ASC") -- exactly the kind of thing synthetic fixtures alone would not have caught. Documented in `04-scoring-ranking-spec.md` §5.
+
+**Test impact:** `select-influences.test.ts`, `archetype.test.ts`, `dedupe.test.ts`, `overall.test.ts`, `score-country.test.ts` updated for the new `CandidateInfluence`/`CoherenceLabel` shapes; `score-city.test.ts`'s v0.1 "synthetic fixtures (07 §8)" describe block retired and replaced with the v0.2 fixtures from `07` §10 (RICH-01/02/03, DOM-01); `interpretation/combinations.test.ts` rewritten for category-tier behavior (no more "undocumented pair returns undefined" case -- coverage is now exhaustive); `golden/case-001-scoring-behavior.test.ts`'s Stockholm fixture confirmed coherence relabels HIGH/MEDIUM/LOW -> REINFORCING/LAYERED/COMPLEX_EFFORTFUL with no other change, but its Lisbon fixture's primary genuinely changed identity (Jupiter-IC -> Mars-IC, since v0.1's relevance weighting let Jupiter-IC outrank a closer Mars-IC, which v0.2's pure-proximity selection no longer does) and was rewritten to assert the new, correct behavior with the reasoning inline. All 140 tests pass.
+
+**Status:** APPROVED / IMPLEMENTED. Remaining: parans (`src/astro/parans.ts` per `03-astro-calculation-spec.md` §19) -- the one piece of the approved framework not yet coded.

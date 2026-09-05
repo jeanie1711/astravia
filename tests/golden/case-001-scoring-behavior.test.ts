@@ -38,9 +38,10 @@ describe("Golden Case 001 - scoring behavior fixtures", () => {
     expect(result.primaryInfluence).toEqual({ body: "Sun", angle: "MC" });
     expect(result.secondaryInfluences).toContainEqual({ body: "Neptune", angle: "ASC" });
     expect(result.stability).toBe("HIGH");
-    // Must not be described as purely easy/beneficial: Sun-MC + Neptune-ASC
-    // is documented as MEDIUM coherence (visibility + ambiguity trade-off).
-    expect(result.coherence).toBe("MEDIUM");
+    // Must not be described as purely easy/beneficial: Sun (Personal) +
+    // Neptune (Transformative) is a mixed category pair -> Layered
+    // (04-scoring-ranking-spec.md v0.2 §6; replaces v0.1's "MEDIUM").
+    expect(result.coherence).toBe("LAYERED");
   });
 
   it("Turku Career: Sun-MC is primary and should outrank a city with no relevant line", () => {
@@ -57,9 +58,16 @@ describe("Golden Case 001 - scoring behavior fixtures", () => {
     expect(result.internalScore).toBeGreaterThan(noLineResult.internalScore);
   });
 
-  it("Lisbon Home: Jupiter-IC is TIME_SENSITIVE (hard regression guard, not a stable 5-star home base)", () => {
+  it("Lisbon Home: v0.2 selects Mars-IC as primary (closest IC line), not v0.1's Jupiter-IC", () => {
+    // v0.1 selected Jupiter-IC as primary because its relevance-weighted
+    // `support` outscored Mars-IC despite Mars-IC sitting closer -- the
+    // relevance matrix could override raw proximity. v0.2 has no such
+    // override: primary is always the closest domain-matching line
+    // (04-scoring-ranking-spec.md v0.2 §5), so Mars-IC (closer) now wins.
+    // This is exactly the kind of change the rewrite intends -- primary
+    // selection follows real proximity, not an invented relevance weight.
     const result = scoreCity("lisbon", "HOME", scenarioInfluencesFor("lisbon"), 15);
-    expect(result.stability).toBe("TIME_SENSITIVE");
+    expect(result.primaryInfluence).toEqual({ body: "Mars", angle: "IC" });
     expect(result.stars).toBeLessThan(5);
   });
 });

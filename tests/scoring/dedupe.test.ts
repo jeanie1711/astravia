@@ -16,7 +16,7 @@ function ranked(cityId: string, internalScore: number): RankedCity {
     label: "Mixed",
     primaryInfluence: undefined,
     secondaryInfluences: [],
-    coherence: "MEDIUM",
+    coherence: "LAYERED",
     stability: "HIGH",
     archetypeId: "VISIBILITY"
   };

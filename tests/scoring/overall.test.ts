@@ -11,7 +11,7 @@ function goalResult(goal: ScorableGoal, internalScore: number, stars: Stars, coh
     label: "Mixed",
     primaryInfluence: { body: "Sun", angle: "MC" },
     secondaryInfluences: [],
-    coherence: coherenceLow ? "LOW" : "HIGH",
+    coherence: coherenceLow ? "COMPLEX_EFFORTFUL" : "REINFORCING",
     stability: "HIGH",
     archetypeId: coherenceLow ? "LAYERED" : "VISIBILITY"
   };

@@ -34,8 +34,8 @@ export function computeOverall(cityId: string, goalResults: Record<ScorableGoal,
     results.reduce((sum, r) => sum + STABILITY_QUALITY[r.stability], 0) / results.length;
   const stabilityBonus = avgStabilityQuality * STABILITY_BONUS_CAP;
 
-  const lowCoherenceCount = results.filter((r) => r.coherence === "LOW").length;
-  const tensionPenalty = Math.min(TENSION_PENALTY_CAP, lowCoherenceCount * TENSION_PENALTY_PER_LOW_COHERENCE_GOAL);
+  const complexEffortfulCount = results.filter((r) => r.coherence === "COMPLEX_EFFORTFUL").length;
+  const tensionPenalty = Math.min(TENSION_PENALTY_CAP, complexEffortfulCount * TENSION_PENALTY_PER_LOW_COHERENCE_GOAL);
 
   const internalScore = Math.min(1, Math.max(0, base + breadthBonus + stabilityBonus - tensionPenalty));
   const stars = scoreToStars(internalScore);

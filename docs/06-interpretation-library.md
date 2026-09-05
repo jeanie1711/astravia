@@ -1,6 +1,6 @@
 # Interpretation Library v0.2 (Canonical Framework)
 
-> **Approved 2026-09-05.** See `docs/PROPOSAL-canonical-framework.md` and `docs/04-scoring-ranking-spec.md` v0.2 for the full rationale. Only §3 (Combination rules) changes in this document — the 40 primary interpretations in §2 are unaffected content and remain exactly as approved; the underlying scoring mechanism that selects primary/secondary influences changes, not the interpretation text itself. **Not yet implemented in code** — see `04-scoring-ranking-spec.md` §16 for what's actually live.
+> **Approved and implemented 2026-09-05** (`MODEL_VERSIONS.interpretation = "1.0"`). See `docs/PROPOSAL-canonical-framework.md` and `docs/04-scoring-ranking-spec.md` v0.2 for the full rationale. Only §3 (Combination rules) changed in this document — the 40 primary interpretations in §2 are unaffected content, used exactly as approved; only the mechanism that selects/synthesizes primary+secondary influences (`src/interpretation/combinations.ts`) changed. See `04-scoring-ranking-spec.md` §16 for the full implementation tracker.
 
 **Purpose:** Approved content primitives for deterministic narrative composition.  
 **Tone:** insightful, reflective, grounded, slightly evocative.  

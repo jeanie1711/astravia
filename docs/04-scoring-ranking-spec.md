@@ -1,6 +1,6 @@
 # Scoring & Ranking Specification v0.2 (Canonical Framework)
 
-> **Approved 2026-09-05.** Supersedes v0.1 below. See `docs/PROPOSAL-canonical-framework.md` for the full rationale and `docs/DECISIONS.md` for the approval record. **Read §16 (Implementation status) before assuming any specific section is already live in code** — this document was updated ahead of the code that implements it, by explicit Product Owner instruction, so the spec and the running app diverge until the rewrite lands.
+> **Approved and implemented 2026-09-05** (`MODEL_VERSIONS.scoring = "1.0"`). Supersedes v0.1 below. See `docs/PROPOSAL-canonical-framework.md` for the full rationale and `docs/DECISIONS.md` for the approval and implementation record. Parans (§5.1) remain specified but not implemented — see §16 (Implementation status) for exactly what's live.
 
 **Purpose:** Convert deterministic city-line calculations into transparent 1–5 star recommendations, while minimizing invented/arbitrary machinery and relying on real, broadly-taught astrocartography (ACG) and traditional astrology knowledge wherever the product's requirements allow it.
 **Core rule:** Stars represent **proximity + reinforcement + coherence + stability**, not luck, destiny, probability, or scientific certainty.
@@ -101,8 +101,10 @@ Primary:
 - must exceed configurable minimum `0.35`
 
 Secondary / reinforcing:
-- the next meaningful candidate (from **any** angle/domain — domain-matching is a primary-only requirement; a secondary from a *different* domain is exactly what makes the Layered coherence tier meaningful, §6), **or a paran involving the primary's angle** (§5.1) if one exists and is closer/stronger than the next plain candidate
+- the next meaningful candidate **from a different body than the primary** (from any angle/domain — domain-matching is a primary-only requirement; a secondary from a *different* domain is exactly what makes the Layered coherence tier meaningful, §6), **or a paran involving the primary's angle** (§5.1) if one exists and is closer/stronger than the next plain candidate
 - must exceed `0.20`
+
+**Why "different body" is required, found during implementation against real Golden Case data (not a synthetic fixture):** a body's MC and IC longitudes are always exactly 180° apart, which places them on the *same* meridian great circle — so a city's distance to a body's MC line and to that same body's IC line are always identical. Without this rule, whenever a body is primary via MC (or IC), its own IC (or MC) counterpart would mechanically tie for the single strongest remaining candidate and become "the secondary" — not a second signal at all, just the same line seen from its other angle. v0.1 avoided this by accident, since that opposite angle's per-goal relevance was usually low; v0.2 has to rule it out explicitly, since a candidate's strength no longer depends on goal at all.
 
 **Real behavior change from v0.1, worth stating plainly:** because the primary must match the goal's domain and there is no per-goal relevance discount any more (§3.2), a line on a *non*-matching angle now contributes **nothing** to that goal's primary selection — not "weakly," as v0.1's relevance-1 entries did, but literally zero. A city with only a Sun-IC line and nothing else within 750 km scores very weakly for Career (no MC/IC.. domain match) while scoring strongly for Home (IC matches) from the exact same input. v0.1 would have given Career a small non-zero contribution from that same Sun-IC line (relevance 1/5). This is intentional — it follows directly from treating the angle-domain mapping as the real, canonical signal (§3.3) rather than a soft, product-invented weighting — but it is a materially different number for some cities, and Golden Test fixture R4 (§16 tracker; see `07-golden-test-cases.md`) locks in exactly this case so it's never "fixed" back to v0.1's behavior by accident.
 
@@ -268,15 +270,14 @@ Store `calculationVersion`, `scoringVersion`, `interpretationVersion`. A result 
 
 ## 16. Implementation status (as of 2026-09-05)
 
-This spec was updated ahead of the code, by explicit Product Owner request, so the two currently disagree in places. Tracking what's actually true in `src/`:
-
 | Section | Spec status | Code status |
 |---|---|---|
-| §9/§11 guardrails cap the score, not just the star label | Approved | **Implemented** (`preventTierAndAbove`, scoring v0.3) |
-| §3.2 planetary category classification | Approved | Not implemented — `src/scoring/relevance.ts` still uses the v0.1 40-entry matrix |
-| §4 tension removed as a scoring multiplier | Approved | Not implemented — v0.1's per-planet tension table is still active in `src/scoring/internal-score.ts` |
-| §6 3-tier coherence | Approved | Not implemented — `src/scoring/coherence.ts`/`combination-rules.ts` still use the 25-pair table |
-| §8 richness formula | Approved | Not implemented — `src/scoring/internal-score.ts` still uses the 5-term formula |
-| §5.1 parans | Approved, geometry specified (`03-astro-calculation-spec.md` §19) | Not implemented — no `src/astro/parans.ts` yet; needs its own module + Golden Tests before wiring into scoring |
+| §9/§11 guardrails cap the score, not just the star label | Approved | **Implemented** (`preventTierAndAbove`, shipped as scoring v0.3, carried into v1.0 unchanged) |
+| §3.2/§3.3 planetary category + angle-domain classification | Approved | **Implemented** (`src/scoring/category.ts`, replaces `relevance.ts`) |
+| §4 tension removed as a scoring multiplier | Approved | **Implemented** — no per-planet tension table anywhere in `src/scoring/` any more |
+| §5 strict domain-matching primary + different-body secondary | Approved | **Implemented** (`src/scoring/select-influences.ts`) |
+| §6 3-tier category-pair coherence | Approved | **Implemented** (`src/scoring/coherence.ts`; `combination-rules.ts` deleted) |
+| §8 richness formula + `1.3` normalizer | Approved | **Implemented** (`src/scoring/internal-score.ts`, `score-city.ts`) |
+| §5.1 parans | Approved, geometry specified (`03-astro-calculation-spec.md` §19) | **Not implemented** — no `src/astro/parans.ts` yet; needs its own module + Golden Tests before wiring into scoring. This is the only remaining gap in the v0.2 framework. |
 
-Per CLAUDE.md §8/§9/§19, none of the "Not implemented" rows should be coded until a new Golden Test suite is authored and approved for this framework — this is sized as its own milestone (see `docs/PROPOSAL-canonical-framework.md` §8).
+`MODEL_VERSIONS.scoring` and `.interpretation` both bumped to `"1.0"` for this implementation (`docs/DECISIONS.md`, 2026-09-05). The v0.2 Golden Test fixtures in `07-golden-test-cases.md` §10 are now the live regression suite in `tests/scoring/score-city.test.ts` and `tests/interpretation/combinations.test.ts` (the v0.1 fixtures in §§6-8 there are retired, not deleted, for historical reference). Parans remain the one open item before this framework is considered fully landed.

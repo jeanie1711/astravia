@@ -163,3 +163,17 @@ Also reverted the same-day ombre-bar and printed-decimal star experiments: `Star
 **Test impact:** `tests/scoring/score-city.test.ts`'s S002 test updated (now asserts `internalScore < 0.78` instead of `>= 0.78`, since the old assertion specifically checked the behavior being replaced). Added a regression test asserting `stars === scoreToStars(internalScore)` across every guardrail-triggering scenario. No Golden Test fixture triggers a guardrail with an asserted exact `internalScore` value, so `tests/golden/*` are unaffected. 137/137 tests pass.
 
 **Status:** APPROVED / IMPLEMENTED.
+
+---
+
+## 2026-09-05 — Canonical Astrocartography framework: written up as a formal proposal, not adopted
+
+**Decision needed:** Whether to replace the current scoring/interpretation framework (04/06) with one that minimizes invented elements, per the Product Owner's standing question about how much of the app is "real" astrocartography vs. product invention (raised earlier this session, deferred while more concrete UI work was prioritized).
+
+**Context:** At the Product Owner's explicit request, wrote a full proposal spec: `docs/PROPOSAL-canonical-framework.md`. It replaces the 40-entry per-goal relevance matrix and per-planet "baseline tension" table with a 4-category traditional planet classification (Personal/Benefic/Malefic/Transformative) driving narrative tone, adds real parans (currently excluded per `03-astro-calculation-spec.md` §1), and simplifies the coherence/scoring formulas accordingly. It explicitly overrides `04-scoring-ranking-spec.md` §4's "do not classify planets as benefic/bad" policy at the internal-classification level, while keeping the actual user-facing language rule (never "good/bad", never fatalistic -- CLAUDE.md §12/§13) intact at the copy layer.
+
+**Recommended option:** See the proposal document's own §9 -- options are adopt in full, adopt partially (parans + planet categories only, keeping today's score shape), or shelve.
+
+**Impact:** Sized as a full rewrite of Milestones 1-2, would invalidate every Golden Test fixture's expected numeric values, and needs its own Golden Test suite authored and approved before any implementation, per CLAUDE.md §8/§9/§19.
+
+**Status: OPEN.** Nothing implemented. Full detail in `docs/PROPOSAL-canonical-framework.md`.

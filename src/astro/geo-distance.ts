@@ -72,6 +72,22 @@ export function distanceToMeridianKm(latDeg: number, lonDeg: number, meridianLon
 // foot falls outside [a, b], the distance to the nearer endpoint is used
 // instead. Spec §11: "production should use point-to-geodesic/polyline
 // segment distance if practical."
+//
+// Correctness fix (found 2026-09-05 while adding a polyline-distance
+// optimization, docs/DECISIONS.md): the along-track distance MUST be
+// computed with atan2, not acos. acos only returns values in [0, pi], so
+// it cannot distinguish the perpendicular foot landing between a and b
+// from it landing an equal angular distance BEHIND a (in the opposite
+// direction, off the far end of the segment) -- both cases produced the
+// same positive "alongTrack" value, so a point almost directly behind `a`
+// could wrongly pass the `alongTrack <= deltaSegment` check and return
+// the (small) cross-track distance to a foot that was never actually on
+// the segment at all, instead of correctly falling back to the nearer
+// endpoint. atan2 preserves the sign (negative = behind `a`), fixing it.
+// A brute-force cross-check in tests/astro/geo-distance.test.ts caught
+// this via an inconsistency with a new pruning optimization -- the bug
+// itself predates that work and affects every ASC/DSC line-to-city
+// distance this function has ever computed.
 export function distanceToSegmentKm(point: Point, a: Point, b: Point): number {
   const deltaSegment = angularDistanceRad(a.lat, a.lon, b.lat, b.lon);
   if (deltaSegment === 0) {
@@ -87,10 +103,7 @@ export function distanceToSegmentKm(point: Point, a: Point, b: Point): number {
   const theta12 = initialBearingRad(a.lat, a.lon, b.lat, b.lon);
 
   const crossTrack = Math.asin(Math.sin(delta13) * Math.sin(theta13 - theta12));
-
-  const cosDenominator = Math.cos(crossTrack);
-  const alongTrackCos = clamp(Math.cos(delta13) / cosDenominator, -1, 1);
-  const alongTrack = Math.acos(alongTrackCos);
+  const alongTrack = Math.atan2(Math.sin(delta13) * Math.cos(theta13 - theta12), Math.cos(delta13));
 
   if (alongTrack >= 0 && alongTrack <= deltaSegment) {
     return Math.abs(crossTrack) * EARTH_RADIUS_KM;
@@ -123,8 +136,56 @@ export function classifyStrengthBand(distanceKm: number): StrengthBand {
   return "NOT_USED";
 }
 
+// Per-polyline segment lengths, cached by array identity: within one
+// computeCityDistancesAtInstant() call, the SAME polyline array is passed
+// to distanceToPolylineKm once per city (up to ~955 times), and a
+// segment's own length never depends on the query point, so computing it
+// once and reusing it avoids ~955x redundant work. Garbage-collected
+// naturally once a request's line data goes out of scope (WeakMap).
+const segmentLengthCache = new WeakMap<Point[], number[]>();
+
+function getSegmentLengthsKm(polyline: Point[]): number[] {
+  let lengths = segmentLengthCache.get(polyline);
+  if (!lengths) {
+    lengths = [];
+    for (let i = 0; i < polyline.length - 1; i++) {
+      lengths.push(haversineDistanceKm(polyline[i]!.lat, polyline[i]!.lon, polyline[i + 1]!.lat, polyline[i + 1]!.lon));
+    }
+    segmentLengthCache.set(polyline, lengths);
+  }
+  return lengths;
+}
+
 // Shortest distance from a point to an ordered polyline (a sampled ASC/DSC
 // segment): the minimum over all consecutive-point segments.
+//
+// Performance note (found 2026-09-05, docs/DECISIONS.md): a naive
+// brute-force scan calls the trig-heavy distanceToSegmentKm for every one
+// of a polyline's ~700 sampled segments, for every city -- measured at
+// ~7.4s for one scenario instant across the full ~955-city dataset (a
+// full /api/calculate call does this 3 times, per G007). Optimized below
+// to give the mathematically IDENTICAL result -- no approximation, no
+// change to any returned value -- by skipping the expensive exact
+// computation for any segment a cheap, rigorous lower bound already
+// proves cannot beat the best distance found so far.
+//
+// The bound (triangle inequality, always valid for any metric -- no
+// assumption about the segment's shape): for a segment [a, b] of length L
+// and any point Q on the geodesic between them, dist(a,Q) + dist(Q,b) = L
+// (Q lies on the shortest path), so dist(point,Q) >= dist(point,a) -
+// dist(a,Q) >= dist(point,a) - L, and symmetrically for b. The larger
+// (tighter) of the two, max(dist(point,a), dist(point,b)) - L, is a valid
+// lower bound on the segment's true minimum distance to `point`.
+//
+// An earlier version of this bound used only the segment's endpoint
+// LATITUDES (great-circle distance >= latitude difference alone). That
+// is a valid bound for a straight meridian hop, but not for an arbitrary
+// geodesic segment: a great-circle path between two points can bulge to
+// a latitude beyond either endpoint's own latitude (classic great-circle
+// vs. rhumb-line behavior), so a latitude-only bound could overestimate
+// the true minimum and wrongly skip the closest segment. Caught by
+// tests/astro/geo-distance.test.ts's brute-force cross-check before
+// shipping -- kept as a cautionary note, not repeated here.
 export function distanceToPolylineKm(point: Point, polyline: Point[]): number {
   if (polyline.length === 0) {
     throw new Error("distanceToPolylineKm: polyline must have at least one point");
@@ -134,12 +195,34 @@ export function distanceToPolylineKm(point: Point, polyline: Point[]): number {
     return haversineDistanceKm(point.lat, point.lon, only.lat, only.lon);
   }
 
-  let min = Infinity;
-  for (let i = 0; i < polyline.length - 1; i++) {
-    const a = polyline[i]!;
-    const b = polyline[i + 1]!;
-    const d = distanceToSegmentKm(point, a, b);
-    if (d < min) min = d;
+  const segmentCount = polyline.length - 1;
+  const segmentLengths = getSegmentLengthsKm(polyline);
+
+  // Cheap (haversine, no cross-track math) distance to every vertex, plus
+  // which vertex is nearest -- used to seed a tight initial `best` below
+  // so the bound has something meaningful to prune against immediately.
+  const vertexDistances: number[] = new Array(polyline.length);
+  let nearestVertex = 0;
+  for (let i = 0; i < polyline.length; i++) {
+    const d = haversineDistanceKm(point.lat, point.lon, polyline[i]!.lat, polyline[i]!.lon);
+    vertexDistances[i] = d;
+    if (d < vertexDistances[nearestVertex]!) nearestVertex = i;
   }
-  return min;
+
+  let best = Infinity;
+  if (nearestVertex > 0) {
+    best = Math.min(best, distanceToSegmentKm(point, polyline[nearestVertex - 1]!, polyline[nearestVertex]!));
+  }
+  if (nearestVertex < segmentCount) {
+    best = Math.min(best, distanceToSegmentKm(point, polyline[nearestVertex]!, polyline[nearestVertex + 1]!));
+  }
+
+  for (let i = 0; i < segmentCount; i++) {
+    const bound = Math.max(vertexDistances[i]!, vertexDistances[i + 1]!) - segmentLengths[i]!;
+    if (bound >= best) continue;
+    const d = distanceToSegmentKm(point, polyline[i]!, polyline[i + 1]!);
+    if (d < best) best = d;
+  }
+
+  return best;
 }

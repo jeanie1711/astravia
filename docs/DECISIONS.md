@@ -221,21 +221,31 @@ Also reverted the same-day ombre-bar and printed-decimal star experiments: `Star
 
 ---
 
-## 2026-09-05 — URGENT, found while perf-testing parans: pre-existing city-to-line distance computation is very slow
+## 2026-09-05 — FIXED: pre-existing city-to-line distance computation was very slow, and had a latent correctness bug
 
-**Decision needed:** Whether/when to fix this. Flagging it, not fixing it, in this entry.
+**Decision needed:** none -- fixed the same day, per explicit Product Owner request after the initial finding was reported.
 
-**Context:** While measuring the performance impact of the paran feature above (which itself adds well under 100ms per request), discovered that the *existing*, unrelated `computeCityDistancesAtInstant` (`src/astro/city-proximity.ts`, used for every ASC/DSC line against every city -- pre-dates this session entirely) takes approximately **7.4 seconds** for one scenario instant across the full ~955-city dataset, confirmed to scale linearly with city count (measured at 10/50/100/200 cities). Root cause: `distanceToPolylineKm` brute-force checks every city against every one of the ~250 sampled points on every ASC/DSC polyline (10 bodies × 2 angles × ~250 points ≈ 12,000+ points total), with no spatial pruning (e.g. a city's latitude alone rules out all but a narrow band of a polyline's points, but nothing currently uses that to skip work).
+**Context:** While measuring the performance impact of the paran feature (itself well under 100ms per request), discovered that the *existing*, unrelated `computeCityDistancesAtInstant` (`src/astro/city-proximity.ts`, pre-dates this session entirely) took approximately **7.4 seconds** for one scenario instant across the full ~955-city dataset (confirmed linear in city count via 10/50/100/200-city measurements). A full `/api/calculate` request repeats this **three times** (lower/baseline/upper, per G007) before any scoring even begins -- roughly 22s+ for a single-goal request, worse for OVERALL. Never load-tested before (Milestone 4's performance item had been pending since the project's start) and very likely at or beyond typical Vercel serverless timeouts.
 
-A full `/api/calculate` request computes this **three times** (lower/baseline/upper scenarios, per the G007 independence rule) regardless of which goal is requested or whether birth time is exact -- so this is on the order of **20+ seconds** before any scoring, dedup, or interpretation work even begins. This was never load-tested before (Milestone 4's "performance verification of `/api/calculate` on Vercel's serverless function time limits" was flagged as pending from the very start of the project, in the original architecture review) and is very likely at or beyond typical Vercel serverless function timeouts (10s default on Hobby; higher but still finite on Pro without Fluid Compute).
+**Two distinct root causes were found and fixed, not one:**
 
-**Options:**
-- Spatially pre-filter each polyline to only the points within a plausible latitude band of each city before running the expensive great-circle segment math (likely the highest-leverage fix -- could plausibly cut this by 10x+ with no change to the actual distance values returned, since it's purely a matter of skipping segments already too far away).
-- Reduce ASC/DSC sampling resolution (`ASC_DSC_LATITUDE_STEP`, currently 0.25°) -- trades numerical precision for speed; would need Golden Test tolerance review (`07-golden-test-cases.md` §2) before changing.
-- Cache/memoize per-scenario line geometry across requests (doesn't help a single request's three-scenario cost, only repeat requests for the same birth chart -- unlikely to be common given the app is stateless with no accounts).
+1. **`distanceToSegmentKm` had a latent correctness bug, not just a performance one.** Its along-track distance used `acos`, which only returns values in `[0, π]` and therefore cannot distinguish the perpendicular foot from `point` landing *between* segment endpoints `a` and `b` from landing an equal angular distance *behind* `a` (off the far end, outside the segment). Both cases produced the same positive "alongTrack" number, so a query point nearly opposite `b` as seen from `a` could wrongly pass the `alongTrack <= deltaSegment` check and return a small cross-track distance to a foot that was never actually on the segment -- instead of correctly falling back to the nearer endpoint. Fixed by computing along-track distance with `atan2(sin(delta13)*cos(theta13-theta12), cos(delta13))` instead, which preserves the sign (negative = behind `a`). This bug predates this session and has been in `src/astro/geo-distance.ts` since Milestone 0; it affects every ASC/DSC line-to-city distance ever computed by this codebase, though it apparently never triggered on any of the documented Golden Case fixtures (all existing Golden Tests still pass unmodified after the fix). **Found only because** a new brute-force cross-check test (added for the performance fix below) disagreed with the optimized version, which turned out to be correctly exposing a bug in the *original* function both versions call -- not a bug in the optimization itself.
 
-**Recommended option:** the spatial pre-filter, since it changes performance characteristics only, not the actual computed distances -- lowest risk to existing Golden Test contracts.
+2. **Performance: `distanceToPolylineKm` brute-force checked every city against every one of a polyline's ~700 sampled points, with no pruning.** Fixed with an exact (not approximate) optimization: for each segment, `max(distance(point,a), distance(point,b)) - segmentLength` is a rigorous lower bound on that segment's true minimum distance to `point` (triangle inequality -- valid for any segment shape, unlike an earlier draft of this fix that bounded by latitude alone, which a brute-force cross-check test also caught as unsound: a great-circle segment can bulge to a latitude beyond either endpoint's own latitude, invalidating a latitude-only bound). Segments whose bound already exceeds the best distance found so far are skipped without the expensive exact computation. Segment lengths are cached per polyline (`WeakMap`, keyed by array identity) since the same polyline is queried once per city (~955 times) and a segment's length never depends on the query point.
 
-**Impact:** This affects every single `/api/calculate` call, independent of the canonical framework or parans work above. If unaddressed, the app may already be timing out or degrading badly in production today.
+3. **Separately found, same investigation: `computeCityInfluencesAcrossScenarios` (`src/astro/sensitivity.ts`) was O(n^2).** It matched each of the ~38,000 baseline (city, body, angle) entries against the other two scenarios' results using `Array.find` -- a linear scan repeated per entry. Fixed by indexing each scenario's distances into a `Map` once (O(n)) and looking up by key (O(1)).
 
-**Status:** OPEN, not fixed. Flagged as likely higher priority than any remaining Milestone 4 item.
+**Verification:** `tests/astro/geo-distance.test.ts` cross-checks the optimized `distanceToPolylineKm` against a naive brute-force reference across multiple synthetic curves and ~60+ random query points (including points on the opposite side of the globe and beyond the curve's latitude range) -- this is what caught both the along-track sign bug and the latitude-only-bound unsoundness before either shipped. All 161 tests pass, including every existing Golden Case fixture, unmodified.
+
+**Measured result (real ~955-city dataset, same birth chart used throughout this session):**
+
+| Step | Before | After |
+|---|---:|---:|
+| `computeCityDistancesAtInstant`, 1 instant | ~7.4s | ~1.4s |
+| Full 3-scenario line computation | ~36s (measured for a single-goal request, unindexed) | ~6.0s |
+| Scoring all 955 cities × 4 goals (OVERALL) | negligible | ~90ms |
+| **Full OVERALL-goal request, end to end** | ~36s+ | **~6.1s** |
+
+About a 5.9x overall speedup. Measured locally via `tsx` (not the compiled Next.js/Vercel runtime, which may differ, likely favorably) -- real production timing on Vercel has still not been directly measured and should be verified before relying on this number for a launch decision.
+
+**Status:** FIXED. Not yet verified on the actual deployed Vercel environment -- recommend a real production timing check before considering Milestone 4's performance item fully closed.

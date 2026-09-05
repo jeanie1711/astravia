@@ -51,6 +51,12 @@ export type CityResult = {
 
   primaryInfluence: Influence | undefined;
   secondaryInfluences: Influence[];
+  // A paran (04-scoring-ranking-spec.md §5.1) that reinforced the primary,
+  // when one won that role. Named as its own distinct signal type in the
+  // UI ("a paran of X and Y") rather than folded into secondaryInfluences
+  // -- it's a qualitatively different kind of signal (06-interpretation-
+  // library.md §5).
+  paranInfluence: Influence | undefined;
 
   technicalDetails: TechnicalDetail[];
 

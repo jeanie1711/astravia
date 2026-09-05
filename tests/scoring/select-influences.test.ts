@@ -100,4 +100,48 @@ describe("selectInfluences", () => {
     const total = (primary ? 1 : 0) + secondary.length;
     expect(total).toBeLessThanOrEqual(4);
   });
+
+  describe("paran reinforcement (04-scoring-ranking-spec.md §5.1)", () => {
+    it("wins the reinforcement role when it beats the best plain secondary and involves the primary", () => {
+      const influences = buildInfluences([{ body: "Sun", angle: "MC", distanceKm: 40 }]); // primary only, no plain secondary
+      const candidates = buildCandidateInfluences(influences);
+      const cityParans = [{ bodyA: "Sun" as const, angleA: "MC" as const, bodyB: "Jupiter" as const, angleB: "ASC" as const, distanceKm: 100 }];
+      const { primary, secondary, paranReinforcement } = selectInfluences(candidates, "CAREER", cityParans);
+      expect(primary!.body).toBe("Sun");
+      expect(secondary).toHaveLength(0);
+      expect(paranReinforcement).toBeDefined();
+      expect(paranReinforcement!.body).toBe("Jupiter");
+      expect(paranReinforcement!.angle).toBe("ASC");
+    });
+
+    it("resolves which side is the partner regardless of whether the primary is bodyA or bodyB in the paran", () => {
+      const influences = buildInfluences([{ body: "Sun", angle: "MC", distanceKm: 40 }]);
+      const candidates = buildCandidateInfluences(influences);
+      // Primary (Sun-MC) is bodyB here, not bodyA.
+      const cityParans = [{ bodyA: "Jupiter" as const, angleA: "ASC" as const, bodyB: "Sun" as const, angleB: "MC" as const, distanceKm: 100 }];
+      const { paranReinforcement } = selectInfluences(candidates, "CAREER", cityParans);
+      expect(paranReinforcement!.body).toBe("Jupiter");
+      expect(paranReinforcement!.angle).toBe("ASC");
+    });
+
+    it("ignores a paran that does not involve the primary's exact body/angle", () => {
+      const influences = buildInfluences([{ body: "Sun", angle: "MC", distanceKm: 40 }]);
+      const candidates = buildCandidateInfluences(influences);
+      const cityParans = [{ bodyA: "Venus" as const, angleA: "ASC" as const, bodyB: "Jupiter" as const, angleB: "DSC" as const, distanceKm: 10 }];
+      const { paranReinforcement } = selectInfluences(candidates, "CAREER", cityParans);
+      expect(paranReinforcement).toBeUndefined();
+    });
+
+    it("loses to a closer plain secondary (a real line beats a paran on a tie or when weaker)", () => {
+      const influences = buildInfluences([
+        { body: "Sun", angle: "MC", distanceKm: 40 }, // primary
+        { body: "Mercury", angle: "MC", distanceKm: 45 } // plain secondary, very close
+      ]);
+      const candidates = buildCandidateInfluences(influences);
+      const cityParans = [{ bodyA: "Sun" as const, angleA: "MC" as const, bodyB: "Jupiter" as const, angleB: "ASC" as const, distanceKm: 600 }]; // weak paran
+      const { secondary, paranReinforcement } = selectInfluences(candidates, "CAREER", cityParans);
+      expect(secondary[0]!.body).toBe("Mercury");
+      expect(paranReinforcement).toBeUndefined();
+    });
+  });
 });

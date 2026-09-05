@@ -1,6 +1,6 @@
 import { selectArchetype } from "./archetype";
 import { classifyStability, type ScenarioInfluences } from "./stability";
-import type { Goal, RatingLabel, RankedCity, ScorableGoal, Stars } from "./types";
+import type { Goal, ParanCandidate, RatingLabel, RankedCity, ScorableGoal, Stars } from "./types";
 
 const RAW_CLAMP_MIN = 0;
 const RAW_CLAMP_MAX = 1.2;
@@ -95,8 +95,14 @@ export function scoreToDisplayValue(internalScore: number, stars: Stars): number
 // influence within 500km), S003 (time-sensitive prevents tier 5), and the
 // documented "Malefic/Transformative primary + Complex/effortful
 // coherence" soft cap preventing tier 4+.
-export function scoreCity(cityId: string, goal: ScorableGoal, scenarios: ScenarioInfluences, uncertaintyMinutes: number): RankedCity {
-  const { stability, baselineComponents } = classifyStability(goal, scenarios, uncertaintyMinutes);
+export function scoreCity(
+  cityId: string,
+  goal: ScorableGoal,
+  scenarios: ScenarioInfluences,
+  uncertaintyMinutes: number,
+  cityParans: ParanCandidate[] = []
+): RankedCity {
+  const { stability, baselineComponents } = classifyStability(goal, scenarios, uncertaintyMinutes, cityParans);
 
   const raw = baselineComponents.rawWithoutStability + STABILITY_ADJUSTMENT[stability];
   const clampedRaw = Math.min(RAW_CLAMP_MAX, Math.max(RAW_CLAMP_MIN, raw));
@@ -144,6 +150,7 @@ export function scoreCity(cityId: string, goal: ScorableGoal, scenarios: Scenari
       ? { body: baselineComponents.primary.body, angle: baselineComponents.primary.angle }
       : undefined,
     secondaryInfluences: baselineComponents.secondary.map((s) => ({ body: s.body, angle: s.angle })),
+    paranInfluence: baselineComponents.paranInfluence,
     coherence: baselineComponents.coherence,
     stability,
     archetypeId: selectArchetype(baselineComponents.primary, baselineComponents.coherence)

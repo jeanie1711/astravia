@@ -2,7 +2,7 @@ import { classifyStrengthBand } from "../astro/geo-distance";
 import type { Angle, Body } from "../astro/types";
 import { angleDomain, planetCategory } from "./category";
 import { distanceStrength } from "./distance-strength";
-import type { CandidateInfluence, ScorableGoal, SelectedInfluences } from "./types";
+import type { CandidateInfluence, ParanCandidate, ScorableGoal, SelectedInfluences } from "./types";
 
 const NOT_USED_THRESHOLD_KM = 750;
 const PRIMARY_MIN_STRENGTH = 0.35;
@@ -62,7 +62,19 @@ export function buildCandidateInfluences(influences: RawInfluenceDistance[]): Ca
 // same line seen from its other angle. v0.1 avoided this by accident (the
 // opposite angle's per-goal relevance was usually low); v0.2 has to rule
 // it out explicitly since a candidate's strength no longer depends on goal.
-export function selectInfluences(candidates: CandidateInfluence[], goal: ScorableGoal): SelectedInfluences {
+//
+// `cityParans` (04 §5.1): every paran within range of this city, in
+// whatever order -- not pre-filtered to the primary, since the primary
+// isn't known until this function determines it. A paran is only eligible
+// for the reinforcement role if it involves the primary's exact body and
+// angle; the OTHER side of that paran becomes the effective reinforcement
+// (`paranReinforcement`) if it beats the best plain secondary, since a
+// real second line is the more literal signal on a tie.
+export function selectInfluences(
+  candidates: CandidateInfluence[],
+  goal: ScorableGoal,
+  cityParans: ParanCandidate[] = []
+): SelectedInfluences {
   const domainMatches = candidates.filter((c) => angleDomain(c.angle) === goal);
   const [topDomainMatch] = domainMatches;
   const primary = topDomainMatch && topDomainMatch.strength > PRIMARY_MIN_STRENGTH ? topDomainMatch : undefined;
@@ -70,5 +82,32 @@ export function selectInfluences(candidates: CandidateInfluence[], goal: Scorabl
   const remaining = primary ? candidates.filter((c) => c.body !== primary.body) : candidates;
   const secondary = remaining.filter((c) => c.strength > SECONDARY_MIN_STRENGTH).slice(0, MAX_SECONDARY);
 
-  return { primary, secondary };
+  let paranReinforcement: CandidateInfluence | undefined;
+  if (primary) {
+    const involvingPrimary = cityParans
+      .map((p) => {
+        if (p.bodyA === primary.body && p.angleA === primary.angle) return { body: p.bodyB, angle: p.angleB, distanceKm: p.distanceKm };
+        if (p.bodyB === primary.body && p.angleB === primary.angle) return { body: p.bodyA, angle: p.angleA, distanceKm: p.distanceKm };
+        return undefined;
+      })
+      .filter((p): p is { body: Body; angle: Angle; distanceKm: number } => p !== undefined)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+
+    const [bestParan] = involvingPrimary;
+    const paranStrength = bestParan ? distanceStrength(bestParan.distanceKm) : 0;
+    const plainSecondaryStrength = secondary[0]?.strength ?? 0;
+
+    if (bestParan && paranStrength > SECONDARY_MIN_STRENGTH && paranStrength > plainSecondaryStrength) {
+      paranReinforcement = {
+        body: bestParan.body,
+        angle: bestParan.angle,
+        distanceKm: bestParan.distanceKm,
+        strengthBand: classifyStrengthBand(bestParan.distanceKm),
+        category: planetCategory(bestParan.body),
+        strength: paranStrength
+      };
+    }
+  }
+
+  return { primary, secondary, paranReinforcement };
 }

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { computeCityParanDistancesAtInstant } from "../../../astro/paran-proximity";
+import { computeAllParansAtInstant } from "../../../astro/parans";
 import { computeCityInfluencesAcrossScenarios, type CityInfluenceSensitivity } from "../../../astro/sensitivity";
 import { buildUncertaintyScenarios, resolveBirthInstant } from "../../../astro/time";
 import type { City } from "../../../astro/types";
@@ -12,7 +14,7 @@ import { dedupeByProximity } from "../../../scoring/dedupe";
 import { toScenarioInfluences } from "../../../scoring/from-calculation";
 import { computeCountryResult } from "../../../scoring/score-country";
 import { scoreCity } from "../../../scoring/score-city";
-import { SCORABLE_GOALS, type RankedCity, type ScorableGoal } from "../../../scoring/types";
+import { SCORABLE_GOALS, type ParanCandidate, type RankedCity, type ScorableGoal } from "../../../scoring/types";
 import type { CalculateRequest, CalculateResponse, CalculateResult } from "../../journey/types";
 
 // Kept small on purpose (product feedback 2026-09-04): the UI only ever
@@ -60,10 +62,30 @@ export async function POST(request: Request): Promise<NextResponse> {
   const allInfluences = computeCityInfluencesAcrossScenarios(scenarios, CITIES as City[]);
   const byCity = groupByCity(allInfluences);
 
+  // Parans (04-scoring-ranking-spec.md §5.1): baseline instant only, not
+  // tracked across uncertainty scenarios like lines are -- see
+  // internal-score.ts's note on why that's a deliberate scope decision,
+  // not an oversight.
+  const baselineParans = computeAllParansAtInstant(scenarios.baselineUtcIso);
+  const cityParanDistances = computeCityParanDistancesAtInstant(baselineParans, CITIES as City[]);
+  const byCityParans = new Map<string, ParanCandidate[]>();
+  for (const { cityId, paran, distanceKm } of cityParanDistances) {
+    const list = byCityParans.get(cityId);
+    const candidate: ParanCandidate = {
+      bodyA: paran.bodyA,
+      angleA: paran.angleA,
+      bodyB: paran.bodyB,
+      angleB: paran.angleB,
+      distanceKm
+    };
+    if (list) list.push(candidate);
+    else byCityParans.set(cityId, [candidate]);
+  }
+
   function scoreForGoal(cityId: string, g: ScorableGoal): RankedCity {
     const group = byCity.get(cityId);
     if (!group) throw new Error(`No influence data for city ${cityId}`);
-    return scoreCity(cityId, g, toScenarioInfluences(group), uncertaintyMinutes);
+    return scoreCity(cityId, g, toScenarioInfluences(group), uncertaintyMinutes, byCityParans.get(cityId) ?? []);
   }
 
   const ranked: RankedCity[] =

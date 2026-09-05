@@ -1,6 +1,6 @@
 # Astro Calculation Specification v0.3
 
-> **2026-09-05:** Parans moved from "out of scope" (v0.1) to "approved, geometry specified" (v0.3) per `docs/PROPOSAL-canonical-framework.md` / `docs/04-scoring-ranking-spec.md` v0.2. Full algorithm in §19. **Not yet implemented in code** — `src/astro/` has no paran module yet; see `04-scoring-ranking-spec.md` §16 for the overall implementation tracker. Everything else in this document is unchanged from v0.1 and remains exactly as implemented.
+> **2026-09-05:** Parans moved from "out of scope" (v0.1) to "approved, geometry specified" (v0.3), then implemented the same day. Full algorithm and implementation in §19 (`src/astro/parans.ts`, `src/astro/paran-proximity.ts`). See `04-scoring-ranking-spec.md` §16 for the overall implementation tracker, including an urgent, unrelated performance finding from the same day. Everything else in this document is unchanged from v0.1 and remains exactly as implemented.
 
 **Purpose:** Deterministic astronomical calculation contract for the MVP.  
 **Audience:** Product owner, Claude Code, developer/tester.  
@@ -405,3 +405,5 @@ type Paran = {
 ### 19.9 Validation before implementation lands
 
 Per `03-astro-calculation-spec.md` §18's existing standard: before this is trusted in production scoring, cross-check at least a handful of hand-computed or third-party-software-computed parans (several published ACG tools list paran tables per chart) against this implementation's output, across a spread of birth locations/dates including at least one high-declination body (to exercise the circumpolar-gap paths in both §19.3 and §19.4) and one near-equatorial-declination body (to exercise the `dec_B ≈ 0°` edge case in §19.3). Document any discrepancy rather than silently adjusting the formulas to match one example.
+
+**Status 2026-09-05:** the closed-form solver (§19.3) is verified against hand-computed cases (construct RA/dec so a specific latitude solves the equation exactly, confirm the function returns it — `tests/astro/parans.test.ts`), and the numerical solver (§19.4) is verified by self-consistency (every returned root actually satisfies the LST-equality condition to within 0.001°). **The third-party/published-paran-table cross-check described above has not been done** — this implementation has not been validated against any external reference, only against its own stated equations. Do this before treating paran-derived scoring as trustworthy for a public launch.

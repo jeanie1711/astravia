@@ -200,3 +200,42 @@ Also reverted the same-day ombre-bar and printed-decimal star experiments: `Star
 **Test impact:** `select-influences.test.ts`, `archetype.test.ts`, `dedupe.test.ts`, `overall.test.ts`, `score-country.test.ts` updated for the new `CandidateInfluence`/`CoherenceLabel` shapes; `score-city.test.ts`'s v0.1 "synthetic fixtures (07 §8)" describe block retired and replaced with the v0.2 fixtures from `07` §10 (RICH-01/02/03, DOM-01); `interpretation/combinations.test.ts` rewritten for category-tier behavior (no more "undocumented pair returns undefined" case -- coverage is now exhaustive); `golden/case-001-scoring-behavior.test.ts`'s Stockholm fixture confirmed coherence relabels HIGH/MEDIUM/LOW -> REINFORCING/LAYERED/COMPLEX_EFFORTFUL with no other change, but its Lisbon fixture's primary genuinely changed identity (Jupiter-IC -> Mars-IC, since v0.1's relevance weighting let Jupiter-IC outrank a closer Mars-IC, which v0.2's pure-proximity selection no longer does) and was rewritten to assert the new, correct behavior with the reasoning inline. All 140 tests pass.
 
 **Status:** APPROVED / IMPLEMENTED. Remaining: parans (`src/astro/parans.ts` per `03-astro-calculation-spec.md` §19) -- the one piece of the approved framework not yet coded.
+
+---
+
+## 2026-09-05 — Parans implemented (closes the v0.2 canonical framework)
+
+**Decision needed:** none -- final piece of the approved framework (see the "Step 1/2/3" entries above and `docs/PROPOSAL-canonical-framework.md`).
+
+**Change:** Implemented the geometry specified in `03-astro-calculation-spec.md` §19 and wired it into scoring:
+- `src/astro/parans.ts`: closed-form solver for MC/IC×ASC/DSC pairs, deterministic sampling + fixed-30-iteration bisection for ASC/DSC×ASC/DSC pairs, MC/IC×MC/IC excluded. Verified against hand-computed cases and self-consistency checks (`tests/astro/parans.test.ts`) -- **not** cross-checked against any third-party ACG software or published paran table (`03` §19.9 flags this explicitly as still open).
+- `src/astro/paran-proximity.ts`: exact city-to-paran distance (a paran has no longitude dependency, so the nearest point is always along the city's own meridian).
+- `src/scoring/select-influences.ts`: a paran is only eligible for the reinforcement role when it involves the primary's exact body+angle; the other side becomes `paranReinforcement`, winning over the plain secondary only if it's strictly stronger.
+- `src/scoring/internal-score.ts`/`stability.ts`: **parans are baseline-instant only, not tracked across the three birth-time uncertainty scenarios.** Deliberate scope decision, not an oversight -- a paran can only add reinforcement on top of an already-selected primary, so it can't change which stability tier a result lands in, only nudge the score within that tier. Including a paran bonus asymmetrically on just the baseline scenario would otherwise inflate the measured spread and risk misclassifying stability as an artifact of where the bonus happens to be computed.
+- `RankedCity.paranInfluence` / `CityResult.paranInfluence` (new field): named as its own distinct signal in a City Story ("A paran of X and Y also sits close by"), never folded into `secondaryInfluences` -- matches `06-interpretation-library.md` §5's instruction.
+- `src/app/place/[cityId]/page.tsx`: renders a paran as its own labeled row ("Paran"), distinct from "Primary"/"Secondary".
+
+**Test impact:** `tests/astro/parans.test.ts` (new, geometry), `tests/scoring/select-influences.test.ts` and `tests/scoring/score-city.test.ts` (new paran-reinforcement cases), `tests/interpretation/compose-city-story.test.ts` (new paran-narrative case). All existing tests pass unmodified with `cityParans` defaulting to `[]` (fully backward compatible). 157/157 tests pass.
+
+**Status:** APPROVED / IMPLEMENTED. The v0.2 canonical Astrocartography framework (`docs/PROPOSAL-canonical-framework.md`) is now complete in full.
+
+---
+
+## 2026-09-05 — URGENT, found while perf-testing parans: pre-existing city-to-line distance computation is very slow
+
+**Decision needed:** Whether/when to fix this. Flagging it, not fixing it, in this entry.
+
+**Context:** While measuring the performance impact of the paran feature above (which itself adds well under 100ms per request), discovered that the *existing*, unrelated `computeCityDistancesAtInstant` (`src/astro/city-proximity.ts`, used for every ASC/DSC line against every city -- pre-dates this session entirely) takes approximately **7.4 seconds** for one scenario instant across the full ~955-city dataset, confirmed to scale linearly with city count (measured at 10/50/100/200 cities). Root cause: `distanceToPolylineKm` brute-force checks every city against every one of the ~250 sampled points on every ASC/DSC polyline (10 bodies × 2 angles × ~250 points ≈ 12,000+ points total), with no spatial pruning (e.g. a city's latitude alone rules out all but a narrow band of a polyline's points, but nothing currently uses that to skip work).
+
+A full `/api/calculate` request computes this **three times** (lower/baseline/upper scenarios, per the G007 independence rule) regardless of which goal is requested or whether birth time is exact -- so this is on the order of **20+ seconds** before any scoring, dedup, or interpretation work even begins. This was never load-tested before (Milestone 4's "performance verification of `/api/calculate` on Vercel's serverless function time limits" was flagged as pending from the very start of the project, in the original architecture review) and is very likely at or beyond typical Vercel serverless function timeouts (10s default on Hobby; higher but still finite on Pro without Fluid Compute).
+
+**Options:**
+- Spatially pre-filter each polyline to only the points within a plausible latitude band of each city before running the expensive great-circle segment math (likely the highest-leverage fix -- could plausibly cut this by 10x+ with no change to the actual distance values returned, since it's purely a matter of skipping segments already too far away).
+- Reduce ASC/DSC sampling resolution (`ASC_DSC_LATITUDE_STEP`, currently 0.25°) -- trades numerical precision for speed; would need Golden Test tolerance review (`07-golden-test-cases.md` §2) before changing.
+- Cache/memoize per-scenario line geometry across requests (doesn't help a single request's three-scenario cost, only repeat requests for the same birth chart -- unlikely to be common given the app is stateless with no accounts).
+
+**Recommended option:** the spatial pre-filter, since it changes performance characteristics only, not the actual computed distances -- lowest risk to existing Golden Test contracts.
+
+**Impact:** This affects every single `/api/calculate` call, independent of the canonical framework or parans work above. If unaddressed, the app may already be timing out or degrading badly in production today.
+
+**Status:** OPEN, not fixed. Flagged as likely higher priority than any remaining Milestone 4 item.

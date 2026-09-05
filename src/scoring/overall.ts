@@ -62,6 +62,7 @@ export function computeOverall(cityId: string, goalResults: Record<ScorableGoal,
     label: STAR_LABELS[stars],
     primaryInfluence: undefined,
     secondaryInfluences: [],
+    paranInfluence: undefined,
     coherence: strongestGoalResult.coherence,
     stability: weakestStability,
     archetypeId

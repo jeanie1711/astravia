@@ -33,9 +33,29 @@ export type CandidateInfluence = {
   strength: number; // distanceStrength(distanceKm), 0-1 -- also this candidate's richness contribution
 };
 
+// A city's distance to one paran (04-scoring-ranking-spec.md §5.1,
+// 03-astro-calculation-spec.md §19), in the same shape computeAllParansAtInstant
+// produces -- both sides named, neither privileged as "the primary's side"
+// yet. select-influences.ts resolves that once it knows the primary.
+export type ParanCandidate = {
+  bodyA: Body;
+  angleA: Angle;
+  bodyB: Body;
+  angleB: Angle;
+  distanceKm: number;
+};
+
 export type SelectedInfluences = {
   primary: CandidateInfluence | undefined;
-  secondary: CandidateInfluence[]; // up to 3
+  secondary: CandidateInfluence[]; // up to 3, plain lines only, for display
+  // Set when a paran's distanceStrength beat the best plain secondary's --
+  // it then stands in for the richness/coherence reinforcement role
+  // instead of secondary[0] (internal-score.ts), while `secondary` above
+  // stays the plain-line list for display. Kept separate from
+  // `secondary` because a paran is a qualitatively different kind of
+  // signal and must be named as such in a City Story (06 §5), not folded
+  // silently into "a second nearby line."
+  paranReinforcement: CandidateInfluence | undefined;
 };
 
 export type RankedCity = {
@@ -46,6 +66,7 @@ export type RankedCity = {
   label: RatingLabel;
   primaryInfluence: Influence | undefined;
   secondaryInfluences: Influence[];
+  paranInfluence: Influence | undefined; // the partner body/angle, when a paran won the reinforcement role
   coherence: CoherenceLabel;
   stability: StabilityLabel;
   archetypeId: string;

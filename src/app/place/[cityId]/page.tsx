@@ -175,14 +175,20 @@ export default function CityStoryPage() {
           {story.confidenceExplanation}
         </p>
 
-        {(story.primaryInfluence || story.secondaryInfluences.length > 0) && (
+        {(story.primaryInfluence || story.paranInfluence || story.secondaryInfluences.length > 0) && (
           <>
             <SectionHeading>Key influences</SectionHeading>
-            {[story.primaryInfluence, ...story.secondaryInfluences]
-              .filter((inf): inf is NonNullable<typeof inf> => Boolean(inf))
-              .map((inf, i) => (
+            {[
+              ...(story.primaryInfluence ? [{ inf: story.primaryInfluence, label: "Primary" }] : []),
+              // Named as its own row, distinct from "Secondary" -- a paran is
+              // a qualitatively different kind of signal (two bodies
+              // simultaneously angular at a shared latitude), not just
+              // another nearby line (06-interpretation-library.md §5).
+              ...(story.paranInfluence ? [{ inf: story.paranInfluence, label: "Paran" }] : []),
+              ...story.secondaryInfluences.map((inf) => ({ inf, label: "Secondary" }))
+            ].map(({ inf, label }) => (
                 <div
-                  key={`${inf.body}-${inf.angle}`}
+                  key={`${label}-${inf.body}-${inf.angle}`}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -190,7 +196,7 @@ export default function CityStoryPage() {
                     padding: "10px 0",
                     borderBottom: "1px solid var(--color-border)"
                   }}
-                  title={INFLUENCE_LABEL[inf.angle]}
+                  title={label === "Paran" ? `A paran with ${INFLUENCE_LABEL[inf.angle]}` : INFLUENCE_LABEL[inf.angle]}
                 >
                   <div style={{ font: "15px var(--font-body)", color: "var(--color-ink)" }}>
                     {inf.body}–{inf.angle}
@@ -203,7 +209,7 @@ export default function CityStoryPage() {
                       color: "var(--color-faint)"
                     }}
                   >
-                    {i === 0 ? "Primary" : "Secondary"}
+                    {label}
                   </div>
                 </div>
               ))}

@@ -16,6 +16,7 @@ function city(
     label: "Strong",
     primaryInfluence,
     secondaryInfluences,
+    paranInfluence: undefined,
     coherence: "LAYERED",
     stability,
     archetypeId: "VISIBILITY"

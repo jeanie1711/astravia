@@ -1,6 +1,6 @@
 import { computeScoreComponents, type ScoreComponents } from "./internal-score";
 import type { RawInfluenceDistance } from "./select-influences";
-import type { ScorableGoal, StabilityLabel } from "./types";
+import type { ParanCandidate, ScorableGoal, StabilityLabel } from "./types";
 
 const HIGH_MAX_PRIMARY_DISTANCE_KM = 500;
 const NOT_USED_THRESHOLD_KM = 750;
@@ -31,22 +31,39 @@ function findDistance(influences: RawInfluenceDistance[], body: string, angle: s
 // independently for each of the three scenarios (not derived from the
 // baseline by approximation), then applies the documented spread formula
 // logged as a default in docs/DECISIONS.md: spread = (max-min)/baseline.
+//
+// Spread is measured from LINES ONLY across all three scenarios (never
+// including `cityParans`, which is baseline-instant only -- see
+// internal-score.ts's note): including a paran bonus on just the baseline
+// term would inflate the apparent spread and could misclassify a result
+// as less stable than it really is, purely as an artifact of where the
+// paran bonus happens to be computed rather than a real birth-time
+// sensitivity. The returned `baselineComponents` (used downstream for the
+// final score, primary/secondary/paranInfluence) is computed separately,
+// once stability is already decided, WITH parans included.
 export function classifyStability(
   goal: ScorableGoal,
   scenarios: ScenarioInfluences,
-  uncertaintyMinutes: number
+  uncertaintyMinutes: number,
+  cityParans: ParanCandidate[] = []
 ): StabilityResult {
-  const baselineComponents = computeScoreComponents(goal, scenarios.baseline);
+  const baselineLinesOnly = computeScoreComponents(goal, scenarios.baseline);
+
+  function withParans(): ScoreComponents {
+    return cityParans.length > 0 ? computeScoreComponents(goal, scenarios.baseline, cityParans) : baselineLinesOnly;
+  }
 
   if (uncertaintyMinutes === 0) {
+    const baselineComponents = withParans();
     const s = baselineComponents.rawWithoutStability;
     return { stability: "EXACT", baselineComponents, scenarioScores: [s, s, s] };
   }
 
-  const primary = baselineComponents.primary;
+  const primary = baselineLinesOnly.primary;
   if (!primary) {
     // Nothing meaningful to track for stability; the city will score low
     // regardless of stability label. Documented neutral default.
+    const baselineComponents = withParans();
     const s = baselineComponents.rawWithoutStability;
     return { stability: "MEDIUM", baselineComponents, scenarioScores: [s, s, s] };
   }
@@ -55,7 +72,7 @@ export function classifyStability(
   const upperComponents = computeScoreComponents(goal, scenarios.upper);
   const scenarioScores: [number, number, number] = [
     lowerComponents.rawWithoutStability,
-    baselineComponents.rawWithoutStability,
+    baselineLinesOnly.rawWithoutStability,
     upperComponents.rawWithoutStability
   ];
 
@@ -81,5 +98,5 @@ export function classifyStability(
     stability = "MEDIUM";
   }
 
-  return { stability, baselineComponents, scenarioScores };
+  return { stability, baselineComponents: withParans(), scenarioScores };
 }

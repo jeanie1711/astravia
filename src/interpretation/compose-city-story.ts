@@ -56,6 +56,7 @@ function composeWeakResult(rankedCity: RankedCity, cityName: string, countryName
     confidenceExplanation: confidenceExplanation(rankedCity.stability),
     primaryInfluence: undefined,
     secondaryInfluences: [],
+    paranInfluence: undefined,
     technicalDetails: [],
     shareText: shareText(cityName, goalName, rankedCity.stars, undefined),
     calculationVersion: MODEL_VERSIONS.calculation,
@@ -83,24 +84,38 @@ export function composeCityStory(
   const secondaryInterps = rankedCity.secondaryInfluences.map((s) => getInterpretation(s.body, s.angle));
 
   const [firstSecondary] = rankedCity.secondaryInfluences;
-  const [firstSecondaryInterp] = secondaryInterps;
+  // The reinforcement that actually drove the coherence tier (04 §5.1,
+  // §6): a winning paran takes priority over the plain secondary list,
+  // matching internal-score.ts's own `paranReinforcement ?? secondary[0]`
+  // -- the narrative must be built from whichever one actually produced
+  // the score, not always the plain secondary.
+  const reinforcement = rankedCity.paranInfluence ?? firstSecondary;
+  const reinforcementInterp = reinforcement ? getInterpretation(reinforcement.body, reinforcement.angle) : undefined;
 
   // Why it stands out: primary first, then a synthesized (not concatenated)
-  // secondary influence when one exists (spec §6-§7: use an explicit
+  // secondary/paran influence when one exists (spec §6-§7: use an explicit
   // combination rule where available; never dump two independent
   // definitions back to back).
   const sentences: string[] = [
     `Your ${influenceLabel(primary.body, primary.angle)} influence is especially strong here.`,
     `In astrocartography, this combination is traditionally associated with ${primaryInterp.coreTheme}.`
   ];
-  if (firstSecondary && firstSecondaryInterp) {
-    const synthesis = lookupSynthesis(primary, firstSecondary);
-    sentences.push(`${synthesis.synthesis} ${synthesis.story}`);
+  if (reinforcement && reinforcementInterp) {
+    const synthesis = lookupSynthesis(primary, reinforcement);
+    if (rankedCity.paranInfluence) {
+      // Named as its own distinct signal type (06-interpretation-library.md
+      // §5), not folded silently into "a second nearby line."
+      sentences.push(
+        `A paran of ${primary.body} and ${reinforcement.body} also sits close by. ${synthesis.synthesis} ${synthesis.story}`
+      );
+    } else {
+      sentences.push(`${synthesis.synthesis} ${synthesis.story}`);
+    }
   }
 
   const tradeOffs = [...primaryInterp.tradeOff];
-  if (firstSecondaryInterp && !tradeOffs.includes(firstSecondaryInterp.tradeOff[0]!)) {
-    tradeOffs.push(firstSecondaryInterp.tradeOff[0]!);
+  if (reinforcementInterp && !tradeOffs.includes(reinforcementInterp.tradeOff[0]!)) {
+    tradeOffs.push(reinforcementInterp.tradeOff[0]!);
   }
 
   const technicalDetails: TechnicalDetail[] = [];
@@ -126,6 +141,12 @@ export function composeCityStory(
   const goalName = goalDisplayName(rankedCity.goal);
   const primaryTheme = primaryInterp.bestFor[0] ?? primaryInterp.coreTheme;
 
+  const secondaryThemes = secondaryInterps.map((s) => s.bestFor[0] ?? s.coreTheme);
+  if (rankedCity.paranInfluence && reinforcementInterp) {
+    const paranTheme = reinforcementInterp.bestFor[0] ?? reinforcementInterp.coreTheme;
+    if (!secondaryThemes.includes(paranTheme)) secondaryThemes.unshift(paranTheme);
+  }
+
   return {
     city: cityName,
     country: countryName,
@@ -134,7 +155,7 @@ export function composeCityStory(
     ratingLabel: rankedCity.label,
     archetypeId: rankedCity.archetypeId,
     primaryTheme,
-    secondaryThemes: secondaryInterps.map((s) => s.bestFor[0] ?? s.coreTheme),
+    secondaryThemes,
     hook: starWording(rankedCity.stars, rankedCity.goal),
     whyItStandsOut: sentences.join(" "),
     opportunities: primaryInterp.opportunity.slice(0, 5),
@@ -145,6 +166,7 @@ export function composeCityStory(
     confidenceExplanation: confidenceExplanation(rankedCity.stability),
     primaryInfluence: primary,
     secondaryInfluences: rankedCity.secondaryInfluences,
+    paranInfluence: rankedCity.paranInfluence,
     technicalDetails,
     shareText: shareText(cityName, goalName, rankedCity.stars, primaryTheme),
     calculationVersion: MODEL_VERSIONS.calculation,

@@ -210,3 +210,24 @@ describe("stars is always a pure function of internalScore (product decision 202
     }
   });
 });
+
+describe("paran reinforcement end-to-end (04-scoring-ranking-spec.md §5.1)", () => {
+  it("surfaces paranInfluence and folds it into the coherence tier when it wins the reinforcement role", () => {
+    const scenarios = exactScenarios([{ body: "Sun", angle: "MC", distanceKm: 40 }]); // primary only, no plain secondary
+    const cityParans = [
+      { bodyA: "Sun" as const, angleA: "MC" as const, bodyB: "Jupiter" as const, angleB: "ASC" as const, distanceKm: 100 }
+    ];
+    const result = scoreCity("city", "CAREER", scenarios, 0, cityParans);
+    expect(result.primaryInfluence).toEqual({ body: "Sun", angle: "MC" });
+    expect(result.secondaryInfluences).toHaveLength(0);
+    expect(result.paranInfluence).toEqual({ body: "Jupiter", angle: "ASC" });
+    // Sun (Personal) + Jupiter (Benefic): both easeful -> Reinforcing.
+    expect(result.coherence).toBe("REINFORCING");
+  });
+
+  it("defaults to no paranInfluence when none is supplied (backward compatible)", () => {
+    const scenarios = exactScenarios([{ body: "Sun", angle: "MC", distanceKm: 40 }]);
+    const result = scoreCity("city", "CAREER", scenarios, 0);
+    expect(result.paranInfluence).toBeUndefined();
+  });
+});

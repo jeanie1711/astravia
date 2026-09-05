@@ -12,6 +12,7 @@ function baseRankedCity(overrides: Partial<RankedCity>): RankedCity {
     label: "Exceptional",
     primaryInfluence: { body: "Sun", angle: "MC" },
     secondaryInfluences: [{ body: "Neptune", angle: "ASC" }],
+    paranInfluence: undefined,
     coherence: "LAYERED",
     stability: "HIGH",
     archetypeId: "VISIBILITY",
@@ -71,6 +72,18 @@ describe("composeCityStory", () => {
   it("confidence explanation matches the stability label", () => {
     const result = composeCityStory(baseRankedCity({ stability: "TIME_SENSITIVE" }), "Lisbon", "Portugal", []);
     expect(result.confidenceExplanation).toBe("This recommendation depends significantly on your exact birth time.");
+  });
+
+  it("names a paran as its own distinct signal, not folded into secondary influences (06 §5)", () => {
+    const result = composeCityStory(
+      baseRankedCity({ secondaryInfluences: [], paranInfluence: { body: "Jupiter", angle: "ASC" } }),
+      "Stockholm",
+      "Sweden",
+      distances
+    );
+    expect(result.paranInfluence).toEqual({ body: "Jupiter", angle: "ASC" });
+    expect(result.whyItStandsOut).toContain("A paran of Sun and Jupiter also sits close by.");
+    expect(result.secondaryThemes).toContain("personal growth"); // Jupiter-ASC's bestFor[0]
   });
 
   it("falls back to the weak-result copy when there is no primary influence", () => {

@@ -1,6 +1,6 @@
 import { resolveCoherence } from "./coherence";
 import { buildCandidateInfluences, selectInfluences, type RawInfluenceDistance } from "./select-influences";
-import type { CandidateInfluence, CoherenceLabel, ScorableGoal } from "./types";
+import type { CandidateInfluence, CoherenceLabel, Influence, ParanCandidate, ScorableGoal } from "./types";
 
 const REINFORCEMENT_WEIGHT = 0.5;
 
@@ -15,6 +15,7 @@ export type ScoreComponents = {
   candidates: CandidateInfluence[];
   primary: CandidateInfluence | undefined;
   secondary: CandidateInfluence[];
+  paranInfluence: Influence | undefined;
   coherence: CoherenceLabel;
   richness: number;
   coherenceAdj: number;
@@ -30,13 +31,22 @@ export type ScoreComponents = {
 // formula with a two-term richness formula: no separate tension penalty --
 // a body's traditional category (category.ts) shapes narrative tone and
 // coherence tier, never a hidden score discount (04 §4).
+//
+// `cityParans` (04 §5.1) is baseline-instant only, not tracked across
+// birth-time uncertainty scenarios like regular lines are -- a documented
+// scope decision (docs/DECISIONS.md), not an oversight: a paran can only
+// ever add reinforcement on top of an already-selected primary, so it
+// cannot change which stability tier a result lands in, only nudge the
+// score within that tier. Stability's own three-scenario recomputation
+// (stability.ts) still runs on lines alone.
 export function computeScoreComponents(
   goal: ScorableGoal,
-  influences: RawInfluenceDistance[]
+  influences: RawInfluenceDistance[],
+  cityParans: ParanCandidate[] = []
 ): ScoreComponents {
   const candidates = buildCandidateInfluences(influences);
-  const { primary, secondary } = selectInfluences(candidates, goal);
-  const reinforcement = secondary[0];
+  const { primary, secondary, paranReinforcement } = selectInfluences(candidates, goal, cityParans);
+  const reinforcement = paranReinforcement ?? secondary[0];
 
   const richness = primary
     ? primary.strength + (reinforcement ? REINFORCEMENT_WEIGHT * reinforcement.strength : 0)
@@ -51,6 +61,7 @@ export function computeScoreComponents(
     candidates,
     primary,
     secondary,
+    paranInfluence: paranReinforcement ? { body: paranReinforcement.body, angle: paranReinforcement.angle } : undefined,
     coherence,
     richness,
     coherenceAdj,

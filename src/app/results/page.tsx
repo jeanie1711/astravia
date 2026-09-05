@@ -6,8 +6,14 @@ import { PillButton } from "../components/PillButton";
 import { ScreenShell } from "../components/ScreenShell";
 import { StarRating } from "../components/StarRating";
 import { useJourney } from "../journey/JourneyContext";
-import type { CalculateRequest, CalculateResponse } from "../journey/types";
-import type { Goal } from "../../scoring/types";
+import type { CalculateRequest, CalculateResponse, CalculateResult } from "../journey/types";
+import type { CountryNarrative, Goal, Stars } from "../../scoring/types";
+
+const NARRATIVE_COPY: Record<CountryNarrative, string> = {
+  CORRIDOR: "Several cities here form a consistently strong corridor.",
+  ANCHOR: "One standout city anchors this country's result.",
+  MIXED: "Different cities here suit different parts of this goal."
+};
 
 const GOAL_TABS: Array<{ id: Goal; name: string }> = [
   { id: "CAREER", name: "Career" },
@@ -56,6 +62,11 @@ export default function ResultsPage() {
   const topCountries = results.countries.slice(0, MAX_COUNTRIES_SHOWN);
   const topStars = topCities[0]?.ranked.stars ?? 1;
   const isMixed = topStars <= 3;
+
+  const allKnownResults: CalculateResult[] = [...results.results, ...results.extraResults];
+  function findResult(cityId: string): CalculateResult | undefined {
+    return allKnownResults.find((r) => r.ranked.cityId === cityId);
+  }
 
   return (
     <ScreenShell maxWidth={640}>
@@ -108,8 +119,8 @@ export default function ResultsPage() {
           </p>
         )}
         <p style={{ margin: "0 0 20px", font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
-          ★ shows how strongly a place fits {goalName}. Open a place to see how much that could shift if your birth
-          time isn't exact.
+          The bar and label show how strongly a place fits {goalName}. Open a place to see how much that could shift
+          if your birth time isn't exact.
         </p>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
@@ -192,9 +203,9 @@ export default function ResultsPage() {
             >
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
                 <div style={{ font: "600 11px var(--font-body)", color: "var(--color-faint)" }}>#{i + 1}</div>
-                <StarRating stars={r.ranked.stars} showLabel />
+                <StarRating stars={r.ranked.stars} score={r.ranked.internalScore} showLabel />
               </div>
-              <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)", marginTop: 2 }}>
+              <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)", marginTop: 10 }}>
                 {r.city.name}, {r.city.countryName}
               </div>
               {story && (
@@ -247,34 +258,62 @@ export default function ResultsPage() {
                   marginBottom: 10
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
                   <div style={{ font: "600 15px var(--font-body)", color: "var(--color-ink)" }}>
                     {results.countryNames[co.countryCode] ?? co.countryCode}
                   </div>
-                  <StarRating stars={co.stars} size={13} />
+                  <div
+                    style={{
+                      font: "600 10px var(--font-body)",
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      color: "var(--color-accent-strong)",
+                      background: "var(--color-tag-bg)",
+                      borderRadius: 100,
+                      padding: "3px 9px",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    {co.narrative}
+                  </div>
                 </div>
-                <div style={{ font: "400 13px var(--font-body)", color: "var(--color-muted)", marginTop: 4 }}>
-                  Best matches:{" "}
-                  {co.topCityIds.map((id, i) => (
-                    <span key={id}>
-                      {i > 0 && " · "}
+                <p style={{ font: "400 12.5px/1.5 var(--font-body)", color: "var(--color-faint)", margin: "4px 0 10px" }}>
+                  {NARRATIVE_COPY[co.narrative]}
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {co.topCityIds.map((id) => {
+                    const cityResult = findResult(id);
+                    return (
                       <button
+                        key={id}
                         type="button"
                         onClick={() => router.push(`/place/${id}`)}
                         style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
                           border: "none",
-                          background: "none",
-                          padding: 0,
-                          font: "inherit",
-                          color: "var(--color-accent-strong)",
+                          background: "var(--color-bg)",
+                          borderRadius: 10,
+                          padding: "8px 10px",
                           cursor: "pointer",
-                          textDecoration: "underline"
+                          textAlign: "left",
+                          font: "inherit"
                         }}
                       >
-                        {results.cityNames[id]?.name ?? id}
+                        <span style={{ font: "600 13px var(--font-body)", color: "var(--color-ink)" }}>
+                          {results.cityNames[id]?.name ?? id}
+                        </span>
+                        {cityResult && (
+                          <StarRating
+                            stars={cityResult.ranked.stars as Stars}
+                            score={cityResult.ranked.internalScore}
+                            size={12}
+                          />
+                        )}
                       </button>
-                    </span>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}

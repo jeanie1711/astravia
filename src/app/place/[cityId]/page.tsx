@@ -86,7 +86,7 @@ export default function CityStoryPage() {
           <h1 style={{ margin: 0, font: "600 32px var(--font-display)", color: "var(--color-ink)" }}>
             {story.city}
           </h1>
-          <StarRating stars={story.stars} size={18} showLabel />
+          <StarRating stars={story.stars} score={ranked.internalScore} size={18} showLabel />
         </div>
         <div
           style={{

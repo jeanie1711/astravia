@@ -149,3 +149,17 @@ This changes ranking/selection order (not any individual city's own `internalSco
 Also reverted the same-day ombre-bar and printed-decimal star experiments: `StarRating.tsx` now shows a **partial visual fill** on the star glyphs (e.g. ~30% of a star tinted for a 0.3 fraction) instead of any printed number, per explicit PO instruction: "không muốn hiển thị số... muốn 0.2/0.3 thể hiện bằng 1/3 ngôi sao được tô màu đen". The underlying `scoreToDisplayValue()` fraction math (previous entry) is unchanged and now drives fill percentage instead of printed text.
 
 **Status:** APPROVED / IMPLEMENTED.
+
+---
+
+## 2026-09-05 — Guardrails now cap the score itself, not just the star label (scoring v0.3, supersedes the v0.2 entry above)
+
+**Decision needed:** none -- directly requested and approved by the Product Owner, who pushed back on the v0.2 fix above with the right question: guardrails should act on the score, since stars are supposed to be nothing more than a friendly representation of it. Sorting by "stars, then score" (v0.2) was treating the symptom; this fixes the actual cause.
+
+**Change:** Replaced `compareByStarsThenScore`/`rank-order.ts` (removed) with a simpler, more correct mechanism: every guardrail in `src/scoring/score-city.ts` (S001 no relevant line, S002 no influence within 500km, S003 TIME_SENSITIVE, the tension+LOW-coherence cap) and `src/scoring/score-country.ts` (five-star qualifying-city rule) now caps `internalScore` itself -- to just under the threshold of the tier it's meant to prevent (`preventTierAndAbove()`, e.g. 0.7799 to prevent 5 stars) -- instead of computing `stars` and then overriding the label afterward. `stars` is now, everywhere, always exactly `scoreToStars(internalScore)` with zero exceptions. Ranking reverted to plain `internalScore` descending (`route.ts`, `dedupe.ts`) since it's now automatically consistent with displayed stars by construction -- no special comparator needed at all.
+
+**Spec note:** `04-scoring-ranking-spec.md` §9 phrases these rules in star-label terms ("cannot receive ★★★★★", "may be capped at ★★★☆☆"), separately from §8's score formula. This implementation folds the two together -- functionally equivalent for any single city's own displayed rating, but `internalScore` now means "the score after safety adjustments" rather than "the pure formula output," which is a real reinterpretation of where §9 sits relative to §8. Approved directly by the Product Owner; flagging here per CLAUDE.md §3.
+
+**Test impact:** `tests/scoring/score-city.test.ts`'s S002 test updated (now asserts `internalScore < 0.78` instead of `>= 0.78`, since the old assertion specifically checked the behavior being replaced). Added a regression test asserting `stars === scoreToStars(internalScore)` across every guardrail-triggering scenario. No Golden Test fixture triggers a guardrail with an asserted exact `internalScore` value, so `tests/golden/*` are unaffected. 137/137 tests pass.
+
+**Status:** APPROVED / IMPLEMENTED.

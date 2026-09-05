@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Angle, Body } from "../../src/astro/types.js";
-import { scoreCity, scoreToDisplayValue } from "../../src/scoring/score-city.js";
+import { scoreCity, scoreToDisplayValue, scoreToStars } from "../../src/scoring/score-city.js";
 import type { ScenarioInfluences } from "../../src/scoring/stability.js";
 import { buildInfluences, buildScenarios } from "./helpers.js";
 
@@ -20,13 +20,16 @@ describe("S001 no relevant line", () => {
 });
 
 describe("S002 five-star proximity", () => {
-  it("caps at 4 stars when the best influences all sit beyond 500 km, even if the raw score would clear 5-star threshold", () => {
+  it("caps the score itself (not just the star label) when the best influences all sit beyond 500 km", () => {
     const scenarios = exactScenarios([
       { body: "Mercury", angle: "MC", distanceKm: 501 },
       { body: "Jupiter", angle: "MC", distanceKm: 501 }
     ]);
     const result = scoreCity("city", "CAREER", scenarios, 0);
-    expect(result.internalScore).toBeGreaterThanOrEqual(0.78); // would be 5-star uncapped
+    // Product decision 2026-09-05: a guardrail caps `internalScore` itself,
+    // so `stars` is always a pure function of the score -- never a
+    // separate override that could contradict ranking-by-score elsewhere.
+    expect(result.internalScore).toBeLessThan(0.78);
     expect(result.stars).toBeLessThanOrEqual(4);
   });
 });
@@ -169,5 +172,39 @@ describe("scoreToDisplayValue", () => {
 
   it("1-star tier never displays below 1.0 even for a score of 0", () => {
     expect(scoreToDisplayValue(0, 1)).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("stars is always a pure function of internalScore (product decision 2026-09-05)", () => {
+  it("holds even when every guardrail is triggered", () => {
+    const noRelevantLine = scoreCity("city", "CAREER", exactScenarios([]), 0);
+    const distantOnly = scoreCity(
+      "city",
+      "CAREER",
+      exactScenarios([
+        { body: "Mercury", angle: "MC", distanceKm: 501 },
+        { body: "Jupiter", angle: "MC", distanceKm: 501 }
+      ]),
+      0
+    );
+    const timeSensitive = scoreCity(
+      "city",
+      "CAREER",
+      buildScenarios({ tracked: { body: "Sun", angle: "MC", distancesKm: [20, 20, 900] } }),
+      15
+    );
+    const tensionHeavy = scoreCity(
+      "city",
+      "CAREER",
+      exactScenarios([
+        { body: "Mars", angle: "MC", distanceKm: 30 },
+        { body: "Pluto", angle: "MC", distanceKm: 50 }
+      ]),
+      0
+    );
+
+    for (const result of [noRelevantLine, distantOnly, timeSensitive, tensionHeavy]) {
+      expect(result.stars).toBe(scoreToStars(result.internalScore));
+    }
   });
 });

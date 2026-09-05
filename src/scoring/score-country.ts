@@ -1,4 +1,4 @@
-import { scoreToStars, STAR_LABELS } from "./score-city";
+import { preventTierAndAbove, scoreToStars, STAR_LABELS } from "./score-city";
 import type { CountryNarrative, CountryResult, RankedCity, StabilityLabel } from "./types";
 
 // Country ranking (spec §11): "never score a country from its capital
@@ -22,9 +22,9 @@ const STABILITY_QUALITY: Record<StabilityLabel, number> = {
 };
 
 // Cities must already represent distinct metros (see dedupe.ts) and be
-// sorted with compareByStarsThenScore (star tier first, then internalScore
-// as tiebreak -- see rank-order.ts) so "best/second/third" means the same
-// thing here as it does for the global Top City ranking.
+// sorted by internalScore descending. Since every guardrail is applied to
+// the score itself (score-city.ts), this is automatically consistent with
+// how the global Top City ranking orders the same cities.
 export function computeCountryResult(countryCode: string, citiesInCountry: RankedCity[]): CountryResult {
   const [best, second, third] = citiesInCountry;
 
@@ -48,15 +48,18 @@ export function computeCountryResult(countryCode: string, citiesInCountry: Ranke
     BREADTH_WEIGHT * breadth +
     STABILITY_WEIGHT * stabilityConsistency;
 
-  const internalScore = Math.min(1, Math.max(0, raw));
-  let stars = scoreToStars(internalScore);
+  let internalScore = Math.min(1, Math.max(0, raw));
 
   // Spec §11: require at least two qualifying cities for a 5-star country
   // rating unless a documented small-country exception applies (none is
-  // implemented for MVP, so the cap always applies).
-  if (stars === 5 && qualifyingCount < MIN_QUALIFYING_CITIES_FOR_FIVE_STARS) {
-    stars = 4;
+  // implemented for MVP, so the cap always applies). Capped on the score
+  // itself (product decision 2026-09-05, see score-city.ts) so `stars`
+  // stays a pure function of `internalScore` with no separate override.
+  if (qualifyingCount < MIN_QUALIFYING_CITIES_FOR_FIVE_STARS) {
+    internalScore = Math.min(internalScore, preventTierAndAbove(5));
   }
+
+  const stars = scoreToStars(internalScore);
 
   const narrative = classifyNarrative(bestScore, secondScore, qualifyingCount);
 

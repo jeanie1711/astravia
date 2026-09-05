@@ -281,3 +281,73 @@ A scoring/content change may intentionally change Golden outputs, but the develo
 2. explain product rationale,
 3. increment the relevant version,
 4. receive product-owner approval.
+
+## 10. v0.2 Canonical Framework fixtures (new suite — step 2/3 of the approved rewrite, 2026-09-05)
+
+**Status of this section: authored, not yet implementable.** These fixtures are written against `04-scoring-ranking-spec.md` v0.2 and `06-interpretation-library.md` v0.2, none of which exist in `src/` yet (§16 there tracks this). They are a companion to §§6–8 above, not a replacement — §§6–8 remain the correct, currently-passing contract for the code running today (scoring v0.3). Do not touch `src/scoring/relevance.ts`, `internal-score.ts`, or `coherence.ts` to satisfy these fixtures until they're formally moved into `tests/`; that move is step 3.
+
+Two formula constants were fixed **during the authoring of this section**, not before — writing worked examples surfaced that they mattered:
+- The coherence-tier definition was corrected from an angle/domain-based rule (ambiguous, and didn't match v0.1's own examples) to a pure category-pair rule — see `04-scoring-ranking-spec.md` §6's own note about this correction.
+- A `1.3` score normalizer was added to `04-scoring-ranking-spec.md` §8 — without it, nearly every city with a moderately close primary saturated to 5 stars, since v0.2's richness formula has no per-goal relevance discount to keep it in check the way v0.1's `R` factor did.
+
+Both are recorded as provisional, Golden-Test-tunable constants, exactly like v0.1's `0.35`/`1.05`/thresholds always were.
+
+### 10.1 Category classification (CAT)
+
+**CAT-01.** Each of the 10 bodies must classify into exactly the category `04-scoring-ranking-spec.md` §3.2 assigns it — this is an exhaustive table-driven test, no tolerance:
+
+| Body | Category |
+|---|---|
+| Sun, Moon, Mercury | Personal |
+| Venus, Jupiter | Benefic |
+| Mars, Saturn | Malefic |
+| Uranus, Neptune, Pluto | Transformative |
+
+### 10.2 Strict angle-domain filtering (DOM) — the most significant behavior change from v0.1
+
+**DOM-01.** Fixture: a city with exactly one relevant line, Sun–IC at 50 km, and nothing else within 750 km.
+- Career (domain = MC): Sun-IC does not match → **no primary candidate at all** → richness = 0 → ★☆☆☆☆ (Weak).
+- Home (domain = IC): Sun-IC matches → primary, `distanceStrength(50) ≈ 0.996`, no secondary (None coherence, 0), High stability (+0.10) → `raw = 1.096`, `score = clamp(1.096/1.3, 0, 1) ≈ 0.843` → ★★★★★ (Exceptional).
+
+Same city, same single line, same distance — Career and Home diverge from ★☆☆☆☆ to ★★★★★ purely because of angle-domain match. **This must never regress toward v0.1's soft behavior** (where a non-matching angle still contributed a small non-zero amount via its relevance-1 entry) — that soft behavior was the *editorial hypothesis* this rewrite specifically removed.
+
+### 10.3 Richness + coherence worked examples (RICH)
+
+All use the formula and constants in `04-scoring-ranking-spec.md` §8. `distanceStrength(km) = 1 − (km/750)²` (unchanged from v0.1).
+
+**RICH-01 — Reinforcing, saturates to 5 stars.** Sun-MC 40 km (Personal, primary) + Jupiter-MC 200 km (Benefic, secondary), High stability.
+`richness = 0.997 + 0.5×0.929 = 1.461`; `raw = 1.461 + 0.12 + 0.10 = 1.681`; `score = clamp(1.681/1.3, 0,1) = 1.0` → ★★★★★, coherence Reinforcing.
+
+**RICH-02 — Layered, mid-range (shows secondary need not share the primary's domain).** Sun-MC 600 km (Personal, primary, Career) + Saturn-ASC 500 km (Malefic, secondary — different angle, irrelevant to tier), Medium stability.
+`richness = 0.36 + 0.5×0.556 = 0.638`; `raw = 0.638 + 0.04 + 0.03 = 0.708`; `score = clamp(0.708/1.3,0,1) ≈ 0.545` → ★★★☆☆ (Mixed), coherence Layered.
+
+**RICH-03 — Complex/effortful, guardrail actually changes the outcome.** Mars-MC 100 km (Malefic, primary) + Pluto-MC 150 km (Transformative, secondary), Exact stability.
+`richness = 0.982 + 0.5×0.96 = 1.462`; `raw = 1.462 − 0.08 + 0 = 1.382`; `score = clamp(1.382/1.3,0,1) = 1.0` — **but** the guardrail (primary category Malefic/Transformative + Complex/effortful coherence, §9 of `04`) caps the score at `preventTierAndAbove(4) ≈ 0.6199` before mapping to stars → ★★★☆☆ (Mixed), not ★★★★★. This is the fixture that proves the guardrail is doing real work, not just capping an already-weak result.
+
+**RICH-04 — S002-equivalent: guardrail caps an otherwise-5-star result because nothing is within 500 km.** Sun-MC 501 km (Personal, primary) + Jupiter-MC 501 km (Benefic, secondary), Reinforcing, High stability.
+`richness = 0.553 + 0.5×0.553 = 0.830`; `raw = 0.830 + 0.12 + 0.10 = 1.050`; `score = clamp(1.050/1.3,0,1) ≈ 0.808` (naturally ★★★★★) — capped to `preventTierAndAbove(5) ≈ 0.7799` since no candidate is ≤500 km → ★★★★☆ (Strong).
+
+**RICH-05 — Time-sensitive cap.** Same inputs as RICH-01 but Time-sensitive stability instead of High.
+`raw = 1.461 + 0.12 − 0.10 = 1.481`; naturally `score = clamp(1.481/1.3,0,1)=1.0` (★★★★★) — capped to `preventTierAndAbove(5)` for the same reason as S003 in v0.1 → ★★★★☆ (Strong).
+
+**RICH-06 — Weak city.** No candidate line within 750 km for the selected goal → richness = 0 → ★☆☆☆☆ regardless of stability/coherence (nothing to adjust).
+
+### 10.4 Country aggregation (unchanged shape, richness-based inputs)
+
+**CTRY-01 Corridor.** Three cities in one country each scoring ≥ 0.45 (the 3-star qualifying threshold, unchanged from v0.1) for the same goal, with the 2nd-best ≥70% of the best → country narrative CORRIDOR, eligible for ★★★★★ if both qualify per `04` §11's two-qualifying-city rule.
+
+**CTRY-02 Anchor.** One ★★★★★-equivalent city, the other two well below the qualifying threshold → country narrative ANCHOR; five-star country rating is guardrail-capped (only 1 qualifying city) per the unchanged §11 rule.
+
+### 10.5 What this section deliberately does not cover
+
+Parans (`04` §5.1 / `03` §19): excluded until a `src/astro/parans.ts` module exists to produce real paran latitudes to test against. Do not fabricate placeholder paran fixtures here — author them alongside that module's implementation instead.
+
+### 10.6 Interpretation-layer fixtures (I2xx — parallel to §7's I001–I006)
+
+**I201.** Same as I001 (primary first) — unchanged, category/richness rewrite doesn't touch composition order.
+
+**I202 Synthesis by tier.** A Layered-coherence city (RICH-02 shape) must produce prose following `06-interpretation-library.md` §3's Layered synthesis pattern ("[easeful] meets [challenging]"), not a concatenation of two independent influence definitions — same principle as v0.1's I002, now keyed off the 3-tier rule instead of the 25-pair table.
+
+**I203 Five-star balance.** Unchanged from I003: every ★★★★★ story still has a non-empty trade-off. Note RICH-01-shaped cities (Reinforcing, both Personal/Benefic) still need a trade-off sentence even though neither influence is Malefic/Transformative — a purely "easy" 5-star story without ANY trade-off would violate CLAUDE.md §12 regardless of category.
+
+**I204–I206.** Same as I004–I006 (prohibited-language list, practical-domain separation, pattern language) — none of these depend on the scoring mechanism and are unaffected by the rewrite.

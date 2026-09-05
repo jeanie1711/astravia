@@ -101,8 +101,10 @@ Primary:
 - must exceed configurable minimum `0.35`
 
 Secondary / reinforcing:
-- the next meaningful candidate, **or a paran involving the primary's angle** (§5.1) if one exists and is closer/stronger than the next plain candidate
+- the next meaningful candidate (from **any** angle/domain — domain-matching is a primary-only requirement; a secondary from a *different* domain is exactly what makes the Layered coherence tier meaningful, §6), **or a paran involving the primary's angle** (§5.1) if one exists and is closer/stronger than the next plain candidate
 - must exceed `0.20`
+
+**Real behavior change from v0.1, worth stating plainly:** because the primary must match the goal's domain and there is no per-goal relevance discount any more (§3.2), a line on a *non*-matching angle now contributes **nothing** to that goal's primary selection — not "weakly," as v0.1's relevance-1 entries did, but literally zero. A city with only a Sun-IC line and nothing else within 750 km scores very weakly for Career (no MC/IC.. domain match) while scoring strongly for Home (IC matches) from the exact same input. v0.1 would have given Career a small non-zero contribution from that same Sun-IC line (relevance 1/5). This is intentional — it follows directly from treating the angle-domain mapping as the real, canonical signal (§3.3) rather than a soft, product-invented weighting — but it is a materially different number for some cities, and Golden Test fixture R4 (§16 tracker; see `07-golden-test-cases.md`) locks in exactly this case so it's never "fixed" back to v0.1's behavior by accident.
 
 Never select more than four visible key influences in MVP (unchanged from v0.1).
 
@@ -114,15 +116,17 @@ The full geometry (closed-form for MC/IC×ASC/DSC, numerical root-finding for AS
 
 ## 6. Coherence
 
-Coherence measures whether the primary and secondary/paran influences tell a compatible story, using categories (§3.2) directly instead of a separately hand-authored lookup table:
+Coherence measures whether the primary and secondary/paran influences tell a compatible story. It is a function of the **pair of categories (§3.2)** involved — not of domain/angle at all (domain match is irrelevant here; two influences on the same angle can still be a mismatched category pair, and two on different angles can still both be easeful) — replacing a separately hand-authored 25-pair lookup table with one small, unambiguous rule:
 
-| Tier | Condition | Replaces (v0.1) |
+| Tier | Condition (category of primary × category of secondary/paran) | Replaces (v0.1) |
 |---|---|---|
-| **Reinforcing** | Secondary/paran lands on the **same** angle/domain as the primary | HIGH |
-| **Layered** | Secondary/paran lands on a **different but complementary** domain (e.g. MC + ASC) | MEDIUM |
-| **Complex/effortful** | Secondary/paran is **Malefic or Transformative** while the primary is Personal/Benefic | LOW |
+| **Reinforcing** | Both are **Personal or Benefic** | HIGH |
+| **Layered** | Exactly **one** is Malefic or Transformative (mixed) | MEDIUM |
+| **Complex/effortful** | **Both** are Malefic or Transformative | LOW |
 
-This replaces v0.1's 25 explicitly hand-picked pairwise rules (`06-interpretation-library.md` §3) with one rule derived from classifications already established above — see `06` §3 for the corresponding rewrite of the Combination Rules section.
+(An earlier draft of this section keyed the tiers off angle/domain-sameness. That was corrected 2026-09-05 during Golden Test authoring — it produced ambiguous, overlapping conditions and didn't actually match v0.1's own hand-authored examples, several of which have a *same-angle* Benefic+Malefic pair rated MEDIUM, not HIGH. Category-pair alone matches the dominant pattern across nearly all of v0.1's 25 examples; a handful of specific Pluto-involving pairs that v0.1 additionally hand-tuned down to LOW are intentionally not preserved as special cases — see `06-interpretation-library.md` §3 for the reconciliation.)
+
+This replaces v0.1's 25 explicitly hand-picked pairwise rules (`06-interpretation-library.md` §3) with one rule derived from the classification already established in §3.2 — see `06` §3 for the corresponding rewrite of the Combination Rules section.
 
 Implementation: still deterministic, still no runtime LLM (CLAUDE.md §3).
 
@@ -153,16 +157,25 @@ For exact birth time (`uncertainty=0`), label `Exact-time calculation` rather th
 Richness (replaces v0.1's five-term `P + S + coherenceAdj + stabilityAdj − T` formula):
 
 ```
-richness = distanceStrength(closest relevant line)
-         + 0.5 × distanceStrength(next reinforcing line or paran, if any)
+richness = distanceStrength(closest domain-matching line, i.e. the primary)
+         + 0.5 × distanceStrength(secondary line or paran, if any)
 ```
 
-Coherence and stability then adjust this the same way v0.1 combined its terms (exact adjustment magnitudes to be re-derived and validated against a new Golden Test suite — see §16):
+Coherence and stability then adjust this, using the same adjustment magnitudes as v0.1 as a provisional default (that layer isn't targeted by this rewrite — only richness/tension were, per `docs/PROPOSAL-canonical-framework.md`):
+
+| Coherence tier (§6) | Adjustment | Stability (§7) | Adjustment |
+|---|---:|---|---:|
+| Reinforcing | +0.12 | Exact | 0 |
+| Layered | +0.04 | High | +0.10 |
+| Complex/effortful | −0.08 | Medium | +0.03 |
+| None (no secondary/paran at all) | 0 | Time-sensitive | −0.10 |
 
 ```
 raw = richness + coherenceAdjustment + stabilityAdjustment
-score = clamp(raw, 0, 1)
+score = clamp(raw / 1.3, 0, 1)
 ```
+
+**The `1.3` normalizer (analogous to v0.1's `1.05`) exists because richness alone has no relevance discount** (removed along with the relevance matrix, §3.2) — a single very close primary can already reach `distanceStrength ≈ 1.0`, and v0.1's `R = relevance/5` factor (often well below 1) no longer exists to keep that in check. Without a normalizer, most cities with any reasonably close primary would saturate to 5 stars regardless of reinforcement, defeating the guardrails' purpose. `1.3` was chosen during Golden Test authoring (§16) so that a close primary *alone*, with no secondary and only baseline (High) stability, lands just under the 5-star threshold (§9) — genuine reinforcement or coherence is required to clear it. This constant is provisional and re-tunable through versioned Golden Test review only, same as every other constant in this section.
 
 One clear formula instead of five weighted terms. This numeric score is internal and may be tuned only through versioned Golden Test review (unchanged principle from v0.1).
 

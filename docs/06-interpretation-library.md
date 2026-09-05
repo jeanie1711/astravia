@@ -317,23 +317,27 @@ Best for: deep relationship work, high-stakes partnership, transformation.
 
 ## 3. Combination rules (v0.2 — replaces the 25 hand-picked pairs below)
 
-`04-scoring-ranking-spec.md` §6 derives coherence directly from category (§3.2 there) instead of a separately hand-authored lookup table. Three tiers, each with one synthesis pattern instead of 25 individually hand-picked pairs:
+`04-scoring-ranking-spec.md` §6 derives coherence from the **pair of categories** (§3.2, via the note prefacing §2 above) alone — domain/angle is irrelevant to which tier applies. Three tiers, each with one synthesis pattern instead of 25 individually hand-picked pairs:
 
-1. **Reinforcing** — secondary/paran lands on the *same* angle/domain as the primary.
-   Synthesis pattern: "[Primary's domain theme] meets [secondary's domain theme, same domain] — a clear, doubled-down signal."
-   Example: Sun-MC + Jupiter-MC (both MC/career) → "Visibility meets expansion." Recognition/leadership with broader opportunity; watch overconfidence if both are Benefic/Personal-flavored.
+1. **Reinforcing** — primary and secondary/paran are **both Personal or Benefic**.
+   Synthesis pattern: "[Primary's domain theme] meets [secondary's domain theme] — a clear, doubled-down signal."
+   Example: Sun-MC + Jupiter-MC → "Visibility meets expansion." Recognition/leadership with broader opportunity; watch overconfidence.
+   Example: Sun-MC + Mercury-MC → "Visibility meets communication." Strong for consulting, speaking, knowledge work.
 
-2. **Layered** — secondary/paran lands on a *different but complementary* domain (e.g. MC + ASC, IC + DSC).
-   Synthesis pattern: "[Primary's domain theme] meets [secondary's domain theme, different domain] — a layered story spanning two life areas."
-   Example: Sun-MC + Venus-ASC → "Professional visibility meets social ease." Good for relationship-led careers.
+2. **Layered** — **exactly one** of primary/secondary is Malefic or Transformative (the other is Personal/Benefic).
+   Synthesis pattern: "[Easeful influence's theme] meets [challenging influence's theme] — a layered story, opportunity alongside effort."
+   Example: Sun-MC + Saturn-ASC → "Visibility meets responsibility." Strong builder story; achievement may feel earned rather than effortless.
+   Example: Venus-ASC + Saturn-ASC (same angle, still Layered — angle-sameness doesn't matter here) → "Connection meets maturity." Relationships may be meaningful but require boundaries/commitment.
+   Example: Sun-MC + Neptune-ASC → "Visibility meets inspiration — and ambiguity." Preserve the Sun opportunity; add a clarity/boundary note.
+   Never phrase this tier as "bad" — always effort/reward framing (CLAUDE.md §12–§13).
 
-3. **Complex/effortful** — secondary/paran is **Malefic or Transformative** while the primary is **Personal/Benefic** (or vice versa).
-   Synthesis pattern: "[Primary's domain theme] meets [secondary's category tone] — powerful, but asks more of you."
-   Example: Sun-MC + Saturn-ASC → "Visibility meets responsibility." Strong builder story; achievement may feel earned rather than effortless. Never phrase this tier as "bad" — always effort/reward framing (CLAUDE.md §12–§13).
+3. **Complex/effortful** — primary and secondary/paran are **both** Malefic or Transformative.
+   Synthesis pattern: "[Primary's theme] compounds with [secondary's theme] — powerful, but demanding on every side."
+   Example: Mars-MC + Pluto-MC → "Intensity compounds." Never romanticise; foreground power/conflict/burnout risk honestly.
+   Example: Saturn + Pluto → "Deep restructuring under pressure." Strong transformation but demanding; cap positive language.
+   This tier is score-capped below ★★★★ when it is also the primary's *only* meaningful signal (`04-scoring-ranking-spec.md` §9's guardrail).
 
-When both the primary and secondary are themselves Malefic/Transformative (e.g. Mars + Pluto), the tone intensifies within the same "Complex/effortful" tier rather than introducing a fourth tier — foreground power/conflict/intensity honestly, never romanticised, and always paired with the guardrail note that this combination is score-capped below ★★★★ (`04-scoring-ranking-spec.md` §9).
-
-This replaces v0.1's 25 explicitly authored pairs (Sun-MC+Jupiter-MC, Venus-ASC+Saturn-ASC, Mars+Pluto strong, etc.) — those specific combinations are still valid *examples* of each tier, not separate rules to maintain going forward.
+**Reconciling with v0.1's 25 pairs:** most map cleanly onto the tier their category pair predicts (e.g. all the HIGH examples are Personal/Benefic pairs; nearly all MEDIUM examples are mixed pairs). A few of v0.1's most Pluto-specific pairs (e.g. "Uranus + Neptune strong," "Mars-MC + Saturn-MC") were hand-tuned to MEDIUM despite being a same-category-severity pair — that hand-tuned nuance is intentionally not preserved; under v0.2's clean rule these become Complex/effortful. This is a deliberate simplification (`docs/PROPOSAL-canonical-framework.md`'s whole point), not an oversight — flagging it here so it isn't mistaken for one.
 
 ## 4. Narrative archetypes
 
@@ -348,7 +352,7 @@ Primary archetypes:
 - REINVENTION — Uranus dominant
 - VISION — Neptune dominant
 - TRANSFORMATION — Pluto dominant
-- LAYERED — strong Personal/Benefic influence + strong Malefic/Transformative influence (Complex/effortful coherence, §3)
+- LAYERED — strong Personal/Benefic influence + strong Malefic/Transformative influence (Layered coherence, §3)
 - BALANCED — multi-goal support without one dominant line
 
 ## 5. City Story composition

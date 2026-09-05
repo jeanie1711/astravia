@@ -135,7 +135,7 @@ Same idea as today (a small number of thresholds mapping a score to 1–5 stars)
 | Continuous "baseline tension" 0.08–0.50 per planet (invented) | Same 4-category classification drives narrative tone; no separate tension number |
 | Policy: "Do NOT classify planets as benefic/bad" | Classification used internally; user-facing language rules (never "good/bad", never fatalistic) unchanged and still enforced at the copy layer |
 | 25 explicit pairwise coherence rules + tension fallback heuristic | 3-tier synthesis rule derived directly from angle-domain + planet-category |
-| Parans excluded from MVP | Parans computed and surfaced as a distinct, real ACG signal (needs its own geometry spec) |
+| Parans excluded from MVP | Parans computed and surfaced as a distinct, real ACG signal (geometry specified `03` §19; module not yet implemented) |
 | 5-term weighted score | 2-term richness score |
 | Country ranking: 45/25/15/10/5 weighted composite | Same shape, re-derived once the new richness score is finalized — out of scope for this document's first pass |
 
@@ -155,7 +155,7 @@ This is sized as a **full rewrite of Milestone 1 and most of Milestone 2**, not 
 
 - `src/scoring/relevance.ts`, `combination-rules.ts`, most of `internal-score.ts`/`select-influences.ts`/`coherence.ts` would be replaced.
 - `src/interpretation/library.ts`'s 40 hand-authored entries would need reworking around category-driven copy rather than per-entry hand-written text (some flavor text may be preservable — needs its own pass).
-- A **new paran-detection module** in `src/astro/` (calculation layer) — real, nontrivial geometry needing its own spec and Golden Tests (§3.3).
+- A **new paran-detection module** in `src/astro/` (calculation layer) — geometry now specified (`03-astro-calculation-spec.md` §19), implementation and its own Golden Tests still pending.
 - Every expected numeric value in `docs/07-golden-test-cases.md` becomes invalid, since the score formula fundamentally changes. A new Golden Test suite must be authored and approved *before* any of this ships (CLAUDE.md §8/§9).
 - Every existing star rating changes meaning — this needs a major version bump across `MODEL_VERSIONS` (calculation stays the same; scoring and interpretation both bump), and if any result has ever been shared/saved, a one-time "we improved the model" note.
 - Rough sizing: comparable to redoing Milestones 1 and 2 from scratch — larger than any single change made in this project so far.
@@ -164,9 +164,9 @@ This is sized as a **full rewrite of Milestone 1 and most of Milestone 2**, not 
 
 **Decided 2026-09-05: adopted in full.** `03`, `04`, and `06` have been rewritten to v0.2 to reflect it (see the status banner at the top of this document).
 
-Remaining, in order, per CLAUDE.md §19:
-1. Write the dedicated paran geometry spec (§3.3 above only establishes intent, not the algorithm — see `03-astro-calculation-spec.md` §19 for exactly what that follow-up spec needs to define).
+Sequence, per CLAUDE.md §19:
+1. ~~Write the dedicated paran geometry spec.~~ **Done 2026-09-05** — full algorithm (closed-form MC/IC×ASC/DSC, numerical root-finding for ASC/DSC×ASC/DSC, city-to-paran distance) in `03-astro-calculation-spec.md` §19.
 2. Author and get approval for a new Golden Test suite against the v0.2 formulas *before* touching production scoring/interpretation code (`04-scoring-ranking-spec.md` §16 tracks this).
-3. Implement, in this order: planetary category classification → richness formula/coherence tiers → paran calculation+scoring integration (paran implementation depends on step 1's spec).
+3. Implement, in this order: planetary category classification → richness formula/coherence tiers → paran calculation module (`03` §19) + its own Golden Tests → wire parans into scoring.
 
 **Status: APPROVED, implementation pending.** No production code has been changed by this document or by the `03`/`04`/`06` doc updates that followed its approval.

@@ -106,11 +106,11 @@ Secondary / reinforcing:
 
 Never select more than four visible key influences in MVP (unchanged from v0.1).
 
-### 5.1 Parans (new — currently excluded from MVP per `03-astro-calculation-spec.md` §1; this spec assumes that exclusion will be lifted in a follow-up calculation-layer change)
+### 5.1 Parans (geometry specified 2026-09-05 — see `03-astro-calculation-spec.md` §19; not yet implemented in code)
 
 A paran is the latitude at which two planetary lines are simultaneously angular (rising, setting, culminating, or anti-culminating) for an observer there — a real, distinctive ACG concept, and one ACG literature treats as often more specific than a single line alone, because it blends two influences at a latitude band valid across every longitude on it.
 
-**Status: geometry not yet specified.** Computing a paran (solving for the latitude where two bodies' diurnal motions coincide at their respective angles) is meaningfully more involved than the current MC/IC/ASC/DSC calculations and needs its own dedicated mathematical spec and Golden Tests before implementation. This document establishes only the product intent — a paran should be eligible as a reinforcing signal in richness (§6) and should be surfaced as its own signal type in a City Story, distinct from "a second nearby line." Do not implement paran detection from this section alone.
+The full geometry (closed-form for MC/IC×ASC/DSC, numerical root-finding for ASC/DSC×ASC/DSC, city-to-paran distance) is specified in `03-astro-calculation-spec.md` §19. A paran is eligible as a reinforcing signal in richness (§6/§8 below) exactly like a second nearby line, scored by the same `distanceStrength()` curve applied to its one-dimensional (latitude-only) distance, and is surfaced as its own named signal type in a City Story, distinct from "a second nearby line" (`06-interpretation-library.md` §5).
 
 ## 6. Coherence
 
@@ -264,6 +264,6 @@ This spec was updated ahead of the code, by explicit Product Owner request, so t
 | §4 tension removed as a scoring multiplier | Approved | Not implemented — v0.1's per-planet tension table is still active in `src/scoring/internal-score.ts` |
 | §6 3-tier coherence | Approved | Not implemented — `src/scoring/coherence.ts`/`combination-rules.ts` still use the 25-pair table |
 | §8 richness formula | Approved | Not implemented — `src/scoring/internal-score.ts` still uses the 5-term formula |
-| §5.1 parans | Approved (product intent only) | Not implemented — needs its own geometry spec first (`03-astro-calculation-spec.md` §19) |
+| §5.1 parans | Approved, geometry specified (`03-astro-calculation-spec.md` §19) | Not implemented — no `src/astro/parans.ts` yet; needs its own module + Golden Tests before wiring into scoring |
 
 Per CLAUDE.md §8/§9/§19, none of the "Not implemented" rows should be coded until a new Golden Test suite is authored and approved for this framework — this is sized as its own milestone (see `docs/PROPOSAL-canonical-framework.md` §8).

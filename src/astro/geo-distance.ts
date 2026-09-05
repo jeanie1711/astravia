@@ -102,6 +102,17 @@ export function distanceToSegmentKm(point: Point, a: Point, b: Point): number {
   );
 }
 
+// Distance from a city to a paran (spec §19.6). A paran has no longitude
+// dependency -- it's a full latitude band -- so the nearest point on it to
+// a city is always directly along that city's own meridian, at
+// (latParanDeg, city's own longitude). Since a meridian is a great circle,
+// this is exact, not an approximation, unlike distanceToPolylineKm's
+// segment-based approach for the latitude-and-longitude-dependent ASC/DSC
+// curves.
+export function distanceToParanKm(cityLatDeg: number, paranLatDeg: number): number {
+  return Math.abs(toRad(cityLatDeg - paranLatDeg)) * EARTH_RADIUS_KM;
+}
+
 // Influence-distance bands feeding scoring (spec §12). Purely geometric
 // distance categorization -- no goal/quality judgment belongs here.
 export function classifyStrengthBand(distanceKm: number): StrengthBand {

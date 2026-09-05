@@ -1,4 +1,7 @@
-const STAR_LABEL: Record<number, string> = {
+import { scoreToDisplayValue } from "../../scoring/score-city";
+import type { Stars } from "../../scoring/types";
+
+const STAR_LABEL: Record<Stars, string> = {
   5: "Exceptional",
   4: "Strong",
   3: "Mixed",
@@ -6,56 +9,43 @@ const STAR_LABEL: Record<number, string> = {
   1: "Weak"
 };
 
-// Rating indicator: an ombre-filled bar (relative strength, no digits or
-// percentages -- CLAUDE.md §11) paired with the plain-language word label
-// (05-result-content-framework.md §4's "Exceptional/Strong/Mixed/
-// Challenging/Weak" table). Replaces discrete star glyphs (product
-// feedback 2026-09-05): two "Exceptional" places can otherwise look
-// visually identical despite a real difference underneath, and text alone
-// carries the categorical meaning either way. The bar's fill is driven by
-// the absolute internal score (0-1), not a comparison to other items on
-// screen, so it reads correctly even alone on the City Story page.
+// Star glyphs (product feedback 2026-09-05: an ombre bar tried in place of
+// stars didn't read as clearly), plus a one-decimal number computed within
+// the assigned star's own band (scoreToDisplayValue) so two results in the
+// same tier -- e.g. two "Strong" 4-star cities -- no longer look identical.
+// The filled-star COUNT still always equals the real, guardrail-capped
+// `stars` value; only the decimal adds granularity underneath it.
 export function StarRating({
   stars,
   score,
   size = 16,
   showLabel = false
 }: {
-  stars: 1 | 2 | 3 | 4 | 5;
+  stars: Stars;
   score?: number;
   size?: number;
   showLabel?: boolean;
 }) {
-  // Falls back to a tier-based fill (e.g. 5 -> 90%) if the raw score isn't
-  // passed in, so the bar still renders sensibly wherever internalScore
-  // isn't threaded through yet.
-  const fill = Math.max(0.08, Math.min(1, score ?? (stars * 2 - 1) / 10));
-  const barWidth = size * 5;
+  const displayValue = score !== undefined ? scoreToDisplayValue(score, stars) : stars;
 
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <span
-        role="img"
-        aria-label={`${stars} out of 5: ${STAR_LABEL[stars]}`}
-        style={{
-          display: "inline-block",
-          width: barWidth,
-          height: Math.max(5, Math.round(size * 0.35)),
-          borderRadius: 100,
-          background: "var(--color-border)",
-          overflow: "hidden"
-        }}
-      >
-        <span
-          style={{
-            display: "block",
-            width: `${fill * 100}%`,
-            height: "100%",
-            borderRadius: 100,
-            background: "linear-gradient(90deg, var(--color-tag-bg), var(--color-accent) 65%, var(--color-accent-strong))"
-          }}
-        />
+      <span role="img" aria-label={`${displayValue.toFixed(1)} out of 5: ${STAR_LABEL[stars]}`}>
+        <span style={{ color: "var(--color-accent)", fontSize: size }}>{"★".repeat(stars)}</span>
+        <span style={{ color: "var(--color-star-empty)", fontSize: size }}>{"★".repeat(5 - stars)}</span>
       </span>
+      {score !== undefined && (
+        <span
+          aria-hidden="true"
+          style={{
+            font: `600 ${Math.max(11, Math.round(size * 0.75))}px var(--font-body)`,
+            color: "var(--color-ink)",
+            fontVariantNumeric: "tabular-nums"
+          }}
+        >
+          {displayValue.toFixed(1)}
+        </span>
+      )}
       {showLabel && (
         <span
           aria-hidden="true"

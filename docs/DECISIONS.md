@@ -121,3 +121,15 @@ Format per CLAUDE.md §17: Date / Decision needed / Context / Options / Recommen
 Implemented as a new required step, S05b, inserted right after S05 Calculating finishes: the user picks "By city" or "By country", each with a one-line explanation of what that ranking means and an explicit note that the two lists are scored differently. `journey.viewMode` ("city" | "country") is persisted in session state (`src/app/journey/types.ts`). S06 (`src/app/results/page.tsx`) now renders only the section matching the active mode, with a compact switch control to flip modes instantly without re-fetching (`/api/calculate`'s response already includes both `results` and `countries`). Landing on S06 directly with no `viewMode` set (e.g. back-button navigation) redirects to S05b.
 
 **Status:** APPROVED / IMPLEMENTED. Full doc: `docs/02-user-flow-screen-spec.md` S05b and S06.
+
+---
+
+## 2026-09-05 — Star rating shows one decimal (e.g. 4.2) instead of only a whole number
+
+**Decision needed:** none -- directly requested and approved by the Product Owner, reverting the ombre-bar experiment from the same day.
+
+**Context:** The bar-chart replacement for stars (previous entry above) didn't read as clearly to the Product Owner in practice. Reverted to ★ glyphs, but with the underlying granularity problem still solved: `scoreToDisplayValue()` (`src/scoring/score-city.ts`) interpolates `internalScore` within the *final, guardrail-capped* star tier's own bound (reusing `scoreToStars`'s existing thresholds, not a new set of numbers) to produce a decimal in `[stars.0, stars.9]`, capped so it can never round up into the next whole star -- so a result capped by S002/S003/the tension guardrail/country's five-star qualifying-city rule still reads as at most e.g. "4.9", never "basically a 5". The 5-star tier always displays flat as "5.0" (the scale's ceiling; nothing above it). `StarRating.tsx` shows the filled-star count from the real `stars` value, with this decimal printed alongside it.
+
+Read as compliant with CLAUDE.md §11 ("User sees 1–5 stars, not 0–100"): the number shown is a decimal on the 1–5 star scale itself, not the raw internal composite score (which is still 0–1 and never rendered) or a 0–100/percentage figure.
+
+**Status:** APPROVED / IMPLEMENTED. See `scoreToDisplayValue` and its tests in `tests/scoring/score-city.test.ts`.

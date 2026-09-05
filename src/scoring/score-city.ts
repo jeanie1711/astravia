@@ -35,6 +35,34 @@ export function scoreToStars(score: number): Stars {
   return 1;
 }
 
+// Same breakpoints as scoreToStars, kept as each tier's own [lower, upper)
+// bound so a decimal display value can be interpolated within a tier
+// without inventing a second set of thresholds.
+const STAR_LOWER_BOUND: Record<Stars, number> = { 1: 0, 2: 0.28, 3: 0.45, 4: 0.62, 5: 0.78 };
+const STAR_UPPER_BOUND: Record<Stars, number> = { 1: 0.28, 2: 0.45, 3: 0.62, 4: 0.78, 5: 1 };
+// Never let a tier's decimal reach the next whole star -- important when a
+// guardrail (S002/S003, the tension+LOW-coherence cap, or country's
+// five-star qualifying-city rule) has capped `stars` below what the raw
+// score would naturally reach: the decimal must stay inside the capped
+// tier, not read as "basically" the tier above (CLAUDE.md §11: a capped
+// result must never look like it became the higher rating).
+const MAX_FRACTION = 0.94;
+
+// One decimal of extra granularity within the assigned star tier (product
+// feedback 2026-09-05: whole stars made every result in a tier look
+// identical, which was mistaken for a bug when two same-starred cities
+// were treated differently elsewhere). `stars` must be the FINAL,
+// guardrail-capped value -- never derive the decimal from the raw score
+// against its own natural tier, since a capped score can sit far outside
+// the capped tier's bound and must be clamped into it instead.
+export function scoreToDisplayValue(internalScore: number, stars: Stars): number {
+  if (stars === 5) return 5; // 5.0 is the ceiling of the scale, nothing above it
+  const lo = STAR_LOWER_BOUND[stars];
+  const hi = STAR_UPPER_BOUND[stars];
+  const fraction = Math.min(MAX_FRACTION, Math.max(0, (internalScore - lo) / (hi - lo)));
+  return Math.round((stars + fraction) * 10) / 10;
+}
+
 // Computes the full scoring result for one city/goal (spec §5-§9), applying
 // the star guardrails: S001 (no relevant line caps at 2), S002 (five stars
 // requires an influence within 500km), S003 (time-sensitive caps at 4), and

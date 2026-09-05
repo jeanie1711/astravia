@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Angle, Body } from "../../src/astro/types.js";
-import { scoreCity } from "../../src/scoring/score-city.js";
+import { scoreCity, scoreToDisplayValue } from "../../src/scoring/score-city.js";
 import type { ScenarioInfluences } from "../../src/scoring/stability.js";
 import { buildInfluences, buildScenarios } from "./helpers.js";
 
@@ -134,5 +134,40 @@ describe("synthetic fixtures (07-golden-test-cases.md §8)", () => {
     });
     const result = scoreCity("city", "CAREER", scenarios, 15);
     expect(result.stability).toBe("HIGH");
+  });
+});
+
+describe("scoreToDisplayValue", () => {
+  it("interpolates within a tier: low/mid/high score in the 4-star band gives distinct decimals", () => {
+    const low = scoreToDisplayValue(0.63, 4);
+    const mid = scoreToDisplayValue(0.7, 4);
+    const high = scoreToDisplayValue(0.775, 4);
+    expect(low).toBeCloseTo(4.1, 1);
+    expect(mid).toBeGreaterThan(low);
+    expect(high).toBeGreaterThan(mid);
+    expect(low).toBeGreaterThanOrEqual(4);
+    expect(high).toBeLessThan(5);
+  });
+
+  it("never reaches the next whole star, even exactly at a tier's upper bound", () => {
+    expect(scoreToDisplayValue(0.7799, 4)).toBeLessThan(5);
+    expect(scoreToDisplayValue(0.9999, 4)).toBeLessThan(5); // guardrail-capped 5->4 case
+  });
+
+  it("clamps into the capped tier when a guardrail placed a high raw score into a lower tier", () => {
+    // e.g. S002/S003: raw score would naturally be 5-star (>=0.78) but the
+    // final stars value was capped to 4 -- the decimal must stay in 4.x.
+    const capped = scoreToDisplayValue(0.95, 4);
+    expect(capped).toBeGreaterThanOrEqual(4);
+    expect(capped).toBeLessThan(5);
+  });
+
+  it("5-star tier is always displayed flat at 5.0, the scale's ceiling", () => {
+    expect(scoreToDisplayValue(0.78, 5)).toBe(5);
+    expect(scoreToDisplayValue(1, 5)).toBe(5);
+  });
+
+  it("1-star tier never displays below 1.0 even for a score of 0", () => {
+    expect(scoreToDisplayValue(0, 1)).toBeGreaterThanOrEqual(1);
   });
 });

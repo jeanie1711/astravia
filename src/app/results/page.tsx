@@ -165,10 +165,10 @@ export default function ResultsPage() {
         )}
         <p style={{ margin: "0 0 20px", font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
           {viewMode === "city"
-            ? "The bar and label show how strongly a place fits " +
+            ? "★ shows how strongly a place fits " +
               goalName +
               ". Open a place to see how much that could shift if your birth time isn't exact."
-            : "The bar and label show how strongly a country fits " +
+            : "★ shows how strongly a country fits " +
               goalName +
               " overall, based on its strongest cities together -- not just its single best one."}
         </p>

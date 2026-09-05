@@ -27,6 +27,8 @@ S04 Life Goal
    ↓
 S05 Calculating
    ↓
+S05b View Mode
+   ↓
 S06 Your Places
    ↓
 S07 City Story
@@ -267,6 +269,62 @@ Technical error details should be logged, not shown to normal users.
 
 ---
 
+# S05b — View Mode
+
+## Purpose
+
+Added 2026-09-05 (Product Owner request): let the user choose a lens on
+their results *before* seeing them, instead of showing city-ranked and
+country-ranked lists on the same page. City ranking and country ranking
+come from different formulas (04-scoring-ranking-spec.md §11), so a city
+inside a top-3 country's best matches can look identical (same stars) to a
+global top-3 city yet not itself be a top-3 city -- showing both lists
+together read as a bug. Splitting into two lenses removes the
+side-by-side comparison that caused the confusion.
+
+## Heading
+
+> **How do you want to explore your places?**
+
+## Explanation
+
+One short paragraph naming the actual cause of the confusion in plain
+language, e.g.:
+
+> A city can be a strong individual match without its country being a top
+> overall country, and the reverse can happen too -- they're scored
+> differently. Pick a lens so your results stay easy to compare. You can
+> switch anytime from your results page.
+
+## Options
+
+### By city
+
+Individual cities, ranked by how strongly each one on its own supports
+the selected goal.
+
+### By country
+
+Countries, ranked by how many strong cities they contain, not just their
+single best one.
+
+## CTA
+
+`Show my cities` / `Show my countries` (label follows the selected
+option) → S06, filtered to that lens.
+
+## Behavior
+
+- Always shown once per fresh calculation (i.e. every time S05 completes),
+  pre-selecting the user's last choice if any.
+- The choice is also switchable directly on S06 via a compact two-option
+  control, without re-fetching or returning to this screen -- both the
+  city list and the country list are already present in the S05 response.
+- If a user reaches S06 directly (e.g. browser back) with no lens chosen
+  yet, redirect to S05b first.
+
+---
+
 # S06 — Your Places
 
 ## Purpose
@@ -277,13 +335,17 @@ Deliver the main “wow” moment: ranked places + immediate explanation.
 
 > **Your strongest places for Career**
 
-or selected goal.
+or selected goal. In Country view, the equivalent heading is **Your
+strongest countries for Career**.
 
 Context line:
 
 > Based on the birth details and time range you entered.
 
 Allow a small `Edit` action to return to inputs.
+
+Only the section matching the S05b choice (Section B or Section D) is
+shown -- never both at once.
 
 ---
 

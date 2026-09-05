@@ -34,11 +34,18 @@ export default function ResultsPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (hydrated && (!journey.birth || !journey.results)) {
+    if (!hydrated) return;
+    if (!journey.birth || !journey.results) {
       router.replace("/explore/birth-details");
+      return;
+    }
+    // Force the S05b choice once per fresh calculation -- avoids landing
+    // here (e.g. via back button) with no lens chosen yet.
+    if (!journey.viewMode) {
+      router.replace("/explore/view-mode");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated]);
+  }, [hydrated, journey.results, journey.viewMode]);
 
   async function switchGoal(goal: Goal) {
     if (!journey.birth || goal === journey.results?.goal) return;
@@ -54,14 +61,19 @@ export default function ResultsPage() {
     setLoading(false);
   }
 
-  const results = journey.results;
-  if (!results) return null;
+  function switchView(mode: "city" | "country") {
+    setJourney((prev) => ({ ...prev, viewMode: mode }));
+  }
 
+  const results = journey.results;
+  if (!results || !journey.viewMode) return null;
+
+  const viewMode = journey.viewMode;
   const goalName = GOAL_TABS.find((g) => g.id === results.goal)?.name ?? results.goal;
   const topCities = results.results.slice(0, MAX_CITIES_SHOWN);
   const topCountries = results.countries.slice(0, MAX_COUNTRIES_SHOWN);
-  const topStars = topCities[0]?.ranked.stars ?? 1;
-  const isMixed = topStars <= 3;
+  const activeTopStars = viewMode === "city" ? topCities[0]?.ranked.stars ?? 1 : topCountries[0]?.stars ?? 1;
+  const isMixed = activeTopStars <= 3;
 
   const allKnownResults: CalculateResult[] = [...results.results, ...results.extraResults];
   function findResult(cityId: string): CalculateResult | undefined {
@@ -104,14 +116,47 @@ export default function ResultsPage() {
       </div>
 
       <div style={{ padding: "16px 28px 0" }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
+          <button
+            type="button"
+            onClick={() => switchView("city")}
+            style={{
+              padding: "7px 14px",
+              borderRadius: 100,
+              border: viewMode === "city" ? "2px solid var(--color-accent)" : "1px solid var(--color-border)",
+              background: viewMode === "city" ? "var(--color-surface)" : "#ffffff",
+              font: "600 12px var(--font-body)",
+              color: "var(--color-ink)",
+              cursor: "pointer"
+            }}
+          >
+            By city
+          </button>
+          <button
+            type="button"
+            onClick={() => switchView("country")}
+            style={{
+              padding: "7px 14px",
+              borderRadius: 100,
+              border: viewMode === "country" ? "2px solid var(--color-accent)" : "1px solid var(--color-border)",
+              background: viewMode === "country" ? "var(--color-surface)" : "#ffffff",
+              font: "600 12px var(--font-body)",
+              color: "var(--color-ink)",
+              cursor: "pointer"
+            }}
+          >
+            By country
+          </button>
+        </div>
+
         <h2 style={{ margin: "0 0 6px", font: "600 30px var(--font-display)", color: "var(--color-ink)" }}>
-          Your strongest places for {goalName}
+          {viewMode === "city" ? `Your strongest places for ${goalName}` : `Your strongest countries for ${goalName}`}
         </h2>
         {isMixed ? (
           <p style={{ margin: "0 0 8px", font: "400 14px/1.5 var(--font-body)", color: "var(--color-muted)" }}>
             <strong style={{ color: "var(--color-ink)" }}>Your map is more mixed for this goal.</strong> These are
-            the locations with the clearest signals, even though none are exceptionally strong in the current
-            model.
+            the {viewMode === "city" ? "locations" : "countries"} with the clearest signals, even though none are
+            exceptionally strong in the current model.
           </p>
         ) : (
           <p style={{ margin: "0 0 8px", font: "400 14px var(--font-body)", color: "var(--color-muted)" }}>
@@ -119,8 +164,13 @@ export default function ResultsPage() {
           </p>
         )}
         <p style={{ margin: "0 0 20px", font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
-          The bar and label show how strongly a place fits {goalName}. Open a place to see how much that could shift
-          if your birth time isn't exact.
+          {viewMode === "city"
+            ? "The bar and label show how strongly a place fits " +
+              goalName +
+              ". Open a place to see how much that could shift if your birth time isn't exact."
+            : "The bar and label show how strongly a country fits " +
+              goalName +
+              " overall, based on its strongest cities together -- not just its single best one."}
         </p>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
@@ -175,66 +225,7 @@ export default function ResultsPage() {
           </div>
         )}
 
-        <div
-          style={{
-            font: "600 12px var(--font-body)",
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: "var(--color-faint)",
-            marginBottom: 14
-          }}
-        >
-          Your top places
-        </div>
-
-        {topCities.map((r, i) => {
-          const story = results.stories[r.ranked.cityId];
-          return (
-            <div
-              key={r.ranked.cityId}
-              style={{
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-border)",
-                borderRadius: 16,
-                padding: "20px 22px",
-                marginBottom: 14,
-                boxShadow: "var(--shadow-card)"
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                <div style={{ font: "600 11px var(--font-body)", color: "var(--color-faint)" }}>#{i + 1}</div>
-                <StarRating stars={r.ranked.stars} score={r.ranked.internalScore} showLabel />
-              </div>
-              <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)", marginTop: 10 }}>
-                {r.city.name}, {r.city.countryName}
-              </div>
-              {story && (
-                <>
-                  <div
-                    style={{
-                      font: "600 12px var(--font-body)",
-                      letterSpacing: "0.04em",
-                      color: "var(--color-accent-strong)",
-                      marginTop: 6
-                    }}
-                  >
-                    {[goalName.toUpperCase(), story.primaryTheme, ...story.secondaryThemes.slice(0, 1)]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </div>
-                  <div style={{ font: "400 14px/1.5 var(--font-body)", color: "#3E5865", marginTop: 10 }}>
-                    {story.hook}
-                  </div>
-                </>
-              )}
-              <PillButton variant="accent" style={{ marginTop: 14 }} onClick={() => router.push(`/place/${r.ranked.cityId}`)}>
-                Why {r.city.name}? →
-              </PillButton>
-            </div>
-          );
-        })}
-
-        {topCountries.length > 0 && (
+        {viewMode === "city" ? (
           <>
             <div
               style={{
@@ -242,24 +233,95 @@ export default function ResultsPage() {
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
                 color: "var(--color-faint)",
-                margin: "28px 0 12px"
+                marginBottom: 14
               }}
             >
-              Top countries
+              Your top places
             </div>
-            {topCountries.map((co) => (
+
+            {topCities.map((r, i) => {
+              const story = results.stories[r.ranked.cityId];
+              return (
+                <div
+                  key={r.ranked.cityId}
+                  style={{
+                    background: "var(--color-surface)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 16,
+                    padding: "20px 22px",
+                    marginBottom: 14,
+                    boxShadow: "var(--shadow-card)"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                    <div style={{ font: "600 11px var(--font-body)", color: "var(--color-faint)" }}>#{i + 1}</div>
+                    <StarRating stars={r.ranked.stars} score={r.ranked.internalScore} showLabel />
+                  </div>
+                  <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)", marginTop: 10 }}>
+                    {r.city.name}, {r.city.countryName}
+                  </div>
+                  {story && (
+                    <>
+                      <div
+                        style={{
+                          font: "600 12px var(--font-body)",
+                          letterSpacing: "0.04em",
+                          color: "var(--color-accent-strong)",
+                          marginTop: 6
+                        }}
+                      >
+                        {[goalName.toUpperCase(), story.primaryTheme, ...story.secondaryThemes.slice(0, 1)]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </div>
+                      <div style={{ font: "400 14px/1.5 var(--font-body)", color: "#3E5865", marginTop: 10 }}>
+                        {story.hook}
+                      </div>
+                    </>
+                  )}
+                  <PillButton
+                    variant="accent"
+                    style={{ marginTop: 14 }}
+                    onClick={() => router.push(`/place/${r.ranked.cityId}`)}
+                  >
+                    Why {r.city.name}? →
+                  </PillButton>
+                </div>
+              );
+            })}
+          </>
+        ) : (
+          <>
+            <div
+              style={{
+                font: "600 12px var(--font-body)",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "var(--color-faint)",
+                marginBottom: 14
+              }}
+            >
+              Your top countries
+            </div>
+
+            {topCountries.map((co, i) => (
               <div
                 key={co.countryCode}
                 style={{
                   background: "var(--color-surface)",
                   border: "1px solid var(--color-border)",
-                  borderRadius: 14,
-                  padding: "16px 18px",
-                  marginBottom: 10
+                  borderRadius: 16,
+                  padding: "20px 22px",
+                  marginBottom: 14,
+                  boxShadow: "var(--shadow-card)"
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
-                  <div style={{ font: "600 15px var(--font-body)", color: "var(--color-ink)" }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                  <div style={{ font: "600 11px var(--font-body)", color: "var(--color-faint)" }}>#{i + 1}</div>
+                  <StarRating stars={co.stars} score={co.internalScore} showLabel />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+                  <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)" }}>
                     {results.countryNames[co.countryCode] ?? co.countryCode}
                   </div>
                   <div
@@ -277,9 +339,20 @@ export default function ResultsPage() {
                     {co.narrative}
                   </div>
                 </div>
-                <p style={{ font: "400 12.5px/1.5 var(--font-body)", color: "var(--color-faint)", margin: "4px 0 10px" }}>
+                <p style={{ font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)", margin: "6px 0 14px" }}>
                   {NARRATIVE_COPY[co.narrative]}
                 </p>
+                <div
+                  style={{
+                    font: "600 11px var(--font-body)",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    color: "var(--color-faint)",
+                    marginBottom: 8
+                  }}
+                >
+                  Best matches
+                </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {co.topCityIds.map((id) => {
                     const cityResult = findResult(id);

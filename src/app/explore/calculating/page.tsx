@@ -54,7 +54,7 @@ export default function CalculatingPage() {
       })
       .then((data) => {
         setJourney((prev) => ({ ...prev, results: data }));
-        router.push("/results");
+        router.push("/explore/view-mode");
       })
       .catch(() => setError("We couldn't calculate your results."))
       .finally(() => clearInterval(interval));

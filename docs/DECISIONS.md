@@ -109,3 +109,15 @@ Format per CLAUDE.md §17: Date / Decision needed / Context / Options / Recommen
 **Context:** Implemented in `src/interpretation/compose-city-story.ts`'s `composeWeakResult()`: uses "Like the signal here is more mixed than clear." -- a minimal, non-evocative filler that echoes the approved headline's own "mixed" language rather than introducing new imagery, kept deliberately flat since there's no real influence to draw a feeling from.
 
 **Status:** IMPLEMENTED AS DEFAULT — low stakes (this is literal filler text for a low-star edge case, not a claim), but flagging since it's the one sentence in the whole interpretation layer not sourced from the approved library or spec verbatim. Product Owner may want to approve specific wording for this case.
+
+---
+
+## 2026-09-05 — Added S05b (View Mode) step: choose City vs Country lens before seeing results
+
+**Decision needed:** none -- directly requested and approved by the Product Owner.
+
+**Context:** City ranking and country ranking are computed by completely different formulas (04-scoring-ranking-spec.md §11: country score = 45%/25%/15%/10%/5% weighting of best/2nd/3rd city + breadth + stability, not a simple rollup of city scores). Showing both lists on one results page (S06) meant a city inside a top-3 country's "best matches" could carry the same stars as a global top-3 city yet not itself appear in the top-3 city list -- read by users as an inconsistency/bug rather than two different rankings.
+
+Implemented as a new required step, S05b, inserted right after S05 Calculating finishes: the user picks "By city" or "By country", each with a one-line explanation of what that ranking means and an explicit note that the two lists are scored differently. `journey.viewMode` ("city" | "country") is persisted in session state (`src/app/journey/types.ts`). S06 (`src/app/results/page.tsx`) now renders only the section matching the active mode, with a compact switch control to flip modes instantly without re-fetching (`/api/calculate`'s response already includes both `results` and `countries`). Landing on S06 directly with no `viewMode` set (e.g. back-button navigation) redirects to S05b.
+
+**Status:** APPROVED / IMPLEMENTED. Full doc: `docs/02-user-flow-screen-spec.md` S05b and S06.

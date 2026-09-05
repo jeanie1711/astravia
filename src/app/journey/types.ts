@@ -50,11 +50,19 @@ export type CalculateErrorResponse = {
   kind?: string;
 };
 
+export type ViewMode = "city" | "country";
+
 export type JourneyState = {
   birth?: BirthDraft;
   uncertaintyMinutes: UncertaintyMinutes;
   goal?: Goal;
   results?: CalculateResponse;
+  // Chosen on S05b (View Mode), right after calculation finishes. Keeps the
+  // results page from showing city-ranked and country-ranked lists side by
+  // side, which is what produced the "same stars, different treatment"
+  // confusion (city ranking and country ranking use different formulas --
+  // 04-scoring-ranking-spec.md §11).
+  viewMode?: ViewMode;
 };
 
 export const INITIAL_JOURNEY_STATE: JourneyState = {

@@ -1,7 +1,9 @@
-# Scoring & Ranking Specification v0.1
+# Scoring & Ranking Specification v0.2 (Canonical Framework)
 
-**Purpose:** Convert deterministic city-line calculations into transparent 1–5 star recommendations.  
-**Core rule:** Stars represent **goal fit + strength + coherence + stability**, not luck, destiny, probability, or scientific certainty.
+> **Approved 2026-09-05.** Supersedes v0.1 below. See `docs/PROPOSAL-canonical-framework.md` for the full rationale and `docs/DECISIONS.md` for the approval record. **Read §16 (Implementation status) before assuming any specific section is already live in code** — this document was updated ahead of the code that implements it, by explicit Product Owner instruction, so the spec and the running app diverge until the rewrite lands.
+
+**Purpose:** Convert deterministic city-line calculations into transparent 1–5 star recommendations, while minimizing invented/arbitrary machinery and relying on real, broadly-taught astrocartography (ACG) and traditional astrology knowledge wherever the product's requirements allow it.
+**Core rule:** Stars represent **proximity + reinforcement + coherence + stability**, not luck, destiny, probability, or scientific certainty.
 
 ## 1. User-visible star meanings
 
@@ -29,20 +31,16 @@ MVP goals:
 For each city and goal:
 
 ```text
-Primary Support
-+ Secondary Support
-+ Coherence
-+ Stability
-- Tension Penalty
+Richness (closest relevant line + capped reinforcement from a second line or paran)
++ Coherence adjustment
++ Stability adjustment
 = Internal Goal Score
 → 1–5 stars
 ```
 
-Internal score exists only for deterministic ranking.
+Internal score exists only for deterministic ranking, and is never itself the product of a per-planet "tension multiplier" (see §4) — that was v0.1's invented mechanism. Richness comes from proximity and reinforcement alone; a body's traditional nature (§3.2) shapes the **narrative**, not the number. This is a real, user-visible behavioral change from v0.1: a Mars- or Saturn-flavored result is no longer implicitly scored lower for being "tense" — it ranks purely on how close and how reinforced it is, exactly as a Venus- or Jupiter-flavored result would.
 
-### 3.1 Distance strength
-
-Recommended continuous function:
+### 3.1 Distance strength (unchanged from v0.1)
 
 ```ts
 function distanceStrength(km: number): number {
@@ -53,130 +51,86 @@ function distanceStrength(km: number): number {
 }
 ```
 
-This gives a 0–1 strength. Exact function is configurable, but once Golden Tests are approved it must be versioned.
+This gives a 0–1 strength. The general shape (closer = stronger, smooth falloff, cutoff around several hundred km) reflects the one broadly-taught ACG principle that is quantifiable in spirit; the exact exponent and the 750 km cutoff remain a modeling choice, not something sourced from a specific ACG author — say so in any documentation/copy that references it.
 
-### 3.2 Goal relevance matrix
+### 3.2 Planetary nature classification (replaces the v0.1 goal-relevance matrix and per-planet tension table)
 
-Scale:
-- 5 = primary fit
-- 4 = strong
-- 3 = contextual/supportive
-- 2 = minor
-- 1 = little direct relevance
+v0.1 hand-tuned a 1–5 relevance number for all 40 (body × angle) combinations across 4 goals — 160 invented numbers, and its own text called the result *"an editorial product hypothesis, not an astronomical fact."* It also carried a separate, invented "baseline tension" multiplier per planet (0.08–0.50) with no traditional source.
 
-Initial editorial matrix:
+Both are replaced by one classification, into exactly one of four categories per body, drawn from real, broadly-taught tradition:
 
-| Influence | Career | Love | Home | Growth |
-|---|---:|---:|---:|---:|
-| Sun MC | 5 | 2 | 1 | 4 |
-| Sun IC | 1 | 3 | 4 | 3 |
-| Sun ASC | 4 | 3 | 2 | 5 |
-| Sun DSC | 3 | 4 | 2 | 3 |
-| Moon MC | 3 | 3 | 2 | 3 |
-| Moon IC | 1 | 4 | 5 | 4 |
-| Moon ASC | 2 | 4 | 4 | 4 |
-| Moon DSC | 2 | 5 | 4 | 3 |
-| Mercury MC | 5 | 3 | 1 | 3 |
-| Mercury IC | 2 | 3 | 3 | 3 |
-| Mercury ASC | 4 | 4 | 2 | 4 |
-| Mercury DSC | 4 | 4 | 2 | 3 |
-| Venus MC | 4 | 4 | 2 | 3 |
-| Venus IC | 2 | 4 | 5 | 3 |
-| Venus ASC | 3 | 5 | 3 | 4 |
-| Venus DSC | 2 | 5 | 3 | 3 |
-| Mars MC | 4 | 2 | 1 | 4 |
-| Mars IC | 1 | 2 | 2 | 3 |
-| Mars ASC | 3 | 3 | 2 | 5 |
-| Mars DSC | 3 | 2 | 1 | 4 |
-| Jupiter MC | 5 | 3 | 2 | 4 |
-| Jupiter IC | 2 | 4 | 5 | 4 |
-| Jupiter ASC | 4 | 4 | 3 | 5 |
-| Jupiter DSC | 3 | 5 | 3 | 4 |
-| Saturn MC | 4 | 2 | 2 | 4 |
-| Saturn IC | 2 | 2 | 3 | 4 |
-| Saturn ASC | 3 | 2 | 2 | 5 |
-| Saturn DSC | 3 | 2 | 2 | 4 |
-| Uranus MC | 4 | 2 | 1 | 5 |
-| Uranus IC | 2 | 2 | 2 | 5 |
-| Uranus ASC | 3 | 2 | 1 | 5 |
-| Uranus DSC | 3 | 2 | 1 | 5 |
-| Neptune MC | 3 | 2 | 1 | 4 |
-| Neptune IC | 1 | 3 | 3 | 4 |
-| Neptune ASC | 2 | 3 | 2 | 5 |
-| Neptune DSC | 2 | 4 | 2 | 4 |
-| Pluto MC | 4 | 2 | 1 | 5 |
-| Pluto IC | 2 | 2 | 3 | 5 |
-| Pluto ASC | 3 | 2 | 2 | 5 |
-| Pluto DSC | 3 | 2 | 1 | 5 |
+| Category | Bodies | Traditional basis |
+|---|---|---|
+| **Personal** | Sun, Moon, Mercury | The "personal planets": identity, emotion, communication/thought. Neither benefic nor malefic — quality follows the angle, not the planet. |
+| **Benefic** | Venus, Jupiter | Classical benefics since Hellenistic astrology: ease, harmony, growth, opportunity, wherever they fall. |
+| **Malefic (classical)** | Mars, Saturn | Classical malefics: friction, effort, consequence. Mars = conflict/drive/assertion. Saturn = restriction/responsibility/delay. Traditionally "hard," never "bad." |
+| **Transformative (modern)** | Uranus, Neptune, Pluto | Added by post-1781 astrology; most modern ACG authors treat these as their own category — intensifying and disruptive-but-purposeful, not simply malefic. Uranus = sudden change/rebellion. Neptune = dissolution/idealism/spirituality. Pluto = deep transformation/power. |
 
-**Important:** This matrix is an editorial product hypothesis, not an astronomical fact. Version it and validate it with experienced astrocartography readers/user feedback.
+This supersedes v0.1 §4's *"Do NOT classify planets globally as benefic/bad"* rule. That rule's real concern — never telling a user a planet or a place is simply "bad," never fatalistic language — is a **language rule** (CLAUDE.md §12–§13), not a reason to avoid a real, traditional classification. The two concerns are now separated: the classification is used internally to select a narrative tone; user-facing copy still always uses effort/reward framing, never "good/bad" (§4 below, and 06 §Combination rules).
 
-## 4. Support vs tension
+Category, together with the angle (§3.3), replaces the entire 160-number relevance matrix: a body's fit for a goal is no longer independently hand-tuned per goal — it follows from which angle it's on (the goal's domain) and which category it belongs to (the story's tone).
 
-Do NOT classify planets globally as benefic/bad.
+### 3.3 Angle → life domain (already implemented; stated explicitly here as the other half of §3.2's replacement)
 
-Each influence has:
-- `supportPotential` for a goal
-- `tensionPotential`
-- narrative shadow/trade-off
+| Angle | Life domain |
+|---|---|
+| MC | Career, public life, direction, reputation |
+| IC | Home, roots, family, private foundation |
+| ASC | Identity, self-presentation, how you meet the world |
+| DSC | Relationships, partnerships, significant others |
 
-Suggested baseline tension multipliers:
+Near-universal consensus across ACG literature since Jim Lewis's original method; unchanged from how the app already labels influences today.
 
-| Planet | Baseline tension |
-|---|---:|
-| Sun | 0.15 |
-| Moon | 0.20 |
-| Mercury | 0.10 |
-| Venus | 0.08 |
-| Mars | 0.45 |
-| Jupiter | 0.10 |
-| Saturn | 0.50 |
-| Uranus | 0.40 |
-| Neptune | 0.45 |
-| Pluto | 0.50 |
+## 4. Support, tension, and tone
 
-Angle/goal context may modify these. Example: Saturn-MC can be highly relevant for Career but still carry pressure/responsibility.
+Every influence's story tone comes directly from its category (§3.2), never from a separate numeric multiplier:
 
-## 5. Primary and secondary influences
+- **Personal** on an angle → the domain's theme, expressed directly and personally.
+- **Benefic** on an angle → the domain's theme, expressed with ease and opportunity.
+- **Malefic** on an angle → the domain's theme, expressed with effort and responsibility — powerful but demanding, never "bad."
+- **Transformative** on an angle → the domain's theme, expressed through change and reinvention.
 
-Candidate influence if distance < 750 km.
+There is no separate `tensionPotential` number and no per-planet "baseline tension" table (v0.1 §4's table is removed). Category alone drives which of the four tones the Interpretation Library (`06`) selects for a given (body, angle) combination.
+
+## 5. Primary, secondary, and paran influences
+
+Candidate influence if distance < 750 km (unchanged).
 
 Primary:
-- highest `distanceStrength × goalRelevance`
+- highest `distanceStrength` among candidates whose angle matches the current goal's domain (§3.3)
 - must exceed configurable minimum `0.35`
 
-Secondary:
-- next 1–3 meaningful influences
+Secondary / reinforcing:
+- the next meaningful candidate, **or a paran involving the primary's angle** (§5.1) if one exists and is closer/stronger than the next plain candidate
 - must exceed `0.20`
-- avoid listing weak noise
 
-Never select more than four visible key influences in MVP.
+Never select more than four visible key influences in MVP (unchanged from v0.1).
+
+### 5.1 Parans (new — currently excluded from MVP per `03-astro-calculation-spec.md` §1; this spec assumes that exclusion will be lifted in a follow-up calculation-layer change)
+
+A paran is the latitude at which two planetary lines are simultaneously angular (rising, setting, culminating, or anti-culminating) for an observer there — a real, distinctive ACG concept, and one ACG literature treats as often more specific than a single line alone, because it blends two influences at a latitude band valid across every longitude on it.
+
+**Status: geometry not yet specified.** Computing a paran (solving for the latitude where two bodies' diurnal motions coincide at their respective angles) is meaningfully more involved than the current MC/IC/ASC/DSC calculations and needs its own dedicated mathematical spec and Golden Tests before implementation. This document establishes only the product intent — a paran should be eligible as a reinforcing signal in richness (§6) and should be surfaced as its own signal type in a City Story, distinct from "a second nearby line." Do not implement paran detection from this section alone.
 
 ## 6. Coherence
 
-Coherence measures whether multiple strong signals tell a compatible story for the selected goal.
+Coherence measures whether the primary and secondary/paran influences tell a compatible story, using categories (§3.2) directly instead of a separately hand-authored lookup table:
 
-Internal labels:
-- `HIGH`
-- `MEDIUM`
-- `LOW`
+| Tier | Condition | Replaces (v0.1) |
+|---|---|---|
+| **Reinforcing** | Secondary/paran lands on the **same** angle/domain as the primary | HIGH |
+| **Layered** | Secondary/paran lands on a **different but complementary** domain (e.g. MC + ASC) | MEDIUM |
+| **Complex/effortful** | Secondary/paran is **Malefic or Transformative** while the primary is Personal/Benefic | LOW |
 
-Examples:
-- Career: Sun-MC + Jupiter-MC → HIGH
-- Career: Sun-MC + Mercury-MC → HIGH
-- Love: Venus-DSC + Jupiter-DSC → HIGH
-- Home: Moon-IC + Jupiter-IC → HIGH
-- Career: Sun-MC + Neptune-ASC → MEDIUM; strong career signal plus identity/clarity trade-off
-- Love: Venus-ASC + Saturn-ASC → MEDIUM; connection plus seriousness/boundaries
-- Career: Sun-MC + Saturn-ASC + Pluto-IC → LOW/MEDIUM depending strengths; powerful but competing demands
+This replaces v0.1's 25 explicitly hand-picked pairwise rules (`06-interpretation-library.md` §3) with one rule derived from classifications already established above — see `06` §3 for the corresponding rewrite of the Combination Rules section.
 
-Implementation: use explicit pairwise interaction rules in the Interpretation Library. Do not ask an LLM to decide coherence.
+Implementation: still deterministic, still no runtime LLM (CLAUDE.md §3).
 
-## 7. Stability
+## 7. Stability (unchanged from v0.1)
 
-For uncertainty scenarios, compute the city’s relevant influence score at each sampled time.
+This layer was never an astrology concern — it reflects uncertainty in the user's *reported* birth time, not the sky. No change proposed.
 
-Suggested classification:
+For uncertainty scenarios, compute the city's relevant influence score at each sampled time.
 
 **High**
 - primary influence remains within 500 km in all scenarios AND
@@ -194,47 +148,27 @@ Suggested classification:
 
 For exact birth time (`uncertainty=0`), label `Exact-time calculation` rather than High.
 
-## 8. Internal score proposal
+## 8. Internal score formula
 
-Normalize relevance: `R = relevance / 5`.
+Richness (replaces v0.1's five-term `P + S + coherenceAdj + stabilityAdj − T` formula):
 
-For each influence:
-`support_i = distanceStrength_i × R_i × (1 - 0.35*tension_i)`
+```
+richness = distanceStrength(closest relevant line)
+         + 0.5 × distanceStrength(next reinforcing line or paran, if any)
+```
 
-Primary support:
-`P = max(support_i)`
+Coherence and stability then adjust this the same way v0.1 combined its terms (exact adjustment magnitudes to be re-derived and validated against a new Golden Test suite — see §16):
 
-Secondary support:
-take top 3 remaining support values; diminishing weights:
-`S = 0.45*s2 + 0.25*s3 + 0.15*s4`, capped at 0.35.
+```
+raw = richness + coherenceAdjustment + stabilityAdjustment
+score = clamp(raw, 0, 1)
+```
 
-Coherence:
-- High: +0.12
-- Medium: +0.04
-- Low: -0.08
+One clear formula instead of five weighted terms. This numeric score is internal and may be tuned only through versioned Golden Test review (unchanged principle from v0.1).
 
-Stability:
-- High: +0.10
-- Medium: +0.03
-- Time-sensitive: -0.10
-- Exact time: 0
+## 9. Numeric-to-stars mapping and guardrails
 
-Tension penalty:
-sum top two strong tension contributions:
-`tensionContribution = distanceStrength × R × tension`
-`T = min(0.25, 0.18*t1 + 0.10*t2)`
-
-Raw:
-`raw = P + S + coherenceAdj + stabilityAdj - T`
-
-Clamp 0..1.20, then normalize:
-`score = min(1, raw / 1.05)`
-
-This numeric score is internal and may be tuned only through versioned Golden Test review.
-
-## 9. Numeric-to-stars mapping
-
-Initial thresholds:
+Thresholds carry over from v0.1 as a **provisional** starting point — they were tuned against the old formula's output range, which no longer exists, so they need re-validation once a new Golden Test suite exists (§16):
 
 | Internal score | Stars |
 |---|---|
@@ -244,54 +178,47 @@ Initial thresholds:
 | 0.28–<0.45 | ★★☆☆☆ |
 | <0.28 | ★☆☆☆☆ |
 
-Guardrails:
-- `Time-sensitive` cannot receive ★★★★★ unless an explicit product decision changes this rule.
-- A city with no influence inside 500 km cannot receive ★★★★★.
-- A city whose strongest relevant signal is primarily tension-heavy may be capped at ★★★☆☆ and described as “powerful/challenging,” not “bad.”
+**Guardrails are applied to the score itself, not to the star label** (this mechanism is already implemented in code — `src/scoring/score-city.ts`'s `preventTierAndAbove()`, approved 2026-09-05, see `docs/DECISIONS.md` — and carries over unchanged into this framework):
+
+- A city with no influence inside 500 km cannot receive ★★★★★ — its score is capped just under the 5-star threshold.
+- `Time-sensitive` stability cannot receive ★★★★★ — same score cap.
+- A city whose only strong signal is Malefic/Transformative-flavored with **Complex/effortful** coherence (§6) is capped just under the 4-star threshold, and described as "powerful/demanding," never "bad."
 - Do not force a five-star city into every result set.
+
+`stars` is always exactly `scoreToStars(internalScore)` — no separate override step, so ranking by `internalScore` is automatically consistent with displayed stars everywhere.
 
 ## 10. Overall rating
 
-Overall is NOT the arithmetic average of four goals.
+Overall is NOT the arithmetic average of four goals (unchanged principle). Inputs now come from each goal's richness-based score rather than the old five-term score, but the aggregation shape is unchanged:
 
-Calculate:
 - breadth: number of goals ≥ ★★★★
 - peak: strongest goal
 - coherence across goals
 - stability
-- severe tension
+- severe complex/effortful pattern (replaces "severe tension")
 
-Suggested internal weighting:
-- Career 25%
-- Love 25%
-- Home 25%
-- Growth 25%
-then apply:
-- + breadth bonus up to 0.10
-- + stability up to 0.05
-- - severe cross-goal tension up to 0.10
+Suggested internal weighting (unchanged): 25% per goal, + breadth bonus up to 0.10, + stability bonus up to 0.05, − severe cross-goal complex/effortful pattern penalty up to 0.10.
 
 The UI should explain the top 2–3 dimensions behind Overall.
 
 ## 11. Country ranking
 
-Never score a country from its capital only.
+Never score a country from its capital only (unchanged). Weighting shape unchanged — inputs are now each city's richness-based score:
 
-Country candidate score:
 - best city: 45%
 - second-best distinct metro: 25%
 - third-best distinct metro: 15%
 - geographic breadth/supportive corridor: 10%
 - stability consistency: 5%
 
-Require at least two qualifying cities for ★★★★★ country rating, unless a small-country exception is documented.
+Require at least two qualifying cities for ★★★★★ country rating (score-capped, same mechanism as §9 — already implemented in `src/scoring/score-country.ts`), unless a small-country exception is documented.
 
-Country narrative types:
+Country narrative types (unchanged):
 - `CORRIDOR`: several cities share a strong pattern
 - `ANCHOR`: one standout city dominates
 - `MIXED`: different cities suit different goals
 
-## 12. De-duplication
+## 12. De-duplication (unchanged from v0.1)
 
 To avoid top results filled with neighboring cities:
 - cluster cities within ~100 km or same metro
@@ -309,30 +236,34 @@ type RankedCity = {
   label: "Weak"|"Challenging"|"Mixed"|"Strong"|"Exceptional";
   primaryInfluence: Influence;
   secondaryInfluences: Influence[];
-  coherence: "HIGH"|"MEDIUM"|"LOW";
+  paranInfluences: Influence[]; // NEW -- pending §5.1's geometry spec
+  coherence: "REINFORCING"|"LAYERED"|"COMPLEX_EFFORTFUL";
   stability: "EXACT"|"HIGH"|"MEDIUM"|"TIME_SENSITIVE";
   archetypeId: string;
 }
 ```
 
-## 14. Product integrity
+## 14. Product integrity (unchanged from v0.1)
 
-Stars mean:
-“Relative astrology-based strength and coherence for the selected goal.”
+Stars mean: "Relative astrology-based strength and coherence for the selected goal."
 
-They do NOT mean:
-- probability of success
-- objective quality of a city
-- visa/job feasibility
-- safety
-- medical or financial outcome
-- destiny
+They do NOT mean: probability of success, objective quality of a city, visa/job feasibility, safety, medical or financial outcome, destiny.
 
 ## 15. Versioning
 
-Store:
-- `calculationVersion`
-- `scoringVersion`
-- `interpretationVersion`
+Store `calculationVersion`, `scoringVersion`, `interpretationVersion`. A result must be reproducible from input + these versions (unchanged principle).
 
-A result must be reproducible from input + these versions.
+## 16. Implementation status (as of 2026-09-05)
+
+This spec was updated ahead of the code, by explicit Product Owner request, so the two currently disagree in places. Tracking what's actually true in `src/`:
+
+| Section | Spec status | Code status |
+|---|---|---|
+| §9/§11 guardrails cap the score, not just the star label | Approved | **Implemented** (`preventTierAndAbove`, scoring v0.3) |
+| §3.2 planetary category classification | Approved | Not implemented — `src/scoring/relevance.ts` still uses the v0.1 40-entry matrix |
+| §4 tension removed as a scoring multiplier | Approved | Not implemented — v0.1's per-planet tension table is still active in `src/scoring/internal-score.ts` |
+| §6 3-tier coherence | Approved | Not implemented — `src/scoring/coherence.ts`/`combination-rules.ts` still use the 25-pair table |
+| §8 richness formula | Approved | Not implemented — `src/scoring/internal-score.ts` still uses the 5-term formula |
+| §5.1 parans | Approved (product intent only) | Not implemented — needs its own geometry spec first (`03-astro-calculation-spec.md` §19) |
+
+Per CLAUDE.md §8/§9/§19, none of the "Not implemented" rows should be coded until a new Golden Test suite is authored and approved for this framework — this is sized as its own milestone (see `docs/PROPOSAL-canonical-framework.md` §8).

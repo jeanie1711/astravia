@@ -1,5 +1,7 @@
 # Golden Test Cases v0.1
 
+> **2026-09-05:** `docs/04-scoring-ranking-spec.md` and `docs/06-interpretation-library.md` were approved and rewritten to v0.2 (see `docs/PROPOSAL-canonical-framework.md`). **This document's scoring/interpretation fixtures (levels B and C below) still reflect v0.1** and remain the correct regression contract for the code currently running (scoring v0.3, which is a guardrail refinement of v0.1's formula — see `04-scoring-ranking-spec.md` §16). They will need a companion v0.2 suite, authored and approved *before* any v0.2 scoring/interpretation code is written (CLAUDE.md §8/§9/§19) — do not edit the expected values below to match v0.2 output; author new fixtures alongside them instead. Level A (mathematical invariants — ephemeris, MC/IC/ASC/DSC, timezone) is calculation-layer and unaffected either way.
+
 **Purpose:** Prevent calculation/scoring regressions and stop Claude Code from “fixing” the engine by intuition.
 
 ## 1. Test philosophy

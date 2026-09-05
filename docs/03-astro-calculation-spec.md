@@ -1,4 +1,6 @@
-# Astro Calculation Specification v0.1
+# Astro Calculation Specification v0.2
+
+> **2026-09-05:** Parans moved from "out of scope" to "approved, pending its own geometry spec" per `docs/PROPOSAL-canonical-framework.md` / `docs/04-scoring-ranking-spec.md` v0.2 (§5.1 there). See §19 below. Everything else in this document is unchanged from v0.1 and remains exactly as implemented.
 
 **Purpose:** Deterministic astronomical calculation contract for the MVP.  
 **Audience:** Product owner, Claude Code, developer/tester.  
@@ -13,8 +15,9 @@ The MVP calculates astrocartography angular lines for:
 - 40 planet-angle combinations in total
 - City-to-line proximity
 - Birth-time sensitivity for an uncertainty range
+- Parans (approved 2026-09-05; geometry not yet specified — see §19)
 
-Out of scope: houses, aspects, nodes, Chiron, parans, local-space astrology, relocated natal charts, transits, progressions, synastry.
+Out of scope: houses, aspects, nodes, Chiron, local-space astrology, relocated natal charts, transits, progressions, synastry.
 
 ## 2. Calculation principles
 
@@ -305,3 +308,19 @@ Compare at least 20–30 diverse birth cases against a trusted reference impleme
 - high-declination Moon cases
 
 Document every material difference rather than “tuning” the output to match one example.
+
+## 19. Parans (v0.2 addendum — approved 2026-09-05, geometry not yet specified)
+
+**Do not implement from this section.** It records product intent only, per `docs/PROPOSAL-canonical-framework.md` §3.3; a dedicated technical/mathematical spec (with its own worked examples and Golden Test fixtures) must be written and approved before any code is added.
+
+**What a paran is:** the latitude at which two planetary lines are simultaneously angular (rising, setting, culminating, or anti-culminating) for an observer at that latitude. Unlike MC/IC (fixed-longitude lines) or ASC/DSC (curved lines sampled per latitude), a paran is a **horizontal band**: valid at every longitude along that one latitude, not tied to a single point on the map.
+
+**Why it matters here:** real ACG literature (Jim Lewis onward) treats a paran crossing as a distinct, often more nuanced signal than a single line — two influences blending at a specific latitude. `docs/04-scoring-ranking-spec.md` v0.2 §5.1/§6 wants parans eligible as a reinforcing signal in scoring and as their own named signal type in a City Story (`06-interpretation-library.md` §5), separate from "a second nearby line."
+
+**What the follow-up spec needs to define, at minimum:**
+- For a pair of (body A, angle A) and (body B, angle B): the exact geometric/numerical method to solve for the latitude at which A's diurnal motion places it at angle A's local hour angle *at the same moment* B's diurnal motion places it at angle B's local hour angle.
+- How many of the up to 40 lines are eligible to pair (all 40 choose 2 is a large search space — likely needs a relevance pre-filter, e.g. only pairing lines already within some distance of the target city, or only angle pairs that are astrologically meaningful together).
+- The proximity model for "is this city near this paran" — likely a simple latitude-distance check (unlike line-to-point distance, which considers both lat and lon), since a paran has no longitude dependency.
+- Numerical validation approach (comparable to `03-astro-calculation-spec.md` §18) against a reference implementation or published ACG paran tables, since this is new, unvalidated geometry for this codebase.
+
+**Explicitly not decided here:** the exact algorithm, the pairing/filtering strategy, the output data shape, and how paran proximity composes with the existing `city-proximity.ts`/`geo-distance.ts` modules. All of that is the follow-up spec's job.

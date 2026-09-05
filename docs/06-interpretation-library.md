@@ -1,4 +1,6 @@
-# Interpretation Library v0.1
+# Interpretation Library v0.2 (Canonical Framework)
+
+> **Approved 2026-09-05.** See `docs/PROPOSAL-canonical-framework.md` and `docs/04-scoring-ranking-spec.md` v0.2 for the full rationale. Only §3 (Combination rules) changes in this document — the 40 primary interpretations in §2 are unaffected content and remain exactly as approved; the underlying scoring mechanism that selects primary/secondary influences changes, not the interpretation text itself. **Not yet implemented in code** — see `04-scoring-ranking-spec.md` §16 for what's actually live.
 
 **Purpose:** Approved content primitives for deterministic narrative composition.  
 **Tone:** insightful, reflective, grounded, slightly evocative.  
@@ -20,6 +22,8 @@ type Interpretation = {
 ```
 
 ## 2. The 40 primary interpretations
+
+Grouped below by body, per body's traditional category from `04-scoring-ranking-spec.md` §3.2 (source of truth — not repeated here to avoid two copies of the same table): Sun/Moon/Mercury = **Personal**, Venus/Jupiter = **Benefic**, Mars/Saturn = **Malefic (classical)**, Uranus/Neptune/Pluto = **Transformative (modern)**. The category is what §6 (Coherence) and the guardrail in §9 of that spec key off of; the specific prose below is unaffected by that change and needs no rewriting.
 
 ### Sun
 **Sun–MC — The Visibility Place**  
@@ -311,109 +315,25 @@ Trade-off: control; obsession; manipulation; difficult separations.
 Feel: “Like relationships become catalysts rather than background.”  
 Best for: deep relationship work, high-stakes partnership, transformation.
 
-## 3. Combination rules
+## 3. Combination rules (v0.2 — replaces the 25 hand-picked pairs below)
 
-Each rule contains: pair, coherence by relevant goal, synthesis phrase, trade-off modifier.
+`04-scoring-ranking-spec.md` §6 derives coherence directly from category (§3.2 there) instead of a separately hand-authored lookup table. Three tiers, each with one synthesis pattern instead of 25 individually hand-picked pairs:
 
-1. **Sun-MC + Jupiter-MC** — HIGH Career  
-   Synthesis: “Visibility meets expansion.”  
-   Story: recognition/leadership with broader opportunity. Watch overconfidence.
+1. **Reinforcing** — secondary/paran lands on the *same* angle/domain as the primary.
+   Synthesis pattern: "[Primary's domain theme] meets [secondary's domain theme, same domain] — a clear, doubled-down signal."
+   Example: Sun-MC + Jupiter-MC (both MC/career) → "Visibility meets expansion." Recognition/leadership with broader opportunity; watch overconfidence if both are Benefic/Personal-flavored.
 
-2. **Sun-MC + Mercury-MC** — HIGH Career  
-   “Visibility meets communication.”  
-   Strong for consulting, speaking, product/business communication, knowledge work.
+2. **Layered** — secondary/paran lands on a *different but complementary* domain (e.g. MC + ASC, IC + DSC).
+   Synthesis pattern: "[Primary's domain theme] meets [secondary's domain theme, different domain] — a layered story spanning two life areas."
+   Example: Sun-MC + Venus-ASC → "Professional visibility meets social ease." Good for relationship-led careers.
 
-3. **Sun-MC + Venus-ASC** — HIGH/MEDIUM Career/Love  
-   “Professional visibility meets social ease.”  
-   Good for relationship-led careers; watch people-pleasing.
+3. **Complex/effortful** — secondary/paran is **Malefic or Transformative** while the primary is **Personal/Benefic** (or vice versa).
+   Synthesis pattern: "[Primary's domain theme] meets [secondary's category tone] — powerful, but asks more of you."
+   Example: Sun-MC + Saturn-ASC → "Visibility meets responsibility." Strong builder story; achievement may feel earned rather than effortless. Never phrase this tier as "bad" — always effort/reward framing (CLAUDE.md §12–§13).
 
-4. **Sun-MC + Neptune-ASC** — MEDIUM Career  
-   “Visibility meets inspiration — and ambiguity.”  
-   Preserve Sun opportunity; add clarity/boundary warning.
+When both the primary and secondary are themselves Malefic/Transformative (e.g. Mars + Pluto), the tone intensifies within the same "Complex/effortful" tier rather than introducing a fourth tier — foreground power/conflict/intensity honestly, never romanticised, and always paired with the guardrail note that this combination is score-capped below ★★★★ (`04-scoring-ranking-spec.md` §9).
 
-5. **Sun-MC + Saturn-ASC** — MEDIUM Career/Growth  
-   “Visibility meets responsibility.”  
-   Strong builder story; achievement may feel earned rather than effortless.
-
-6. **Sun-MC + Pluto-MC/ASC** — MEDIUM Career/Growth  
-   “Visibility meets transformation and power.”  
-   High intensity; leadership and control dynamics foregrounded.
-
-7. **Venus-ASC + Jupiter-ASC/DSC** — HIGH Love/Growth  
-   “Connection meets expansion.”  
-   Social openness, helpful people, confidence; watch excess/idealisation.
-
-8. **Venus-ASC + Saturn-ASC** — MEDIUM Love/Growth  
-   “Connection meets maturity.”  
-   Relationships may be meaningful but require boundaries/commitment.
-
-9. **Venus-ASC + Uranus-ASC** — MEDIUM Love/Growth  
-   “Attraction meets reinvention.”  
-   Exciting networks/new identity; less predictable.
-
-10. **Venus-ASC + Neptune-ASC** — MEDIUM Love/Growth  
-    “Magnetism meets idealism.”  
-    Creative/romantic; add projection and boundary warning.
-
-11. **Moon-IC + Jupiter-IC** — HIGH Home  
-    “Belonging meets expansion.”  
-    One of the clearest home/family narratives; still warn against idealising.
-
-12. **Moon-IC + Venus-IC** — HIGH Home/Love  
-    “Belonging meets harmony.”  
-    Strong home, family and lifestyle narrative.
-
-13. **Jupiter-IC + Venus-IC** — HIGH Home/Love  
-    “A generous, comfortable home-base signature.”  
-    Watch excess/comfort-seeking.
-
-14. **Mercury-MC + Jupiter-MC** — HIGH Career  
-    “Ideas meet expansion.”  
-    Teaching, consulting, international business, publishing, networks.
-
-15. **Mercury-MC + Uranus-MC/ASC** — HIGH/MEDIUM Career/Growth  
-    “Communication meets innovation.”  
-    Strong for tech/new ideas; watch fragmentation.
-
-16. **Mars-MC + Jupiter-MC** — HIGH/MEDIUM Career  
-    “Momentum meets expansion.”  
-    Excellent launch energy; overreach/burnout warning.
-
-17. **Mars-MC + Saturn-MC** — MEDIUM Career  
-    “Drive meets discipline.”  
-    High execution potential; heavy workload/frustration if blocked.
-
-18. **Mars + Pluto strong** — LOW/MEDIUM  
-    “Intensity compounds.”  
-    Never romanticise; foreground power/conflict/burnout risk.
-
-19. **Saturn + Pluto strong** — LOW/MEDIUM  
-    “Deep restructuring under pressure.”  
-    Strong transformation but demanding; cap positive language.
-
-20. **Uranus + Neptune strong** — MEDIUM Growth  
-    “Reinvention meets imagination.”  
-    Inspiring but destabilising; practical grounding required.
-
-21. **Uranus + Saturn strong** — MEDIUM Growth/Career  
-    “Freedom meets structure.”  
-    Productive tension between change and responsibility.
-
-22. **Neptune + Jupiter strong** — MEDIUM/HIGH Growth  
-    “Vision meets expansion.”  
-    Inspiring; check unrealistic expectations.
-
-23. **Moon + Neptune strong** — MEDIUM Home/Love/Growth  
-    “Sensitivity is amplified.”  
-    Creative/intuitive; boundaries and emotional clarity important.
-
-24. **Venus + Pluto strong** — MEDIUM Love/Growth  
-    “Attraction meets intensity.”  
-    Magnetic but not necessarily easy; power dynamics matter.
-
-25. **Mercury + Neptune strong** — MEDIUM Career/Growth  
-    “Ideas meet imagination.”  
-    Creative communication; fact-checking/clarity needed.
+This replaces v0.1's 25 explicitly authored pairs (Sun-MC+Jupiter-MC, Venus-ASC+Saturn-ASC, Mars+Pluto strong, etc.) — those specific combinations are still valid *examples* of each tier, not separate rules to maintain going forward.
 
 ## 4. Narrative archetypes
 
@@ -428,7 +348,7 @@ Primary archetypes:
 - REINVENTION — Uranus dominant
 - VISION — Neptune dominant
 - TRANSFORMATION — Pluto dominant
-- LAYERED — strong supportive + strong tension influence
+- LAYERED — strong Personal/Benefic influence + strong Malefic/Transformative influence (Complex/effortful coherence, §3)
 - BALANCED — multi-goal support without one dominant line
 
 ## 5. City Story composition
@@ -453,6 +373,7 @@ Rules:
 - Use max 1 evocative “feel” sentence.
 - Avoid repetitive opening phrases across consecutive city cards.
 - Never infer visa, safety, cost, job market, culture, or quality of life from astrology.
+- **v0.2, pending implementation:** where a paran (`04-scoring-ranking-spec.md` §5.1) is present, name it as its own distinct signal in Key Influences (e.g. "a paran of Venus and Jupiter") rather than folding it silently into "secondary influences" — it is a qualitatively different kind of signal (a latitude band, not a single line) and real ACG treats it as often more specific. Exact wording TBD once paran geometry is specified.
 
 ## 6. Birth-time wording
 

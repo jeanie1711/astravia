@@ -166,7 +166,7 @@ Also reverted the same-day ombre-bar and printed-decimal star experiments: `Star
 
 ---
 
-## 2026-09-05 — Canonical Astrocartography framework: written up as a formal proposal, not adopted
+## 2026-09-05 — Canonical Astrocartography framework: proposed, then approved and adopted the same day
 
 **Decision needed:** Whether to replace the current scoring/interpretation framework (04/06) with one that minimizes invented elements, per the Product Owner's standing question about how much of the app is "real" astrocartography vs. product invention (raised earlier this session, deferred while more concrete UI work was prioritized).
 
@@ -176,4 +176,6 @@ Also reverted the same-day ombre-bar and printed-decimal star experiments: `Star
 
 **Impact:** Sized as a full rewrite of Milestones 1-2, would invalidate every Golden Test fixture's expected numeric values, and needs its own Golden Test suite authored and approved before any implementation, per CLAUDE.md §8/§9/§19.
 
-**Status: OPEN.** Nothing implemented. Full detail in `docs/PROPOSAL-canonical-framework.md`.
+**Update, same day:** Product Owner approved the proposal in full. `docs/03-astro-calculation-spec.md`, `docs/04-scoring-ranking-spec.md`, and `docs/06-interpretation-library.md` were rewritten to v0.2 to reflect it (relevance matrix + tension table → 4-category classification; 25-pair coherence table → 3-tier rule; 5-term score → 2-term richness formula; parans moved from out-of-scope to approved-pending-its-own-geometry-spec).
+
+**Status: APPROVED, implementation pending.** No production code changed by the doc updates. `04-scoring-ranking-spec.md` §16 tracks exactly which pieces are implemented (only the score-level guardrail mechanism, already shipped in v0.3 scoring — see the entry above) vs. still pending a dedicated Golden Test suite per CLAUDE.md §8/§9/§19 before any further code changes. Full detail in `docs/PROPOSAL-canonical-framework.md`.

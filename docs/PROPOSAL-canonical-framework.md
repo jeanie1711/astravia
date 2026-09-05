@@ -1,8 +1,8 @@
 # Proposal: A More Canonical Astrocartography Framework
 
-**Status: OPEN / NOT ADOPTED.** Written at the Product Owner's request (2026-09-05) to fully specify, for review, what the scoring and interpretation layers would look like if redesigned to minimize invented/arbitrary elements and rely as much as possible on real, broadly-taught Astrocartography (ACG) and traditional astrology knowledge — even where that means overriding policy already in `04-scoring-ranking-spec.md` and `06-interpretation-library.md`.
+**Status: APPROVED 2026-09-05.** Written at the Product Owner's request to fully specify, for review, what the scoring and interpretation layers would look like if redesigned to minimize invented/arbitrary elements and rely as much as possible on real, broadly-taught Astrocartography (ACG) and traditional astrology knowledge — even where that means overriding policy already in `04-scoring-ranking-spec.md` and `06-interpretation-library.md`.
 
-This document does not change any approved spec and nothing in it has been implemented. It exists so the Product Owner can decide whether to pursue it, per CLAUDE.md §3/§17 (no silent methodology changes; product decisions get written down before being acted on).
+The Product Owner has approved this direction. **`docs/03-astro-calculation-spec.md`, `docs/04-scoring-ranking-spec.md`, and `docs/06-interpretation-library.md` have been updated to v0.2 to reflect it** — those documents are now the source of truth for the approved methodology. This document remains as the rationale/background record. **No production code has been changed yet** — see `04-scoring-ranking-spec.md` §16 (Implementation status) for exactly what's implemented vs. still pending, and §8/§9 below for why implementation is sequenced as its own milestone with a new Golden Test suite, per CLAUDE.md §3/§8/§9/§19.
 
 ---
 
@@ -160,10 +160,13 @@ This is sized as a **full rewrite of Milestone 1 and most of Milestone 2**, not 
 - Every existing star rating changes meaning — this needs a major version bump across `MODEL_VERSIONS` (calculation stays the same; scoring and interpretation both bump), and if any result has ever been shared/saved, a one-time "we improved the model" note.
 - Rough sizing: comparable to redoing Milestones 1 and 2 from scratch — larger than any single change made in this project so far.
 
-## 9. Open questions for the Product Owner
+## 9. Decision and next steps
 
-1. Adopt in full, adopt partially (e.g. add parans and planet-category framing first while keeping the current score's shape), or shelve.
-2. If proceeding: per CLAUDE.md §19, this should be its own milestone with a Golden Test suite authored and approved *before* touching production scoring/interpretation code, given the size.
-3. Paran geometry (§3.3) needs its own dedicated technical spec before implementation — this document establishes intent, not the algorithm.
+**Decided 2026-09-05: adopted in full.** `03`, `04`, and `06` have been rewritten to v0.2 to reflect it (see the status banner at the top of this document).
 
-**Status: OPEN.** Not implemented. No code, spec, or Golden Test in this repository has been changed by this document.
+Remaining, in order, per CLAUDE.md §19:
+1. Write the dedicated paran geometry spec (§3.3 above only establishes intent, not the algorithm — see `03-astro-calculation-spec.md` §19 for exactly what that follow-up spec needs to define).
+2. Author and get approval for a new Golden Test suite against the v0.2 formulas *before* touching production scoring/interpretation code (`04-scoring-ranking-spec.md` §16 tracks this).
+3. Implement, in this order: planetary category classification → richness formula/coherence tiers → paran calculation+scoring integration (paran implementation depends on step 1's spec).
+
+**Status: APPROVED, implementation pending.** No production code has been changed by this document or by the `03`/`04`/`06` doc updates that followed its approval.

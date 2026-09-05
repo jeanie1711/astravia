@@ -133,3 +133,19 @@ Implemented as a new required step, S05b, inserted right after S05 Calculating f
 Read as compliant with CLAUDE.md §11 ("User sees 1–5 stars, not 0–100"): the number shown is a decimal on the 1–5 star scale itself, not the raw internal composite score (which is still 0–1 and never rendered) or a 0–100/percentage figure.
 
 **Status:** APPROVED / IMPLEMENTED. See `scoreToDisplayValue` and its tests in `tests/scoring/score-city.test.ts`.
+
+---
+
+## 2026-09-05 — Unified ranking: star tier now the primary sort key everywhere (scoring v0.2)
+
+**Decision needed:** none -- directly requested and approved by the Product Owner, after they spotted the underlying cause themselves.
+
+**Context:** Global Top City selection/order and a country's own best/second/third-city selection were both sorted by raw `internalScore` alone. A result whose star tier is capped below its raw score by a guardrail (CLAUDE.md §11: S002 no influence within 500km, S003 TIME_SENSITIVE, the tension+LOW-coherence cap, or a country's five-star qualifying-city rule) could therefore still legitimately outrank an *uncapped* result from a higher star tier shown elsewhere on the same page (e.g. a "4 stars" city ranked #1 globally, above a "5 stars" city inside a country's best-matches list). This was mathematically inevitable, not a bug in either individual formula -- but reads as a contradiction once both are visible together, and became sharply visible once decimal granularity was added to the star display the same day (see the two entries above).
+
+**Change:** Added `compareByStarsThenScore()` (`src/scoring/rank-order.ts`): sorts by `stars` descending first, `internalScore` descending only as a tiebreak within the same tier. Applied consistently everywhere a ranking/selection decision is made (`src/app/api/calculate/route.ts`: the global city sort feeding Top City, the per-country city sort feeding a country's best/second/third selection, and the country-vs-country sort; `src/scoring/dedupe.ts`: which city represents a ~100km cluster). A capped result can now never outrank an uncapped higher tier anywhere in the app -- the two contexts (Top City vs. a country's "best matches") use the same mechanism instead of two that could silently disagree.
+
+This changes ranking/selection order (not any individual city's own `internalScore` or `stars`, and not any scoring weight/threshold), so `MODEL_VERSIONS.scoring` was bumped 0.1 → 0.2 per CLAUDE.md §3/§16. No Golden Test asserts cross-city ranking order via the API route (`tests/golden/*` test `scoreCity`/`computeCountryResult` in isolation on fixed inputs), and `tests/scoring/dedupe.test.ts`'s fixtures use uniform `stars` values, so the tiebreak-by-score behavior there is unchanged; all 139 tests pass unmodified except the new `tests/scoring/rank-order.test.ts` added to cover the comparator itself.
+
+Also reverted the same-day ombre-bar and printed-decimal star experiments: `StarRating.tsx` now shows a **partial visual fill** on the star glyphs (e.g. ~30% of a star tinted for a 0.3 fraction) instead of any printed number, per explicit PO instruction: "không muốn hiển thị số... muốn 0.2/0.3 thể hiện bằng 1/3 ngôi sao được tô màu đen". The underlying `scoreToDisplayValue()` fraction math (previous entry) is unchanged and now drives fill percentage instead of printed text.
+
+**Status:** APPROVED / IMPLEMENTED.

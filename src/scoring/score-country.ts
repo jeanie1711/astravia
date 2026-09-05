@@ -22,7 +22,9 @@ const STABILITY_QUALITY: Record<StabilityLabel, number> = {
 };
 
 // Cities must already represent distinct metros (see dedupe.ts) and be
-// sorted by internalScore descending.
+// sorted with compareByStarsThenScore (star tier first, then internalScore
+// as tiebreak -- see rank-order.ts) so "best/second/third" means the same
+// thing here as it does for the global Top City ranking.
 export function computeCountryResult(countryCode: string, citiesInCountry: RankedCity[]): CountryResult {
   const [best, second, third] = citiesInCountry;
 

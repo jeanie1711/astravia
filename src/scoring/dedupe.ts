@@ -1,5 +1,6 @@
 import { haversineDistanceKm } from "../astro/geo-distance";
 import type { City } from "../astro/types";
+import { compareByStarsThenScore } from "./rank-order";
 import type { RankedCity } from "./types";
 
 const CLUSTER_RADIUS_KM = 100;
@@ -8,12 +9,13 @@ const CLUSTER_RADIUS_KM = 100;
 // ~100 km of each other and keeps only the strongest-scoring
 // representative of each cluster, so top results aren't dominated by
 // several suburbs of the same metro. Greedy: process cities strongest
-// first, skip any city that falls within radius of an already-kept one.
+// first (by star tier, then raw score -- compareByStarsThenScore), skip
+// any city that falls within radius of an already-kept one.
 export function dedupeByProximity(
   rankedCities: RankedCity[],
   citiesById: Map<string, City>
 ): RankedCity[] {
-  const sorted = [...rankedCities].sort((a, b) => b.internalScore - a.internalScore);
+  const sorted = [...rankedCities].sort(compareByStarsThenScore);
   const kept: RankedCity[] = [];
 
   for (const candidate of sorted) {

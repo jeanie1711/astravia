@@ -9,12 +9,15 @@ const STAR_LABEL: Record<Stars, string> = {
   1: "Weak"
 };
 
-// Star glyphs (product feedback 2026-09-05: an ombre bar tried in place of
-// stars didn't read as clearly), plus a one-decimal number computed within
-// the assigned star's own band (scoreToDisplayValue) so two results in the
-// same tier -- e.g. two "Strong" 4-star cities -- no longer look identical.
-// The filled-star COUNT still always equals the real, guardrail-capped
-// `stars` value; only the decimal adds granularity underneath it.
+const GLYPHS = "★★★★★";
+
+// Star glyphs with a partial fill (product feedback 2026-09-05: no printed
+// number -- the fill itself should carry the granularity). `score`, when
+// given, positions the fill within the assigned star's own band via
+// scoreToDisplayValue, so e.g. a fraction of 0.3 into the next star shows
+// as roughly a third of that star filled, without ever reaching the next
+// whole star. Two layered ★★★★★ strings: a faint full row underneath, an
+// accent-colored row on top clipped to `fillPercent` width.
 export function StarRating({
   stars,
   score,
@@ -26,26 +29,32 @@ export function StarRating({
   size?: number;
   showLabel?: boolean;
 }) {
-  const displayValue = score !== undefined ? scoreToDisplayValue(score, stars) : stars;
+  const fillValue = score !== undefined ? scoreToDisplayValue(score, stars) : stars;
+  const fillPercent = Math.min(100, Math.max(0, (fillValue / 5) * 100));
 
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <span role="img" aria-label={`${displayValue.toFixed(1)} out of 5: ${STAR_LABEL[stars]}`}>
-        <span style={{ color: "var(--color-accent)", fontSize: size }}>{"★".repeat(stars)}</span>
-        <span style={{ color: "var(--color-star-empty)", fontSize: size }}>{"★".repeat(5 - stars)}</span>
-      </span>
-      {score !== undefined && (
+      <span
+        role="img"
+        aria-label={`${stars} out of 5: ${STAR_LABEL[stars]}`}
+        style={{ position: "relative", display: "inline-block", fontSize: size, lineHeight: 1, whiteSpace: "nowrap" }}
+      >
+        <span style={{ color: "var(--color-star-empty)" }}>{GLYPHS}</span>
         <span
-          aria-hidden="true"
           style={{
-            font: `600 ${Math.max(11, Math.round(size * 0.75))}px var(--font-body)`,
-            color: "var(--color-ink)",
-            fontVariantNumeric: "tabular-nums"
+            position: "absolute",
+            top: 0,
+            left: 0,
+            display: "block",
+            overflow: "hidden",
+            width: `${fillPercent}%`,
+            color: "var(--color-accent)",
+            whiteSpace: "nowrap"
           }}
         >
-          {displayValue.toFixed(1)}
+          {GLYPHS}
         </span>
-      )}
+      </span>
       {showLabel && (
         <span
           aria-hidden="true"

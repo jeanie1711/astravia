@@ -10,6 +10,7 @@ import type { CityResult } from "../../../interpretation/types";
 import { computeOverall } from "../../../scoring/overall";
 import { dedupeByProximity } from "../../../scoring/dedupe";
 import { toScenarioInfluences } from "../../../scoring/from-calculation";
+import { compareByStarsThenScore } from "../../../scoring/rank-order";
 import { computeCountryResult } from "../../../scoring/score-country";
 import { scoreCity } from "../../../scoring/score-city";
 import { SCORABLE_GOALS, type RankedCity, type ScorableGoal } from "../../../scoring/types";
@@ -77,7 +78,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         })
       : CITIES.map((c) => scoreForGoal(c.id, goal as ScorableGoal));
 
-  ranked.sort((a, b) => b.internalScore - a.internalScore);
+  ranked.sort(compareByStarsThenScore);
 
   const citiesById = new Map<string, City>(CITIES.map((c) => [c.id, c as City]));
   const deduped = dedupeByProximity(ranked, citiesById);
@@ -111,8 +112,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     else byCountry.set(city.countryCode, [r]);
   }
   const countries = Array.from(byCountry.entries())
-    .map(([countryCode, cities]) => computeCountryResult(countryCode, [...cities].sort((a, b) => b.internalScore - a.internalScore)))
-    .sort((a, b) => b.internalScore - a.internalScore)
+    .map(([countryCode, cities]) => computeCountryResult(countryCode, [...cities].sort(compareByStarsThenScore)))
+    .sort(compareByStarsThenScore)
     .slice(0, TOP_COUNTRIES_COUNT);
 
   // A country's best cities (spec §11) needn't crack the global top-20 to

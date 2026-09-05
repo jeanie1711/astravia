@@ -2,12 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { GoalBreakdownBars } from "../components/GoalBreakdownBars";
 import { PillButton } from "../components/PillButton";
 import { ScreenShell } from "../components/ScreenShell";
 import { StarRating } from "../components/StarRating";
 import { useJourney } from "../journey/JourneyContext";
 import type { CalculateRequest, CalculateResponse, CalculateResult } from "../journey/types";
-import type { CountryNarrative, Goal, Stars } from "../../scoring/types";
+import type { CountryNarrative, Goal, ScorableGoal, Stars } from "../../scoring/types";
 
 const NARRATIVE_COPY: Record<CountryNarrative, string> = {
   CORRIDOR: "Several cities here form a consistently strong corridor.",
@@ -15,12 +16,19 @@ const NARRATIVE_COPY: Record<CountryNarrative, string> = {
   MIXED: "Different cities here suit different parts of this goal."
 };
 
-const GOAL_TABS: Array<{ id: Goal; name: string }> = [
+// Distinct hue per narrative shape (globals.css), not one flat tag color for
+// all three -- product feedback 2026-09-05.
+const NARRATIVE_COLORS: Record<CountryNarrative, { fg: string; bg: string }> = {
+  CORRIDOR: { fg: "var(--color-corridor)", bg: "var(--color-corridor-bg)" },
+  ANCHOR: { fg: "var(--color-anchor)", bg: "var(--color-anchor-bg)" },
+  MIXED: { fg: "var(--color-mixed)", bg: "var(--color-mixed-bg)" }
+};
+
+const SCORABLE_TABS: Array<{ id: ScorableGoal; name: string }> = [
   { id: "CAREER", name: "Career" },
   { id: "LOVE", name: "Love & Relationships" },
   { id: "HOME", name: "Home & Family" },
-  { id: "GROWTH", name: "Personal Growth" },
-  { id: "OVERALL", name: "Overall" }
+  { id: "GROWTH", name: "Personal Growth" }
 ];
 
 // Kept deliberately small (§ product feedback 2026-09-04): a focused,
@@ -69,7 +77,10 @@ export default function ResultsPage() {
   if (!results || !journey.viewMode) return null;
 
   const viewMode = journey.viewMode;
-  const goalName = GOAL_TABS.find((g) => g.id === results.goal)?.name ?? results.goal;
+  const goalName =
+    results.goal === "OVERALL"
+      ? "your overall picture"
+      : SCORABLE_TABS.find((g) => g.id === results.goal)?.name ?? results.goal;
   const topCities = results.results.slice(0, MAX_CITIES_SHOWN);
   const topCountries = results.countries.slice(0, MAX_COUNTRIES_SHOWN);
   const activeTopStars = viewMode === "city" ? topCities[0]?.ranked.stars ?? 1 : topCountries[0]?.stars ?? 1;
@@ -150,7 +161,13 @@ export default function ResultsPage() {
         </div>
 
         <h2 style={{ margin: "0 0 6px", font: "600 30px var(--font-display)", color: "var(--color-ink)" }}>
-          {viewMode === "city" ? `Your strongest places for ${goalName}` : `Your strongest countries for ${goalName}`}
+          {results.goal === "OVERALL"
+            ? viewMode === "city"
+              ? "Your overall picture, by place"
+              : "Your overall picture, by country"
+            : viewMode === "city"
+              ? `Your strongest places for ${goalName}`
+              : `Your strongest countries for ${goalName}`}
         </h2>
         {isMixed ? (
           <p style={{ margin: "0 0 8px", font: "400 14px/1.5 var(--font-body)", color: "var(--color-muted)" }}>
@@ -164,35 +181,89 @@ export default function ResultsPage() {
           </p>
         )}
         <p style={{ margin: "0 0 20px", font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
-          {viewMode === "city"
-            ? "★ shows how strongly a place fits " +
-              goalName +
-              ". Open a place to see how much that could shift if your birth time isn't exact."
-            : "★ shows how strongly a country fits " +
-              goalName +
-              " overall, based on its strongest cities together -- not just its single best one."}
+          {results.goal === "OVERALL"
+            ? viewMode === "city"
+              ? "★ shows how strongly a place supports all four goals together. Open a place to see the breakdown."
+              : "★ shows how strongly a country supports all four goals together, based on its strongest cities."
+            : viewMode === "city"
+              ? "★ shows how strongly a place fits " +
+                goalName +
+                ". Open a place to see how much that could shift if your birth time isn't exact."
+              : "★ shows how strongly a country fits " +
+                goalName +
+                " overall, based on its strongest cities together, not just its single best one."}
         </p>
 
-        <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
-          {GOAL_TABS.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() => switchGoal(g.id)}
-              style={{
-                padding: "8px 14px",
-                borderRadius: 100,
-                border: g.id === results.goal ? "2px solid var(--color-accent)" : "1px solid var(--color-border)",
-                background: g.id === results.goal ? "var(--color-surface)" : "#ffffff",
-                font: "600 12px var(--font-body)",
-                color: "var(--color-ink)",
-                cursor: "pointer"
-              }}
-            >
-              {g.name}
-            </button>
-          ))}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {SCORABLE_TABS.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => switchGoal(g.id)}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: 100,
+                  border: g.id === results.goal ? "2px solid var(--color-accent)" : "1px solid var(--color-border)",
+                  background: g.id === results.goal ? "var(--color-surface)" : "#ffffff",
+                  font: "600 12px var(--font-body)",
+                  color: "var(--color-ink)",
+                  cursor: "pointer"
+                }}
+              >
+                {g.name}
+              </button>
+            ))}
+          </div>
+          <div
+            aria-hidden="true"
+            style={{ width: 1, height: 20, background: "var(--color-border-strong)", flexShrink: 0 }}
+          />
+          <button
+            type="button"
+            onClick={() => switchGoal("OVERALL")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 16px",
+              borderRadius: 100,
+              border: "none",
+              background: results.goal === "OVERALL" ? "var(--gradient-accent)" : "var(--color-ink)",
+              color: "var(--color-ink-on-dark)",
+              font: "600 12px var(--font-body)",
+              cursor: "pointer",
+              boxShadow: results.goal === "OVERALL" ? "var(--shadow-cta)" : "none",
+              flexShrink: 0
+            }}
+          >
+            <span aria-hidden="true">◎</span> Your overall picture
+          </button>
         </div>
+
+        {results.goal === "OVERALL" && (
+          <div
+            style={{
+              background: "var(--color-ink)",
+              color: "var(--color-ink-on-dark)",
+              borderRadius: 14,
+              padding: "16px 20px",
+              marginBottom: 24,
+              display: "flex",
+              gap: 12,
+              alignItems: "flex-start"
+            }}
+          >
+            <span aria-hidden="true" style={{ fontSize: 18, lineHeight: 1.3 }}>
+              ◎
+            </span>
+            <p style={{ margin: 0, font: "400 13px/1.6 var(--font-body)" }}>
+              <strong style={{ font: "600 13px var(--font-body)" }}>This isn't a fifth goal.</strong> Overall blends
+              your four goals into one big-picture score, so you can see where a place supports Career, Love, Home,
+              and Growth together, not just one of them.
+            </p>
+          </div>
+        )}
 
         {loading && (
           <p style={{ font: "400 13px var(--font-body)", color: "var(--color-muted)" }}>Recalculating…</p>
@@ -241,9 +312,11 @@ export default function ResultsPage() {
 
             {topCities.map((r, i) => {
               const story = results.stories[r.ranked.cityId];
+              const goalTag = results.goal === "OVERALL" ? "OVERALL" : goalName.toUpperCase();
               return (
                 <div
                   key={r.ranked.cityId}
+                  className={i === 0 ? "astravia-card-top" : undefined}
                   style={{
                     background: "var(--color-surface)",
                     border: "1px solid var(--color-border)",
@@ -270,7 +343,7 @@ export default function ResultsPage() {
                           marginTop: 6
                         }}
                       >
-                        {[goalName.toUpperCase(), story.primaryTheme, ...story.secondaryThemes.slice(0, 1)]
+                        {[goalTag, story.primaryTheme, ...story.secondaryThemes.slice(0, 1)]
                           .filter(Boolean)
                           .join(" · ")}
                       </div>
@@ -279,6 +352,7 @@ export default function ResultsPage() {
                       </div>
                     </>
                   )}
+                  {r.goalBreakdown && <GoalBreakdownBars breakdown={r.goalBreakdown} />}
                   <PillButton
                     variant="accent"
                     style={{ marginTop: 14 }}
@@ -307,6 +381,7 @@ export default function ResultsPage() {
             {topCountries.map((co, i) => (
               <div
                 key={co.countryCode}
+                className={i === 0 ? "astravia-card-top" : undefined}
                 style={{
                   background: "var(--color-surface)",
                   border: "1px solid var(--color-border)",
@@ -329,8 +404,8 @@ export default function ResultsPage() {
                       font: "600 10px var(--font-body)",
                       letterSpacing: "0.06em",
                       textTransform: "uppercase",
-                      color: "var(--color-accent-strong)",
-                      background: "var(--color-tag-bg)",
+                      color: NARRATIVE_COLORS[co.narrative].fg,
+                      background: NARRATIVE_COLORS[co.narrative].bg,
                       borderRadius: 100,
                       padding: "3px 9px",
                       whiteSpace: "nowrap"
@@ -342,6 +417,7 @@ export default function ResultsPage() {
                 <p style={{ font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)", margin: "6px 0 14px" }}>
                   {NARRATIVE_COPY[co.narrative]}
                 </p>
+                {co.goalBreakdown && <GoalBreakdownBars breakdown={co.goalBreakdown} />}
                 <div
                   style={{
                     font: "600 11px var(--font-body)",

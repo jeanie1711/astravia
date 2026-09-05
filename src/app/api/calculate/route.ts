@@ -15,7 +15,7 @@ import { toScenarioInfluences } from "../../../scoring/from-calculation";
 import { computeCountryResult } from "../../../scoring/score-country";
 import { scoreCity } from "../../../scoring/score-city";
 import { SCORABLE_GOALS, type ParanCandidate, type RankedCity, type ScorableGoal } from "../../../scoring/types";
-import type { CalculateRequest, CalculateResponse, CalculateResult } from "../../journey/types";
+import type { CalculateRequest, CalculateResponse, CalculateResult, GoalBreakdown } from "../../journey/types";
 
 // Kept small on purpose (product feedback 2026-09-04): the UI only ever
 // shows the top 3 of each, but we keep a little headroom server-side for
@@ -88,21 +88,71 @@ export async function POST(request: Request): Promise<NextResponse> {
     return scoreCity(cityId, g, toScenarioInfluences(group), uncertaintyMinutes, byCityParans.get(cityId) ?? []);
   }
 
+  // Only populated for an Overall request -- kept around so both the
+  // per-city AND per-country breakdowns below can show "why" a place
+  // scored well overall without recomputing anything (product feedback
+  // 2026-09-05: Overall reads as a confusing 5th goal unless the UI can
+  // show it's a synthesis of Career/Love/Home/Growth, not a fresh score).
+  let perGoalByCity: Map<string, Record<ScorableGoal, RankedCity>> | undefined;
+
   const ranked: RankedCity[] =
     goal === "OVERALL"
-      ? CITIES.map((c) => {
-          const perGoal = Object.fromEntries(SCORABLE_GOALS.map((g) => [g, scoreForGoal(c.id, g)])) as Record<
-            ScorableGoal,
-            RankedCity
-          >;
-          return computeOverall(c.id, perGoal);
-        })
+      ? (() => {
+          perGoalByCity = new Map();
+          return CITIES.map((c) => {
+            const perGoal = Object.fromEntries(SCORABLE_GOALS.map((g) => [g, scoreForGoal(c.id, g)])) as Record<
+              ScorableGoal,
+              RankedCity
+            >;
+            perGoalByCity!.set(c.id, perGoal);
+            return computeOverall(c.id, perGoal);
+          });
+        })()
       : CITIES.map((c) => scoreForGoal(c.id, goal as ScorableGoal));
 
   ranked.sort((a, b) => b.internalScore - a.internalScore);
 
   const citiesById = new Map<string, City>(CITIES.map((c) => [c.id, c as City]));
   const deduped = dedupeByProximity(ranked, citiesById);
+
+  function cityGoalBreakdown(cityId: string): GoalBreakdown | undefined {
+    const perGoal = perGoalByCity?.get(cityId);
+    if (!perGoal) return undefined;
+    const breakdown: GoalBreakdown = {};
+    for (const g of SCORABLE_GOALS) {
+      breakdown[g] = { stars: perGoal[g].stars, internalScore: perGoal[g].internalScore };
+    }
+    return breakdown;
+  }
+
+  // A country's OWN aggregate score for each goal separately -- run the
+  // same dedup/group/computeCountryResult pipeline once per goal (not
+  // once per country) using each goal's own city rankings, so a country's
+  // breakdown reflects the whole country's cities for that goal, not just
+  // its Overall-ranked best city's own per-goal numbers.
+  function computeGoalCountryBreakdowns(countryCodes: string[]): Map<string, GoalBreakdown> {
+    const result = new Map<string, GoalBreakdown>(countryCodes.map((code) => [code, {}]));
+    if (!perGoalByCity) return result;
+
+    for (const g of SCORABLE_GOALS) {
+      const goalRanked = CITIES.map((c) => perGoalByCity!.get(c.id)![g]);
+      const goalDeduped = dedupeByProximity(goalRanked, citiesById);
+      const byCountryForGoal = new Map<string, RankedCity[]>();
+      for (const r of goalDeduped) {
+        const code = citiesById.get(r.cityId)!.countryCode;
+        if (!result.has(code)) continue;
+        const list = byCountryForGoal.get(code);
+        if (list) list.push(r);
+        else byCountryForGoal.set(code, [r]);
+      }
+      for (const code of countryCodes) {
+        const citiesInCountry = (byCountryForGoal.get(code) ?? []).sort((a, b) => b.internalScore - a.internalScore);
+        const countryResult = computeCountryResult(code, citiesInCountry);
+        result.get(code)![g] = { stars: countryResult.stars, internalScore: countryResult.internalScore };
+      }
+    }
+    return result;
+  }
 
   const top = deduped.slice(0, TOP_RESULTS_COUNT);
 
@@ -132,10 +182,17 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (list) list.push(r);
     else byCountry.set(city.countryCode, [r]);
   }
-  const countries = Array.from(byCountry.entries())
+  const countriesRaw = Array.from(byCountry.entries())
     .map(([countryCode, cities]) => computeCountryResult(countryCode, [...cities].sort((a, b) => b.internalScore - a.internalScore)))
     .sort((a, b) => b.internalScore - a.internalScore)
     .slice(0, TOP_COUNTRIES_COUNT);
+
+  const countryGoalBreakdowns =
+    goal === "OVERALL" ? computeGoalCountryBreakdowns(countriesRaw.map((co) => co.countryCode)) : undefined;
+  const countries: CalculateResponse["countries"] = countriesRaw.map((co) => ({
+    ...co,
+    goalBreakdown: countryGoalBreakdowns?.get(co.countryCode)
+  }));
 
   // A country's best cities (spec §11) needn't crack the global top-20 to
   // drive that country's own score. Compose+expose those too so every city
@@ -149,7 +206,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const city = citiesById.get(id);
     if (!rankedCity || !city) continue;
     stories[id] = composeStoryFor(rankedCity);
-    extraResults.push({ city, ranked: rankedCity });
+    extraResults.push({ city, ranked: rankedCity, goalBreakdown: cityGoalBreakdown(id) });
   }
 
   const cityNames: CalculateResponse["cityNames"] = {};
@@ -164,7 +221,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const response: CalculateResponse = {
     goal,
-    results: top.map((r) => ({ city: citiesById.get(r.cityId)!, ranked: r })),
+    results: top.map((r) => ({ city: citiesById.get(r.cityId)!, ranked: r, goalBreakdown: cityGoalBreakdown(r.cityId) })),
     extraResults,
     stories,
     pattern,

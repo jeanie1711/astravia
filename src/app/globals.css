@@ -20,6 +20,24 @@
   --shadow-cta: 0 6px 16px rgba(226, 138, 80, 0.35);
   --font-display: var(--font-lora), Georgia, serif;
   --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* A warm "dawn horizon" gradient for primary CTAs -- product feedback
+     2026-09-05: the flat solid accent read as a bit plain. Stays in the
+     same terracotta family already approved (no new hue introduced), just
+     given more depth. */
+  --gradient-accent: linear-gradient(135deg, #f3aa6c 0%, #e28a50 48%, #c25a2e 100%);
+  --gradient-accent-hover: linear-gradient(135deg, #f6b67c 0%, #e6935c 48%, #c9633a 100%);
+
+  /* Country narrative colors (CORRIDOR/ANCHOR/MIXED): distinct hues so the
+     three shapes of a country result are visually, not just textually,
+     different -- and so the results page has more than one accent color
+     on it. Chosen to stay muted/editorial, not saturated/techy. */
+  --color-corridor: #2f7d68;
+  --color-corridor-bg: #e2f0ea;
+  --color-anchor: #c96f3a;
+  --color-anchor-bg: #f3e6d2;
+  --color-mixed: #96608a;
+  --color-mixed-bg: #f1e6ee;
 }
 
 * {
@@ -45,4 +63,39 @@ button {
 
 input {
   font-family: inherit;
+}
+
+.astravia-btn-accent {
+  background: var(--gradient-accent);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.astravia-btn-accent:hover {
+  background: var(--gradient-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(196, 90, 46, 0.32);
+}
+
+.astravia-btn-accent:active {
+  transform: translateY(0);
+}
+
+/* A soft glow on the #1 result card, so the top match feels like a real
+   highlight rather than just another row in a list. */
+.astravia-card-top {
+  position: relative;
+  border-color: rgba(226, 138, 80, 0.35) !important;
+}
+
+.astravia-card-top::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(243, 170, 108, 0.55), rgba(194, 90, 46, 0.15) 60%, transparent 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }

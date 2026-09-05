@@ -1,6 +1,7 @@
 import type { Angle, Body } from "../astro/types";
 import { MODEL_VERSIONS } from "../config/versions";
 import type { RankedCity } from "../scoring/types";
+import { getArchetypeCopy } from "./archetypes";
 import { lookupSynthesis } from "./combinations";
 import { confidenceExplanation, goalDisplayName, influenceLabel, starWording } from "./display";
 import { getInterpretation } from "./library";
@@ -92,13 +93,19 @@ export function composeCityStory(
   const reinforcement = rankedCity.paranInfluence ?? firstSecondary;
   const reinforcementInterp = reinforcement ? getInterpretation(reinforcement.body, reinforcement.angle) : undefined;
 
-  // Why it stands out: primary first, then a synthesized (not concatenated)
-  // secondary/paran influence when one exists (spec §6-§7: use an explicit
-  // combination rule where available; never dump two independent
-  // definitions back to back).
+  // Why it stands out: primary influence first (CLAUDE.md §12, I001), then
+  // an already-approved archetype description (06 §4) in plain language --
+  // it existed in the content library but was never actually surfaced
+  // anywhere in the UI before product feedback 2026-09-05 asked for
+  // richer, clearer City Story content. Then a synthesized (not
+  // concatenated) secondary/paran influence when one exists (spec §6-§7:
+  // use an explicit combination rule where available; never dump two
+  // independent definitions back to back).
+  const archetypeCopy = getArchetypeCopy(rankedCity.archetypeId);
   const sentences: string[] = [
     `Your ${influenceLabel(primary.body, primary.angle)} influence is especially strong here.`,
-    `In astrocartography, this combination is traditionally associated with ${primaryInterp.coreTheme}.`
+    `In astrocartography, this combination is traditionally associated with ${primaryInterp.coreTheme}.`,
+    archetypeCopy.description
   ];
   if (reinforcement && reinforcementInterp) {
     const synthesis = lookupSynthesis(primary, reinforcement);

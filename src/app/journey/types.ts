@@ -1,6 +1,6 @@
 import type { City } from "../../astro/types";
 import type { CityResult } from "../../interpretation/types";
-import type { CountryResult, Goal, RankedCity } from "../../scoring/types";
+import type { CountryResult, Goal, RankedCity, ScorableGoal, Stars } from "../../scoring/types";
 
 export type UncertaintyMinutes = 0 | 15 | 30 | 60;
 
@@ -21,10 +21,22 @@ export type CalculateRequest = {
   goal: Goal;
 };
 
+// Per-goal stars/score, attached only to Overall results (product feedback
+// 2026-09-05: Overall reads as a confusing 5th independent goal unless the
+// UI can show it's a synthesis of the other four). Absent for a
+// non-Overall request.
+export type GoalBreakdown = Partial<Record<ScorableGoal, { stars: Stars; internalScore: number }>>;
+
 export type CalculateResult = {
   city: City;
   ranked: RankedCity;
+  goalBreakdown?: GoalBreakdown | undefined;
 };
+
+// A country's own aggregate score for each of the four goals separately
+// (not borrowed from any single city) -- see route.ts's
+// computeGoalCountryBreakdowns. Only populated for an Overall request.
+export type CountryResultWithBreakdown = CountryResult & { goalBreakdown?: GoalBreakdown | undefined };
 
 export type CalculateResponse = {
   goal: Goal;
@@ -36,7 +48,7 @@ export type CalculateResponse = {
   extraResults: CalculateResult[];
   stories: Record<string, CityResult>;
   pattern: string | undefined;
-  countries: CountryResult[];
+  countries: CountryResultWithBreakdown[];
   // Display names for every city referenced anywhere in the response,
   // including country topCityIds that may fall outside the top-20 global
   // `results` list (e.g. a country's 2nd/3rd best city).

@@ -7,6 +7,7 @@ import { PillButton } from "../../components/PillButton";
 import { ScreenShell } from "../../components/ScreenShell";
 import { StarRating } from "../../components/StarRating";
 import { useJourney } from "../../journey/JourneyContext";
+import { getArchetypeCopy } from "../../../interpretation/archetypes";
 import { confidenceLabel } from "../../../interpretation/display";
 
 const INFLUENCE_LABEL: Record<string, string> = {
@@ -47,6 +48,8 @@ export default function CityStoryPage() {
       </ScreenShell>
     );
   }
+
+  const archetypeCopy = getArchetypeCopy(story.archetypeId);
 
   function share() {
     if (navigator.share) {
@@ -99,12 +102,33 @@ export default function CityStoryPage() {
           {[story.primaryTheme, ...story.secondaryThemes].filter(Boolean).join(" · ").toUpperCase()}
         </div>
 
+        {story.archetypeId !== "UNCLASSIFIED" && (
+          <span
+            style={{
+              display: "inline-block",
+              marginTop: 12,
+              padding: "5px 13px",
+              borderRadius: 100,
+              background: "var(--color-tag-bg)",
+              color: "var(--color-accent-strong)",
+              font: "600 11px var(--font-body)",
+              letterSpacing: "0.05em",
+              textTransform: "uppercase"
+            }}
+          >
+            {archetypeCopy.name}
+          </span>
+        )}
+
         <SectionHeading>Why {story.city} stands out</SectionHeading>
         <p style={{ margin: 0, font: "400 16px/1.65 var(--font-body)", color: "#3E5865" }}>{story.whyItStandsOut}</p>
 
         {story.opportunities.length > 0 && (
           <>
             <SectionHeading>The opportunity</SectionHeading>
+            <p style={{ margin: "0 0 10px", font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
+              This combination is traditionally associated with:
+            </p>
             <ul style={{ margin: 0, paddingLeft: 20 }}>
               {story.opportunities.map((o, i) => (
                 <li key={i} style={{ font: "400 15px/1.6 var(--font-body)", color: "#3E5865", marginBottom: 4 }}>
@@ -118,6 +142,9 @@ export default function CityStoryPage() {
         {story.tradeOffs.length > 0 && (
           <>
             <SectionHeading>The trade-off</SectionHeading>
+            <p style={{ margin: "0 0 8px", font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
+              Every strong placement has a flip side worth keeping in mind:
+            </p>
             <p style={{ margin: 0, font: "400 15px/1.65 var(--font-body)", color: "#3E5865" }}>
               {story.tradeOffs.join(" ")}
             </p>
@@ -141,6 +168,9 @@ export default function CityStoryPage() {
         {story.bestFor.length > 0 && (
           <>
             <SectionHeading>Best suited for</SectionHeading>
+            <p style={{ margin: "0 0 10px", font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
+              People often turn to a placement like this for:
+            </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {story.bestFor.map((b) => (
                 <div

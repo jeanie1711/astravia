@@ -14,16 +14,22 @@ import type { ViewMode } from "../../journey/types";
 // page made it look like a bug when a country's best city and a top-3 city
 // didn't match up. Asking the user to pick a lens up front keeps each page
 // internally consistent instead of trying to reconcile two rankings at once.
-const OPTIONS: Array<{ id: ViewMode; name: string; desc: string }> = [
+// Shortened to one line each (product feedback 2026-09-06): the original
+// two-sentence descriptions made the choice feel heavier than it is.
+const OPTIONS: Array<{ id: ViewMode; icon: string; name: string; tagline: string; desc: string }> = [
   {
     id: "city",
+    icon: "📍",
     name: "By city",
-    desc: "Individual cities, ranked by how strongly each one on its own supports this goal. Best if you want specific places to consider."
+    tagline: "Specific places",
+    desc: "Individual cities ranked on their own strength for this goal."
   },
   {
     id: "country",
+    icon: "📍📍📍",
     name: "By country",
-    desc: "Countries, ranked by how many strong cities they contain -- not just their single best one. Best if you're flexible on the exact city and want to see which regions stand out overall."
+    tagline: "Broader regions",
+    desc: "Countries ranked by how many strong cities they contain together."
   }
 ];
 
@@ -62,7 +68,10 @@ export default function ViewModePage() {
             key={o.id}
             onClick={() => setSelected(o.id)}
             style={{
-              padding: "18px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              padding: "16px 20px",
               borderRadius: 14,
               background: o.id === selected ? "var(--color-surface)" : "#ffffff",
               marginBottom: 12,
@@ -71,9 +80,26 @@ export default function ViewModePage() {
               boxShadow: o.id === selected ? "var(--shadow-card)" : "none"
             }}
           >
-            <div style={{ font: "600 16px var(--font-body)", color: "var(--color-ink)" }}>{o.name}</div>
-            <div style={{ font: "400 13.5px/1.55 var(--font-body)", color: "var(--color-muted)", marginTop: 4 }}>
-              {o.desc}
+            <span aria-hidden="true" style={{ fontSize: 20, letterSpacing: -2 }}>
+              {o.icon}
+            </span>
+            <div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                <span style={{ font: "600 16px var(--font-body)", color: "var(--color-ink)" }}>{o.name}</span>
+                <span
+                  style={{
+                    font: "600 10px var(--font-body)",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    color: "var(--color-accent-strong)"
+                  }}
+                >
+                  {o.tagline}
+                </span>
+              </div>
+              <div style={{ font: "400 13px/1.5 var(--font-body)", color: "var(--color-muted)", marginTop: 2 }}>
+                {o.desc}
+              </div>
             </div>
           </div>
         ))}

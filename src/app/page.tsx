@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { ScreenShell } from "./components/ScreenShell";
 import { PillButton } from "./components/PillButton";
 import { useJourney } from "./journey/JourneyContext";
@@ -36,6 +37,7 @@ const ANGLES: Array<{ id: string; fullName: string; position: string; meaning: s
 export default function LandingPage() {
   const router = useRouter();
   const { resetJourney } = useJourney();
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
 
   function start() {
     resetJourney();
@@ -82,96 +84,7 @@ export default function LandingPage() {
         </p>
       </div>
 
-      <div style={{ padding: "56px 32px 0" }}>
-        <div
-          style={{
-            font: "600 11px var(--font-body)",
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "var(--color-faint)",
-            textAlign: "center"
-          }}
-        >
-          How it works
-        </div>
-        <h2
-          style={{
-            font: "600 26px var(--font-display)",
-            color: "var(--color-ink)",
-            textAlign: "center",
-            margin: "10px auto 16px",
-            maxWidth: 440
-          }}
-        >
-          What is astrocartography?
-        </h2>
-        <p
-          style={{
-            font: "400 15px/1.7 var(--font-body)",
-            color: "var(--color-muted)",
-            maxWidth: 480,
-            margin: "0 auto 28px",
-            textAlign: "center"
-          }}
-        >
-          Imagine the exact moment you were born, looking up at the sky: each planet sits at some position relative
-          to the horizon and the sky above you. Four points mark the most significant of these positions.
-        </p>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-          {ANGLES.map((a) => (
-            <div
-              key={a.id}
-              style={{
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-border)",
-                borderRadius: 14,
-                padding: "18px 20px",
-                boxShadow: "var(--shadow-card)"
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                <span
-                  style={{
-                    font: "700 22px var(--font-display)",
-                    backgroundImage: "var(--gradient-accent)",
-                    backgroundClip: "text",
-                    WebkitBackgroundClip: "text",
-                    color: "transparent",
-                    WebkitTextFillColor: "transparent"
-                  }}
-                >
-                  {a.id}
-                </span>
-                <span style={{ font: "600 12px var(--font-body)", color: "var(--color-faint)" }}>{a.fullName}</span>
-              </div>
-              <p style={{ font: "400 13px/1.5 var(--font-body)", color: "var(--color-muted)", margin: "8px 0 6px" }}>
-                {a.position}
-              </p>
-              <p style={{ font: "600 13px var(--font-body)", color: "var(--color-accent-strong)", margin: 0 }}>
-                {a.meaning}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        <p
-          style={{
-            font: "400 14px/1.7 var(--font-body)",
-            color: "var(--color-muted)",
-            maxWidth: 480,
-            margin: "28px auto 0",
-            textAlign: "center"
-          }}
-        >
-          Astrocartography draws one line on the world map for every planet-and-angle pair: everywhere on Earth
-          where, at your exact birth moment, that planet sat at that exact position. Astravia tracks ten planets
-          this way, from the Sun and Moon through Mercury, Venus, and Mars, out to Jupiter, Saturn, Uranus, Neptune,
-          and Pluto, each carrying its own traditional theme.
-        </p>
-      </div>
-
-      <div aria-hidden="true" style={{ marginTop: 56, lineHeight: 0 }}>
+      <div aria-hidden="true" style={{ marginTop: 40, lineHeight: 0 }}>
         <Image
           src="/astravia-footer.png"
           alt=""
@@ -180,6 +93,122 @@ export default function LandingPage() {
           style={{ width: "100%", height: "auto" }}
           priority
         />
+      </div>
+
+      <div style={{ padding: "40px 32px 0" }}>
+        <h2
+          style={{
+            font: "600 24px var(--font-display)",
+            color: "var(--color-ink)",
+            textAlign: "center",
+            margin: "0 auto 12px",
+            maxWidth: 440
+          }}
+        >
+          How Astravia finds your places
+        </h2>
+        <p
+          style={{
+            font: "400 15px/1.7 var(--font-body)",
+            color: "var(--color-muted)",
+            maxWidth: 460,
+            margin: "0 auto 16px",
+            textAlign: "center"
+          }}
+        >
+          Your birth moment creates a map of planetary lines around the world. Astravia looks for cities near your
+          strongest patterns and translates them into plain-language possibilities.
+        </p>
+        <div style={{ textAlign: "center" }}>
+          <button
+            type="button"
+            onClick={() => setShowHowItWorks((v) => !v)}
+            style={{
+              border: "none",
+              background: "none",
+              color: "var(--color-accent-strong)",
+              font: "600 13px var(--font-body)",
+              cursor: "pointer",
+              padding: 0
+            }}
+          >
+            {showHowItWorks ? "Hide how astrocartography works ↑" : "How astrocartography works →"}
+          </button>
+        </div>
+
+        {showHowItWorks && (
+          <div style={{ marginTop: 28 }}>
+            <p
+              style={{
+                font: "400 15px/1.7 var(--font-body)",
+                color: "var(--color-muted)",
+                maxWidth: 480,
+                margin: "0 auto 24px",
+                textAlign: "center"
+              }}
+            >
+              Imagine the exact moment you were born, looking up at the sky: each planet sits at some position
+              relative to the horizon and the sky above you. Four points mark the most significant of these
+              positions.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+              {ANGLES.map((a) => (
+                <div
+                  key={a.id}
+                  style={{
+                    background: "var(--color-surface)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 14,
+                    padding: "18px 20px",
+                    boxShadow: "var(--shadow-card)"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <span
+                      style={{
+                        font: "700 22px var(--font-display)",
+                        backgroundImage: "var(--gradient-accent)",
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        color: "transparent",
+                        WebkitTextFillColor: "transparent"
+                      }}
+                    >
+                      {a.id}
+                    </span>
+                    <span style={{ font: "600 12px var(--font-body)", color: "var(--color-faint)" }}>
+                      {a.fullName}
+                    </span>
+                  </div>
+                  <p
+                    style={{ font: "400 13px/1.5 var(--font-body)", color: "var(--color-muted)", margin: "8px 0 6px" }}
+                  >
+                    {a.position}
+                  </p>
+                  <p style={{ font: "600 13px var(--font-body)", color: "var(--color-accent-strong)", margin: 0 }}>
+                    {a.meaning}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <p
+              style={{
+                font: "400 14px/1.7 var(--font-body)",
+                color: "var(--color-muted)",
+                maxWidth: 480,
+                margin: "28px auto 0",
+                textAlign: "center"
+              }}
+            >
+              Astrocartography draws one line on the world map for every planet-and-angle pair: everywhere on Earth
+              where, at your exact birth moment, that planet sat at that exact position. Astravia tracks ten planets
+              this way, from the Sun and Moon through Mercury, Venus, and Mars, out to Jupiter, Saturn, Uranus,
+              Neptune, and Pluto, each carrying its own traditional theme.
+            </p>
+          </div>
+        )}
       </div>
 
       <p

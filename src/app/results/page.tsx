@@ -16,6 +16,15 @@ const NARRATIVE_COPY: Record<CountryNarrative, string> = {
   MIXED: "Different cities here suit different parts of this goal."
 };
 
+// Plain-language badge text (product feedback 2026-09-06): the raw enum
+// name ("CORRIDOR") read as a technical label, not a description a
+// newcomer would recognize.
+const NARRATIVE_LABEL: Record<CountryNarrative, string> = {
+  CORRIDOR: "Strong city cluster",
+  ANCHOR: "Standout city",
+  MIXED: "Mixed strengths"
+};
+
 // Distinct hue per narrative shape (globals.css), not one flat tag color for
 // all three -- product feedback 2026-09-05.
 const NARRATIVE_COLORS: Record<CountryNarrative, { fg: string; bg: string }> = {
@@ -23,6 +32,8 @@ const NARRATIVE_COLORS: Record<CountryNarrative, { fg: string; bg: string }> = {
   ANCHOR: { fg: "var(--color-anchor)", bg: "var(--color-anchor-bg)" },
   MIXED: { fg: "var(--color-mixed)", bg: "var(--color-mixed-bg)" }
 };
+
+const OVERALL_INFO_SEEN_KEY = "astravia_overall_info_seen";
 
 const SCORABLE_TABS: Array<{ id: ScorableGoal; name: string }> = [
   { id: "CAREER", name: "Career" },
@@ -40,6 +51,7 @@ export default function ResultsPage() {
   const router = useRouter();
   const { journey, hydrated, setJourney } = useJourney();
   const [loading, setLoading] = useState(false);
+  const [showOverallInfo, setShowOverallInfo] = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -71,6 +83,27 @@ export default function ResultsPage() {
 
   function switchView(mode: "city" | "country") {
     setJourney((prev) => ({ ...prev, viewMode: mode }));
+  }
+
+  // Two-tier goal picker (product feedback 2026-09-06): "Overall" used to
+  // sit in the same row as the four life-area goals, which is exactly why
+  // it read as a confusing fifth one. Selecting "Whole picture" explains
+  // itself once via a dismissible tooltip (localStorage-gated) rather than
+  // a dark box repeated on every screen.
+  function selectWholePicture() {
+    switchGoal("OVERALL");
+    if (typeof window !== "undefined" && window.localStorage.getItem(OVERALL_INFO_SEEN_KEY) !== "1") {
+      setShowOverallInfo(true);
+    }
+  }
+
+  function selectLifeArea() {
+    if (journey.results?.goal === "OVERALL") switchGoal("CAREER");
+  }
+
+  function dismissOverallInfo() {
+    setShowOverallInfo(false);
+    if (typeof window !== "undefined") window.localStorage.setItem(OVERALL_INFO_SEEN_KEY, "1");
   }
 
   const results = journey.results;
@@ -194,8 +227,76 @@ export default function ResultsPage() {
                 " overall, based on its strongest cities together, not just its single best one."}
         </p>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "inline-flex",
+              gap: 4,
+              padding: 4,
+              borderRadius: 100,
+              background: "var(--color-tag-bg)"
+            }}
+          >
+            <button
+              type="button"
+              onClick={selectLifeArea}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 100,
+                border: "none",
+                background: results.goal !== "OVERALL" ? "var(--color-surface)" : "transparent",
+                boxShadow: results.goal !== "OVERALL" ? "var(--shadow-card)" : "none",
+                font: "600 12px var(--font-body)",
+                color: "var(--color-ink)",
+                cursor: "pointer"
+              }}
+            >
+              By life area
+            </button>
+            <button
+              type="button"
+              onClick={selectWholePicture}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 16px",
+                borderRadius: 100,
+                border: "none",
+                background: results.goal === "OVERALL" ? "var(--gradient-accent)" : "transparent",
+                boxShadow: results.goal === "OVERALL" ? "var(--shadow-cta)" : "none",
+                font: "600 12px var(--font-body)",
+                color: results.goal === "OVERALL" ? "var(--color-ink-on-dark)" : "var(--color-ink)",
+                cursor: "pointer"
+              }}
+            >
+              <span aria-hidden="true">◎</span> Whole picture
+            </button>
+          </div>
+          {results.goal === "OVERALL" && (
+            <button
+              type="button"
+              onClick={() => setShowOverallInfo((v) => !v)}
+              aria-label="What is the whole picture?"
+              style={{
+                border: "1px solid var(--color-border-strong)",
+                background: "var(--color-surface)",
+                color: "var(--color-muted)",
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                cursor: "pointer",
+                font: "600 12px var(--font-body)",
+                flexShrink: 0
+              }}
+            >
+              i
+            </button>
+          )}
+        </div>
+
+        {results.goal !== "OVERALL" && (
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
             {SCORABLE_TABS.map((g) => (
               <button
                 key={g.id}
@@ -215,53 +316,44 @@ export default function ResultsPage() {
               </button>
             ))}
           </div>
-          <div
-            aria-hidden="true"
-            style={{ width: 1, height: 20, background: "var(--color-border-strong)", flexShrink: 0 }}
-          />
-          <button
-            type="button"
-            onClick={() => switchGoal("OVERALL")}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "8px 16px",
-              borderRadius: 100,
-              border: "none",
-              background: results.goal === "OVERALL" ? "var(--gradient-accent)" : "var(--color-ink)",
-              color: "var(--color-ink-on-dark)",
-              font: "600 12px var(--font-body)",
-              cursor: "pointer",
-              boxShadow: results.goal === "OVERALL" ? "var(--shadow-cta)" : "none",
-              flexShrink: 0
-            }}
-          >
-            <span aria-hidden="true">◎</span> Your overall picture
-          </button>
-        </div>
+        )}
 
-        {results.goal === "OVERALL" && (
+        {results.goal === "OVERALL" && showOverallInfo && (
           <div
             style={{
-              background: "var(--color-ink)",
-              color: "var(--color-ink-on-dark)",
-              borderRadius: 14,
-              padding: "16px 20px",
-              marginBottom: 24,
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border-strong)",
+              borderRadius: 12,
+              padding: "12px 16px",
+              marginBottom: 20,
               display: "flex",
-              gap: 12,
-              alignItems: "flex-start"
+              gap: 10,
+              alignItems: "flex-start",
+              boxShadow: "var(--shadow-card)"
             }}
           >
-            <span aria-hidden="true" style={{ fontSize: 18, lineHeight: 1.3 }}>
+            <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1.4 }}>
               ◎
             </span>
-            <p style={{ margin: 0, font: "400 13px/1.6 var(--font-body)" }}>
-              <strong style={{ font: "600 13px var(--font-body)" }}>This isn't a fifth goal.</strong> Overall blends
-              your four goals into one big-picture score, so you can see where a place supports Career, Love, Home,
-              and Growth together, not just one of them.
+            <p style={{ margin: 0, font: "400 13px/1.5 var(--font-body)", color: "var(--color-muted)", flex: 1 }}>
+              This isn't a fifth goal. It blends Career, Love, Home, and Growth into one big-picture score.
             </p>
+            <button
+              type="button"
+              onClick={dismissOverallInfo}
+              aria-label="Dismiss"
+              style={{
+                border: "none",
+                background: "none",
+                color: "var(--color-faint)",
+                cursor: "pointer",
+                font: "16px var(--font-body)",
+                padding: 0,
+                lineHeight: 1
+              }}
+            >
+              ×
+            </button>
           </div>
         )}
 
@@ -273,7 +365,7 @@ export default function ResultsPage() {
           <div
             style={{
               background: "var(--color-surface)",
-              border: "1px solid rgba(226,138,80,0.3)",
+              border: "1px solid rgba(232,126,67,0.3)",
               borderRadius: 14,
               padding: "18px 20px",
               marginBottom: 32
@@ -288,10 +380,26 @@ export default function ResultsPage() {
                 marginBottom: 6
               }}
             >
-              Your pattern
+              Your location story
             </div>
             <div style={{ font: "500 15px/1.5 var(--font-display)", color: "var(--color-ink)" }}>
-              {results.pattern}
+              {results.pattern.sentence}
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+              {results.pattern.chips.map((chip) => (
+                <span
+                  key={chip}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: 100,
+                    background: "var(--color-tag-bg)",
+                    font: "600 11px var(--font-body)",
+                    color: "var(--color-accent-strong)"
+                  }}
+                >
+                  {chip}
+                </span>
+              ))}
             </div>
           </div>
         )}
@@ -328,7 +436,7 @@ export default function ResultsPage() {
                 >
                   <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
                     <div style={{ font: "600 11px var(--font-body)", color: "var(--color-faint)" }}>#{i + 1}</div>
-                    <StarRating stars={r.ranked.stars} score={r.ranked.internalScore} showLabel />
+                    <StarRating stars={r.ranked.stars} score={r.ranked.internalScore} showLabel caption="Match strength" />
                   </div>
                   <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)", marginTop: 10 }}>
                     {r.city.name}, {r.city.countryName}
@@ -393,7 +501,7 @@ export default function ResultsPage() {
               >
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
                   <div style={{ font: "600 11px var(--font-body)", color: "var(--color-faint)" }}>#{i + 1}</div>
-                  <StarRating stars={co.stars} score={co.internalScore} showLabel />
+                  <StarRating stars={co.stars} score={co.internalScore} showLabel caption="Match strength" />
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
                   <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)" }}>
@@ -411,7 +519,7 @@ export default function ResultsPage() {
                       whiteSpace: "nowrap"
                     }}
                   >
-                    {co.narrative}
+                    {NARRATIVE_LABEL[co.narrative]}
                   </div>
                 </div>
                 <p style={{ font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)", margin: "6px 0 14px" }}>

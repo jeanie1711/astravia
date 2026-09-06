@@ -1,32 +1,46 @@
-/* Design tokens taken from the approved Astravia visual design
-   (Claude Design prototype, 2026-09-03). Editorial/warm palette per
-   02-user-flow-screen-spec.md's visual direction: no purple, no galaxy
-   backgrounds, no crystal-ball imagery. */
+/* Design tokens per the "editorial travel discovery x personal reflection"
+   direction (product feedback 2026-09-06): keep the warm ivory ground, navy
+   ink and coral accent that already read as distinctly Astravia, but stop
+   leaning on that single terracotta note for every surface in the app. Sky,
+   sage and sun-yellow are reserved for illustration/icon/category/highlight
+   accents only -- never a full background or a primary CTA -- so the app
+   stays a small, considered palette rather than turning multicolored.
+   No purple, no galaxy backgrounds, no crystal-ball imagery
+   (02-user-flow-screen-spec.md). */
 :root {
-  --color-bg: #fdf3eb;
-  --color-surface: #fffdf8;
-  --color-ink: #17323f;
+  --color-bg: #fbf3e9;
+  --color-surface: #fffdf9;
+  --color-ink: #123746;
   --color-ink-on-dark: #fbf1e3;
-  --color-muted: #5e7a88;
+  --color-muted: #718a94;
   --color-faint: #9cacb3;
   --color-faint-2: #8ca0a8;
-  --color-accent: #e28a50;
-  --color-accent-strong: #c96f3a;
+  --color-accent: #eda26e;
+  --color-accent-strong: #e87e43;
   --color-tag-bg: #f3e6d2;
-  --color-border: rgba(23, 50, 63, 0.1);
-  --color-border-strong: rgba(23, 50, 63, 0.16);
-  --color-star-empty: rgba(23, 50, 63, 0.18);
-  --shadow-card: 0 6px 18px rgba(23, 50, 63, 0.05);
-  --shadow-cta: 0 6px 16px rgba(226, 138, 80, 0.35);
+  --color-border: rgba(18, 55, 70, 0.1);
+  --color-border-strong: rgba(18, 55, 70, 0.16);
+  --color-star-empty: rgba(18, 55, 70, 0.18);
+  --shadow-card: 0 6px 18px rgba(18, 55, 70, 0.05);
+  --shadow-cta: 0 6px 16px rgba(232, 126, 67, 0.35);
   --font-display: var(--font-lora), Georgia, serif;
   --font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
 
+  /* Secondary accents -- illustration, icons, category chips, small
+     highlights only. Never used as a page background or a primary CTA. */
+  --color-sky: #bfdde5;
+  --color-sky-bg: #eaf4f6;
+  --color-sage: #c8d6c0;
+  --color-sage-bg: #eef3ec;
+  --color-sun: #f4c979;
+  --color-sun-bg: #fbf0dc;
+
   /* A warm "dawn horizon" gradient for primary CTAs -- product feedback
      2026-09-05: the flat solid accent read as a bit plain. Stays in the
-     same terracotta family already approved (no new hue introduced), just
+     same coral family already approved (no new hue introduced), just
      given more depth. */
-  --gradient-accent: linear-gradient(135deg, #f3aa6c 0%, #e28a50 48%, #c25a2e 100%);
-  --gradient-accent-hover: linear-gradient(135deg, #f6b67c 0%, #e6935c 48%, #c9633a 100%);
+  --gradient-accent: linear-gradient(135deg, #f3aa6c 0%, #e87e43 48%, #c25a2e 100%);
+  --gradient-accent-hover: linear-gradient(135deg, #f6b67c 0%, #ec8b53 48%, #c9633a 100%);
 
   /* Country narrative colors (CORRIDOR/ANCHOR/MIXED): distinct hues so the
      three shapes of a country result are visually, not just textually,

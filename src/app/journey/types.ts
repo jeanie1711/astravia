@@ -1,4 +1,5 @@
 import type { City } from "../../astro/types";
+import type { PatternResult } from "../../interpretation/compose-pattern";
 import type { CityResult } from "../../interpretation/types";
 import type { CountryResult, Goal, RankedCity, ScorableGoal, Stars } from "../../scoring/types";
 
@@ -47,7 +48,9 @@ export type CalculateResponse = {
   // named anywhere in the response is actually clickable.
   extraResults: CalculateResult[];
   stories: Record<string, CityResult>;
-  pattern: string | undefined;
+  // Renamed "Your Pattern" -> "Your location story" in the UI (product
+  // feedback 2026-09-06); chips are short labels for the same sentence.
+  pattern: PatternResult | undefined;
   countries: CountryResultWithBreakdown[];
   // Display names for every city referenced anywhere in the response,
   // including country topCityIds that may fall outside the top-20 global

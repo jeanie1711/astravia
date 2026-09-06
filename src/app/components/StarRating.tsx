@@ -1,10 +1,14 @@
 import { scoreToDisplayValue } from "../../scoring/score-city";
 import type { Stars } from "../../scoring/types";
 
+// Renamed from Exceptional/Strong/Mixed (product feedback 2026-09-06):
+// "Mixed" read as a poor result rather than "opportunity alongside
+// challenge," and none of the labels made clear this is about match
+// strength specifically, distinct from birth-time confidence.
 const STAR_LABEL: Record<Stars, string> = {
-  5: "Exceptional",
-  4: "Strong",
-  3: "Mixed",
+  5: "Strongest match",
+  4: "Strong match",
+  3: "Layered match",
   2: "Challenging",
   1: "Weak"
 };
@@ -22,17 +26,23 @@ export function StarRating({
   stars,
   score,
   size = 16,
-  showLabel = false
+  showLabel = false,
+  caption
 }: {
   stars: Stars;
   score?: number;
   size?: number;
   showLabel?: boolean;
+  // A small "Match strength" eyebrow above the row (product feedback
+  // 2026-09-06): with birth-time confidence now shown elsewhere on the
+  // same screens, this stars-and-word rating needs its own name so the two
+  // don't read as one blended "quality" score.
+  caption?: string;
 }) {
   const fillValue = score !== undefined ? scoreToDisplayValue(score, stars) : stars;
   const fillPercent = Math.min(100, Math.max(0, (fillValue / 5) * 100));
 
-  return (
+  const row = (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
       <span
         role="img"
@@ -68,6 +78,25 @@ export function StarRating({
           {STAR_LABEL[stars]}
         </span>
       )}
+    </span>
+  );
+
+  if (!caption) return row;
+
+  return (
+    <span style={{ display: "inline-flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
+      <span
+        aria-hidden="true"
+        style={{
+          font: "600 10px var(--font-body)",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: "var(--color-faint)"
+        }}
+      >
+        {caption}
+      </span>
+      {row}
     </span>
   );
 }

@@ -89,7 +89,13 @@ export default function CityStoryPage() {
           <h1 style={{ margin: 0, font: "600 32px var(--font-display)", color: "var(--color-ink)" }}>
             {story.city}
           </h1>
-          <StarRating stars={story.stars} score={ranked.internalScore} size={18} showLabel />
+          <StarRating
+            stars={story.stars}
+            score={ranked.internalScore}
+            size={18}
+            showLabel
+            caption="Match strength"
+          />
         </div>
         <div
           style={{
@@ -120,35 +126,78 @@ export default function CityStoryPage() {
           </span>
         )}
 
-        <SectionHeading>Why {story.city} stands out</SectionHeading>
+        <div
+          style={{
+            marginTop: 20,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 14px",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: 10
+          }}
+        >
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--color-accent)", flexShrink: 0 }} />
+          <div style={{ font: "400 12.5px/1.4 var(--font-body)", color: "var(--color-muted)" }}>
+            <strong style={{ color: "var(--color-ink)" }}>Confidence: {confidenceLabel(story.birthTimeConfidence)}.</strong>{" "}
+            {story.confidenceExplanation}
+          </div>
+        </div>
+
+        <SectionHeading>The short version</SectionHeading>
         <p style={{ margin: 0, font: "400 16px/1.65 var(--font-body)", color: "#3E5865" }}>{story.whyItStandsOut}</p>
 
-        {story.opportunities.length > 0 && (
-          <>
-            <SectionHeading>The opportunity</SectionHeading>
-            <p style={{ margin: "0 0 10px", font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
-              This combination is traditionally associated with:
-            </p>
-            <ul style={{ margin: 0, paddingLeft: 20 }}>
-              {story.opportunities.map((o, i) => (
-                <li key={i} style={{ font: "400 15px/1.6 var(--font-body)", color: "#3E5865", marginBottom: 4 }}>
-                  {o}
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-
-        {story.tradeOffs.length > 0 && (
-          <>
-            <SectionHeading>The trade-off</SectionHeading>
-            <p style={{ margin: "0 0 8px", font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
-              Every strong placement has a flip side worth keeping in mind:
-            </p>
-            <p style={{ margin: 0, font: "400 15px/1.65 var(--font-body)", color: "#3E5865" }}>
-              {story.tradeOffs.join(" ")}
-            </p>
-          </>
+        {(story.opportunities.length > 0 || story.tradeOffs.length > 0) && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 12,
+              marginTop: 28
+            }}
+          >
+            {story.opportunities.length > 0 && (
+              <div
+                style={{
+                  background: "var(--color-sage-bg)",
+                  borderRadius: 14,
+                  padding: "16px 18px"
+                }}
+              >
+                <div style={{ font: "600 13px var(--font-body)", color: "var(--color-ink)", marginBottom: 10 }}>
+                  What may open up
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {story.opportunities.map((o, i) => (
+                    <li key={i} style={{ font: "400 14px/1.5 var(--font-body)", color: "#3E5865", marginBottom: 4 }}>
+                      {o}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {story.tradeOffs.length > 0 && (
+              <div
+                style={{
+                  background: "var(--color-sun-bg)",
+                  borderRadius: 14,
+                  padding: "16px 18px"
+                }}
+              >
+                <div style={{ font: "600 13px var(--font-body)", color: "var(--color-ink)", marginBottom: 10 }}>
+                  What to watch
+                </div>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {story.tradeOffs.map((t, i) => (
+                    <li key={i} style={{ font: "400 14px/1.5 var(--font-body)", color: "#3E5865", marginBottom: 4 }}>
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         )}
 
         <div
@@ -160,6 +209,17 @@ export default function CityStoryPage() {
             borderRadius: "0 10px 10px 0"
           }}
         >
+          <div
+            style={{
+              font: "600 11px var(--font-body)",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--color-muted)",
+              marginBottom: 6
+            }}
+          >
+            What life here might feel like
+          </div>
           <p style={{ margin: 0, font: "600 17px/1.5 var(--font-display)", color: "var(--color-ink)" }}>
             {story.howItMayFeel}
           </p>
@@ -190,24 +250,12 @@ export default function CityStoryPage() {
           </>
         )}
 
-        <SectionHeading>Birth-time confidence</SectionHeading>
-        <p style={{ margin: "0 0 10px", font: "400 12px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
-          This is different from the star rating above -- it tells you how much this result could change if your
-          exact birth time isn't certain.
-        </p>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--color-accent)" }} />
-          <div style={{ font: "600 14px var(--font-body)", color: "var(--color-ink)" }}>
-            {confidenceLabel(story.birthTimeConfidence)}
-          </div>
-        </div>
-        <p style={{ margin: "6px 0 0", font: "400 14px/1.6 var(--font-body)", color: "var(--color-muted)" }}>
-          {story.confidenceExplanation}
-        </p>
-
         {(story.primaryInfluence || story.paranInfluence || story.secondaryInfluences.length > 0) && (
           <>
-            <SectionHeading>Key influences</SectionHeading>
+            <SectionHeading>Why Astravia picked it</SectionHeading>
+            <p style={{ margin: "0 0 10px", font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
+              Based on which of your planetary lines fall closest to {story.city}:
+            </p>
             {[
               ...(story.primaryInfluence ? [{ inf: story.primaryInfluence, label: "Primary" }] : []),
               // Named as its own row, distinct from "Secondary" -- a paran is

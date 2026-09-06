@@ -12,18 +12,19 @@ import { StarRating } from "../components/StarRating";
 import { useSavedPlaces } from "../components/useSavedPlaces";
 import { WorldMap, type MapPin } from "../components/WorldMap";
 import { useJourney } from "../journey/JourneyContext";
+import { deriveGoalOrder } from "../journey/priorities";
 import type { CalculateRequest, CalculateResponse, CalculateResult } from "../journey/types";
 import type { Goal, ScorableGoal, Stars } from "../../scoring/types";
 import { getArchetypeCopy } from "../../interpretation/archetypes";
 
 const OVERALL_INFO_SEEN_KEY = "astravia_overall_info_seen";
 
-const SCORABLE_TABS: Array<{ id: ScorableGoal; name: string }> = [
-  { id: "CAREER", name: "Career" },
-  { id: "LOVE", name: "Love & Relationships" },
-  { id: "HOME", name: "Home & Family" },
-  { id: "GROWTH", name: "Personal Growth" }
-];
+const SCORABLE_TAB_NAME: Record<ScorableGoal, string> = {
+  CAREER: "Career",
+  LOVE: "Love & Relationships",
+  HOME: "Home & Family",
+  GROWTH: "Personal Growth"
+};
 
 // Kept deliberately small (§ product feedback 2026-09-04): a focused,
 // convincing shortlist beats a long, noisy one.
@@ -94,10 +95,12 @@ export default function ResultsPage() {
   if (!results || !journey.viewMode) return null;
 
   const viewMode = journey.viewMode;
-  const goalName =
-    results.goal === "OVERALL"
-      ? "your overall picture"
-      : SCORABLE_TABS.find((g) => g.id === results.goal)?.name ?? results.goal;
+  // Tabs render in the order implied by the user's own "what matters
+  // most" picks (S04) when any were made, so the goal they care about
+  // most is also the first pill on the results page -- falls back to the
+  // default order when no priorities were recorded (e.g. an older session).
+  const orderedGoals = deriveGoalOrder(journey.priorities ?? []);
+  const goalName = results.goal === "OVERALL" ? "your overall picture" : SCORABLE_TAB_NAME[results.goal];
   const topCities = results.results.slice(0, MAX_CITIES_SHOWN);
   const topCountries = results.countries.slice(0, MAX_COUNTRIES_SHOWN);
   const activeTopStars = viewMode === "city" ? topCities[0]?.ranked.stars ?? 1 : topCountries[0]?.stars ?? 1;
@@ -286,22 +289,22 @@ export default function ResultsPage() {
 
         {results.goal !== "OVERALL" && (
           <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-            {SCORABLE_TABS.map((g) => (
+            {orderedGoals.map((g) => (
               <button
-                key={g.id}
+                key={g}
                 type="button"
-                onClick={() => switchGoal(g.id)}
+                onClick={() => switchGoal(g)}
                 style={{
                   padding: "8px 14px",
                   borderRadius: 100,
-                  border: g.id === results.goal ? "2px solid var(--color-accent)" : "1px solid var(--color-border)",
-                  background: g.id === results.goal ? "var(--color-surface)" : "#ffffff",
+                  border: g === results.goal ? "2px solid var(--color-accent)" : "1px solid var(--color-border)",
+                  background: g === results.goal ? "var(--color-surface)" : "#ffffff",
                   font: "600 12px var(--font-body)",
                   color: "var(--color-ink)",
                   cursor: "pointer"
                 }}
               >
-                {g.name}
+                {SCORABLE_TAB_NAME[g]}
               </button>
             ))}
           </div>

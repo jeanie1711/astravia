@@ -2,6 +2,7 @@ import type { City } from "../../astro/types";
 import type { PatternResult } from "../../interpretation/compose-pattern";
 import type { CityResult } from "../../interpretation/types";
 import type { CountryResult, Goal, RankedCity, ScorableGoal, Stars } from "../../scoring/types";
+import type { LifePriorityId } from "./priorities";
 
 export type UncertaintyMinutes = 0 | 15 | 30 | 60;
 
@@ -71,6 +72,11 @@ export type JourneyState = {
   birth?: BirthDraft;
   uncertaintyMinutes: UncertaintyMinutes;
   goal?: Goal;
+  // "What matters most in this chapter?" (S04, product feedback
+  // 2026-09-06): up to 3 life-priority picks, mapped to the 4 goals only
+  // to choose the first-calculated goal and the results-page tab order --
+  // never a scoring input (docs/DECISIONS.md, 2026-09-06 Phase 2 entry).
+  priorities?: LifePriorityId[];
   results?: CalculateResponse;
   // Chosen on S05b (View Mode), right after calculation finishes. Keeps the
   // results page from showing city-ranked and country-ranked lists side by

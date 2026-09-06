@@ -295,3 +295,23 @@ About a 5.9x overall speedup. Measured locally via `tsx` (not the compiled Next.
 **Verification:** typecheck clean; 167/167 tests pass (161 existing + 6 new for the discovery heuristic). Dev-server visual verification is still blocked on this machine (`Failed to load SWC binary for win32/x64`) -- not attempted to fix, out of scope for this task and pre-existing all session.
 
 **Status:** IMPLEMENTED for the items listed above. Remaining Phase 2 backlog (the priority picker screen, saved-places view) OPEN.
+
+---
+
+## 2026-09-06 — "What matters most in this chapter?" screen implemented, replacing S04's single goal picker
+
+**Decision needed:** none blocking -- the Product Owner said "bắt đầu làm What matters most screen" (start building it), continuing the mechanic already agreed above (map chips to the 4 goals, pre-select/reorder only, no scoring change). Two integration calls were made on judgment, recorded here for review:
+
+1. **The new picker replaces `src/app/explore/goal/page.tsx` (S04) rather than sitting alongside it.** That screen already asked "What matters most right now?" as a single-select over the 4 goals (+ Overall) and already produced the `journey.goal` used for the first calculation -- adding the new multi-select as a *second*, separate screen would have put two near-identically-worded "what matters most" screens back to back. Replacing it keeps the flow at 3 steps and reuses the exact mechanism (still produces one `Goal` for the first `/api/calculate` call).
+2. **Direct selection of "Overall" at onboarding is removed.** The old S04 let a user jump straight to Overall; the new picker only offers the 8 life-priority chips (each mapped to one of the 4 scorable goals). Overall remains one tap away via the results page's existing "Whole picture" toggle (Phase 1). Given Phase 1's own finding that Overall reads as a confusing "5th option," starting onboarding on a concrete goal and letting Overall be an explicit opt-in afterward was judged the better default, not a regression.
+
+**Implementation** (`src/app/journey/priorities.ts`, new; `src/app/explore/goal/page.tsx`, rewritten; `src/app/results/page.tsx`, tab order):
+
+- 8 priority chips, up to 3 selectable, each mapped to one `ScorableGoal`. **The mapping itself is a subjective editorial call** (not derivable from anything in the data model), recorded here so it can be revisited: "A meaningful career" -> CAREER; "Deeper relationships" -> LOVE; "A sense of belonging," "Family stability," "A slower life" -> HOME (rootedness/grounding); "More freedom," "Reinvention," "Creative energy" -> GROWTH (independence/self-expression/inner development, per that goal's own existing description). This lands 1/1/3/3 across the 4 goals rather than an even 2/2/2/2 split -- judged on semantic fit, not balance.
+- `deriveGoalOrder(selected)`: ranks the 4 goals by how many selected chips point to each, ties broken by which goal was implied earliest in the user's own click order, and appends any untouched goals afterward in the default CAREER/LOVE/HOME/GROWTH order. `deriveGoalOrder(selected)[0]` becomes `journey.goal` for the first calculation; the full ordered list drives the results-page goal-tab render order (`src/app/results/page.tsx`, replacing the previously fixed CAREER/LOVE/HOME/GROWTH tab order). A session with no `journey.priorities` recorded (e.g. one started before this change) falls back to the default order unchanged.
+- Continuing requires at least 1 pick (button disabled at 0 selected) -- there is no minimum stated in the brief beyond "up to 3," but at least one is needed to derive a goal at all.
+- Unit-tested: `tests/app/priorities.test.ts` (5 cases: single pick, vote-count ranking, selection-order tie-break, untouched-goal ordering, full-set invariant).
+
+**Verification:** typecheck clean; 172/172 tests pass (167 existing + 5 new). Dev-server visual verification still blocked on this machine (pre-existing SWC issue) -- not re-attempted.
+
+**Status:** IMPLEMENTED. Remaining Phase 2 backlog: a dedicated "My Saved Places" view (save-place toggle from the prior entry has nowhere of its own yet).

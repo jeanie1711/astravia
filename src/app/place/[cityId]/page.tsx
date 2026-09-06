@@ -4,8 +4,10 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { BackHeader } from "../../components/BackHeader";
 import { PillButton } from "../../components/PillButton";
+import { SaveButton } from "../../components/SaveButton";
 import { ScreenShell } from "../../components/ScreenShell";
 import { StarRating } from "../../components/StarRating";
+import { useSavedPlaces } from "../../components/useSavedPlaces";
 import { useJourney } from "../../journey/JourneyContext";
 import { getArchetypeCopy } from "../../../interpretation/archetypes";
 import { confidenceLabel } from "../../../interpretation/display";
@@ -22,6 +24,7 @@ export default function CityStoryPage() {
   const params = useParams<{ cityId: string }>();
   const { journey, hydrated } = useJourney();
   const [techOpen, setTechOpen] = useState(false);
+  const { saved, toggle: toggleSaved } = useSavedPlaces();
 
   const results = journey.results;
   const story = results?.stories[params.cityId];
@@ -61,7 +64,14 @@ export default function CityStoryPage() {
 
   return (
     <ScreenShell maxWidth={640}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "24px 28px 0" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "24px 28px 0"
+        }}
+      >
         <button
           type="button"
           aria-label="Back"
@@ -79,6 +89,10 @@ export default function CityStoryPage() {
         >
           ←
         </button>
+        <span aria-hidden="true" style={{ font: "600 12px var(--font-display)", color: "var(--color-faint-2)" }}>
+          ✦ Astravia
+        </span>
+        <SaveButton saved={saved.has(params.cityId)} onToggle={() => toggleSaved(params.cityId)} size={20} />
       </div>
 
       <div style={{ padding: "16px 28px 0" }}>

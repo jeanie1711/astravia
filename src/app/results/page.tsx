@@ -2,36 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { CountryMiniMap } from "../components/CountryMiniMap";
+import { classifyDiscovery, getDiscoveryColors, getDiscoveryCopy } from "../components/discoveryLabel";
 import { GoalBreakdownBars } from "../components/GoalBreakdownBars";
 import { PillButton } from "../components/PillButton";
+import { SaveButton } from "../components/SaveButton";
 import { ScreenShell } from "../components/ScreenShell";
 import { StarRating } from "../components/StarRating";
+import { useSavedPlaces } from "../components/useSavedPlaces";
+import { WorldMap, type MapPin } from "../components/WorldMap";
 import { useJourney } from "../journey/JourneyContext";
 import type { CalculateRequest, CalculateResponse, CalculateResult } from "../journey/types";
-import type { CountryNarrative, Goal, ScorableGoal, Stars } from "../../scoring/types";
-
-const NARRATIVE_COPY: Record<CountryNarrative, string> = {
-  CORRIDOR: "Several cities here form a consistently strong corridor.",
-  ANCHOR: "One standout city anchors this country's result.",
-  MIXED: "Different cities here suit different parts of this goal."
-};
-
-// Plain-language badge text (product feedback 2026-09-06): the raw enum
-// name ("CORRIDOR") read as a technical label, not a description a
-// newcomer would recognize.
-const NARRATIVE_LABEL: Record<CountryNarrative, string> = {
-  CORRIDOR: "Strong city cluster",
-  ANCHOR: "Standout city",
-  MIXED: "Mixed strengths"
-};
-
-// Distinct hue per narrative shape (globals.css), not one flat tag color for
-// all three -- product feedback 2026-09-05.
-const NARRATIVE_COLORS: Record<CountryNarrative, { fg: string; bg: string }> = {
-  CORRIDOR: { fg: "var(--color-corridor)", bg: "var(--color-corridor-bg)" },
-  ANCHOR: { fg: "var(--color-anchor)", bg: "var(--color-anchor-bg)" },
-  MIXED: { fg: "var(--color-mixed)", bg: "var(--color-mixed-bg)" }
-};
+import type { Goal, ScorableGoal, Stars } from "../../scoring/types";
+import { getArchetypeCopy } from "../../interpretation/archetypes";
 
 const OVERALL_INFO_SEEN_KEY = "astravia_overall_info_seen";
 
@@ -52,6 +35,7 @@ export default function ResultsPage() {
   const { journey, hydrated, setJourney } = useJourney();
   const [loading, setLoading] = useState(false);
   const [showOverallInfo, setShowOverallInfo] = useState(false);
+  const { saved, toggle: toggleSaved } = useSavedPlaces();
 
   useEffect(() => {
     if (!hydrated) return;
@@ -134,15 +118,20 @@ export default function ResultsPage() {
           padding: "24px 28px 0"
         }}
       >
-        <div
-          style={{
-            font: "600 11px var(--font-body)",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: "var(--color-faint)"
-          }}
-        >
-          Your places
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span aria-hidden="true" style={{ font: "600 12px var(--font-display)", color: "var(--color-faint-2)" }}>
+            ✦ Astravia
+          </span>
+          <span
+            style={{
+              font: "600 11px var(--font-body)",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "var(--color-faint)"
+            }}
+          >
+            Your places
+          </span>
         </div>
         <button
           type="button"
@@ -418,56 +407,175 @@ export default function ResultsPage() {
               Your top places
             </div>
 
+            {topCities.length > 0 && (
+              <WorldMap
+                pins={topCities.map(
+                  (r, i): MapPin => ({
+                    id: r.ranked.cityId,
+                    rank: i + 1,
+                    lat: r.city.latitude,
+                    lon: r.city.longitude,
+                    title: `${r.city.name}, ${r.city.countryName}`,
+                    subtitle: `#${i + 1}`
+                  })
+                )}
+                onSelect={(id) => router.push(`/place/${id}`)}
+              />
+            )}
+
             {topCities.map((r, i) => {
               const story = results.stories[r.ranked.cityId];
-              const goalTag = results.goal === "OVERALL" ? "OVERALL" : goalName.toUpperCase();
+              if (i === 0) {
+                const archetypeCopy = getArchetypeCopy(r.ranked.archetypeId);
+                return (
+                  <div
+                    key={r.ranked.cityId}
+                    className="astravia-card-top astravia-stagger"
+                    style={{
+                      ["--stagger-index" as string]: 0,
+                      borderRadius: 20,
+                      overflow: "hidden",
+                      marginBottom: 14,
+                      boxShadow: "var(--shadow-card)"
+                    }}
+                  >
+                    <div style={{ background: "var(--gradient-accent)", padding: "20px 22px 16px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <div
+                          style={{
+                            font: "600 11px var(--font-body)",
+                            letterSpacing: "0.1em",
+                            textTransform: "uppercase",
+                            color: "var(--color-ink-on-dark)",
+                            opacity: 0.85
+                          }}
+                        >
+                          Your strongest place for {goalName}
+                        </div>
+                        <SaveButton
+                          saved={saved.has(r.ranked.cityId)}
+                          onToggle={() => toggleSaved(r.ranked.cityId)}
+                          onDark
+                        />
+                      </div>
+                      <div
+                        style={{
+                          font: "600 28px var(--font-display)",
+                          color: "var(--color-ink-on-dark)",
+                          marginTop: 6
+                        }}
+                      >
+                        {r.city.name}, {r.city.countryName}
+                      </div>
+                    </div>
+                    <div style={{ background: "var(--color-surface)", padding: "18px 22px 22px" }}>
+                      <StarRating
+                        stars={r.ranked.stars}
+                        score={r.ranked.internalScore}
+                        showLabel
+                        caption="Match strength"
+                      />
+                      <p
+                        style={{
+                          margin: "14px 0 0",
+                          font: "500 16px/1.5 var(--font-display)",
+                          color: "var(--color-ink)"
+                        }}
+                      >
+                        {archetypeCopy.description}
+                      </p>
+                      {story && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                          {[story.primaryTheme, ...story.secondaryThemes.slice(0, 2)]
+                            .filter(Boolean)
+                            .map((theme) => (
+                              <span
+                                key={theme}
+                                style={{
+                                  padding: "5px 12px",
+                                  borderRadius: 100,
+                                  background: "var(--color-tag-bg)",
+                                  font: "600 11px var(--font-body)",
+                                  color: "var(--color-accent-strong)"
+                                }}
+                              >
+                                {theme}
+                              </span>
+                            ))}
+                        </div>
+                      )}
+                      {r.goalBreakdown && <GoalBreakdownBars breakdown={r.goalBreakdown} />}
+                      <PillButton
+                        variant="accent"
+                        style={{ marginTop: 16 }}
+                        onClick={() => router.push(`/place/${r.ranked.cityId}`)}
+                      >
+                        Why {r.city.name}? →
+                      </PillButton>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div
                   key={r.ranked.cityId}
-                  className={i === 0 ? "astravia-card-top" : undefined}
+                  className="astravia-card-hover astravia-stagger"
                   style={{
+                    ["--stagger-index" as string]: i,
                     background: "var(--color-surface)",
                     border: "1px solid var(--color-border)",
-                    borderRadius: 16,
-                    padding: "20px 22px",
-                    marginBottom: 14,
-                    boxShadow: "var(--shadow-card)"
+                    borderRadius: 14,
+                    padding: "14px 18px",
+                    marginBottom: 10
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                    <div style={{ font: "600 11px var(--font-body)", color: "var(--color-faint)" }}>#{i + 1}</div>
-                    <StarRating stars={r.ranked.stars} score={r.ranked.internalScore} showLabel caption="Match strength" />
-                  </div>
-                  <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)", marginTop: 10 }}>
-                    {r.city.name}, {r.city.countryName}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ font: "600 15px var(--font-body)", color: "var(--color-ink)" }}>
+                      <span style={{ color: "var(--color-faint)", fontWeight: 600 }}>#{i + 1}</span> {r.city.name},{" "}
+                      {r.city.countryName}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <StarRating stars={r.ranked.stars} score={r.ranked.internalScore} size={13} />
+                      <SaveButton
+                        saved={saved.has(r.ranked.cityId)}
+                        onToggle={() => toggleSaved(r.ranked.cityId)}
+                        size={15}
+                      />
+                    </div>
                   </div>
                   {story && (
                     <>
                       <div
                         style={{
-                          font: "600 12px var(--font-body)",
-                          letterSpacing: "0.04em",
+                          font: "600 11px var(--font-body)",
+                          letterSpacing: "0.03em",
                           color: "var(--color-accent-strong)",
-                          marginTop: 6
+                          marginTop: 8
                         }}
                       >
-                        {[goalTag, story.primaryTheme, ...story.secondaryThemes.slice(0, 1)]
-                          .filter(Boolean)
-                          .join(" · ")}
+                        {[story.primaryTheme, ...story.secondaryThemes.slice(0, 1)].filter(Boolean).join(" · ")}
                       </div>
-                      <div style={{ font: "400 14px/1.5 var(--font-body)", color: "#3E5865", marginTop: 10 }}>
+                      <p style={{ margin: "6px 0 0", font: "400 13px/1.5 var(--font-body)", color: "var(--color-muted)" }}>
                         {story.hook}
-                      </div>
+                      </p>
                     </>
                   )}
-                  {r.goalBreakdown && <GoalBreakdownBars breakdown={r.goalBreakdown} />}
-                  <PillButton
-                    variant="accent"
-                    style={{ marginTop: 14 }}
+                  <button
+                    type="button"
                     onClick={() => router.push(`/place/${r.ranked.cityId}`)}
+                    style={{
+                      marginTop: 8,
+                      border: "none",
+                      background: "none",
+                      color: "var(--color-accent-strong)",
+                      font: "600 12px var(--font-body)",
+                      cursor: "pointer",
+                      padding: 0
+                    }}
                   >
-                    Why {r.city.name}? →
-                  </PillButton>
+                    Explore this place →
+                  </button>
                 </div>
               );
             })}
@@ -486,11 +594,18 @@ export default function ResultsPage() {
               Your top countries
             </div>
 
-            {topCountries.map((co, i) => (
+            {topCountries.map((co, i) => {
+              const cityResults = co.topCityIds.map(findResult).filter((c): c is CalculateResult => c !== undefined);
+              const discoveryType = classifyDiscovery(co.narrative, co.stars, cityResults[0]?.city.population);
+              const discoveryCopy = getDiscoveryCopy(discoveryType);
+              const discoveryColors = getDiscoveryColors(discoveryType);
+
+              return (
               <div
                 key={co.countryCode}
-                className={i === 0 ? "astravia-card-top" : undefined}
+                className={`astravia-card-hover astravia-stagger${i === 0 ? " astravia-card-top" : ""}`}
                 style={{
+                  ["--stagger-index" as string]: i,
                   background: "var(--color-surface)",
                   border: "1px solid var(--color-border)",
                   borderRadius: 16,
@@ -503,28 +618,41 @@ export default function ResultsPage() {
                   <div style={{ font: "600 11px var(--font-body)", color: "var(--color-faint)" }}>#{i + 1}</div>
                   <StarRating stars={co.stars} score={co.internalScore} showLabel caption="Match strength" />
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
-                  <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)" }}>
-                    {results.countryNames[co.countryCode] ?? co.countryCode}
-                  </div>
-                  <div
-                    style={{
-                      font: "600 10px var(--font-body)",
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase",
-                      color: NARRATIVE_COLORS[co.narrative].fg,
-                      background: NARRATIVE_COLORS[co.narrative].bg,
-                      borderRadius: 100,
-                      padding: "3px 9px",
-                      whiteSpace: "nowrap"
-                    }}
-                  >
-                    {NARRATIVE_LABEL[co.narrative]}
+                <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)", marginTop: 10 }}>
+                  {results.countryNames[co.countryCode] ?? co.countryCode}
+                </div>
+
+                <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginTop: 12 }}>
+                  <CountryMiniMap
+                    points={cityResults.map((c, ci) => ({
+                      id: c.ranked.cityId,
+                      rank: ci + 1,
+                      lat: c.city.latitude,
+                      lon: c.city.longitude
+                    }))}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        display: "inline-block",
+                        font: "600 10px var(--font-body)",
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: discoveryColors.fg,
+                        background: discoveryColors.bg,
+                        borderRadius: 100,
+                        padding: "3px 9px",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      {discoveryCopy.label}
+                    </div>
+                    <p style={{ font: "400 13px/1.5 var(--font-body)", color: "var(--color-muted)", margin: "6px 0 0" }}>
+                      {discoveryCopy.description}
+                    </p>
                   </div>
                 </div>
-                <p style={{ font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)", margin: "6px 0 14px" }}>
-                  {NARRATIVE_COPY[co.narrative]}
-                </p>
+
                 {co.goalBreakdown && <GoalBreakdownBars breakdown={co.goalBreakdown} />}
                 <div
                   style={{
@@ -532,6 +660,7 @@ export default function ResultsPage() {
                     letterSpacing: "0.06em",
                     textTransform: "uppercase",
                     color: "var(--color-faint)",
+                    marginTop: 16,
                     marginBottom: 8
                   }}
                 >
@@ -573,7 +702,8 @@ export default function ResultsPage() {
                   })}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </>
         )}
       </div>

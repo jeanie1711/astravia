@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { scoreToDisplayValue } from "../../scoring/score-city";
 import { SCORABLE_GOALS, type ScorableGoal, type Stars } from "../../scoring/types";
 import type { GoalBreakdown } from "../journey/types";
@@ -18,6 +19,13 @@ export function GoalBreakdownBars({ breakdown }: { breakdown: GoalBreakdown }) {
   const rows = SCORABLE_GOALS.map((goal) => ({ goal, entry: breakdown[goal] })).filter(
     (r): r is { goal: ScorableGoal; entry: { stars: Stars; internalScore: number } } => r.entry !== undefined
   );
+  // Fills in from 0 on mount rather than appearing pre-filled (product
+  // feedback 2026-09-06, item 10: "score bar animate from 0 to result").
+  const [filled, setFilled] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setFilled(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
   if (rows.length === 0) return null;
 
   return (
@@ -49,8 +57,9 @@ export function GoalBreakdownBars({ breakdown }: { breakdown: GoalBreakdown }) {
                 }}
               >
                 <div
+                  className="astravia-bar-fill"
                   style={{
-                    width: `${fillPercent}%`,
+                    width: filled ? `${fillPercent}%` : "0%",
                     height: "100%",
                     borderRadius: 100,
                     background: "var(--gradient-accent)"

@@ -113,3 +113,38 @@ input {
   mask-composite: exclude;
   pointer-events: none;
 }
+
+/* Micro-interactions (product feedback 2026-09-06, item 10): small, real
+   motion instead of more decoration -- a card that lifts under the
+   pointer, and a short staggered rise-in for a freshly loaded results
+   list, both skipped entirely under prefers-reduced-motion. */
+.astravia-card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.astravia-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(18, 55, 70, 0.1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes astravia-rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .astravia-stagger {
+    animation: astravia-rise-in 0.4s ease both;
+    animation-delay: calc(var(--stagger-index, 0) * 70ms);
+  }
+
+  .astravia-bar-fill {
+    transition: width 0.6s ease;
+  }
+}

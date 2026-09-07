@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ScreenShell } from "./components/ScreenShell";
 import { PillButton } from "./components/PillButton";
+import { Wordmark } from "./components/Wordmark";
 import { useJourney } from "./journey/JourneyContext";
 
 const ANGLES: Array<{ id: string; fullName: string; position: string; meaning: string }> = [
@@ -34,6 +35,10 @@ const ANGLES: Array<{ id: string; fullName: string; position: string; meaning: s
   }
 ];
 
+// Homepage hierarchy per product feedback 2026-09-07, §9: lead with the
+// outcome, not the mechanism. MC/IC/ASC/DSC and the astrocartography
+// mechanics move behind a collapsed disclosure so a first-time visitor
+// isn't asked to understand astrology before deciding whether to start.
 export default function LandingPage() {
   const router = useRouter();
   const { resetJourney } = useJourney();
@@ -46,41 +51,35 @@ export default function LandingPage() {
 
   return (
     <ScreenShell maxWidth={640} showFooter={false}>
-      <div style={{ textAlign: "center", padding: "56px 32px 0" }}>
-        <div style={{ color: "var(--color-accent)", fontSize: 18 }} aria-hidden="true">
-          ✦
-        </div>
-        <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)", marginTop: 8 }}>
-          Astravia
-        </div>
-        <div
-          style={{
-            font: "600 11px var(--font-body)",
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "var(--color-faint)",
-            marginTop: 10
-          }}
-        >
-          Your places · Your next chapter
+      <div style={{ textAlign: "center", padding: "48px 24px 0" }}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <Wordmark size={16} />
         </div>
         <h1
           style={{
-            font: "600 40px/1.2 var(--font-display)",
-            color: "var(--color-ink)",
-            margin: "20px 0 0"
+            font: "600 38px/1.25 var(--font-display)",
+            color: "var(--astravia-ink)",
+            margin: "22px 0 0"
           }}
         >
-          A broader world for your next chapter
+          Where in the world might you thrive?
         </h1>
-        <p style={{ font: "400 17px var(--font-body)", color: "var(--color-muted)", margin: "16px 0 32px" }}>
-          Your map. Your places. Your possibilities.
+        <p
+          style={{
+            font: "400 16px/1.6 var(--font-body)",
+            color: "var(--astravia-text-secondary)",
+            margin: "16px auto 28px",
+            maxWidth: 440
+          }}
+        >
+          Discover places that may support your career, relationships, sense of home and personal growth, based on
+          your birth map.
         </p>
-        <div style={{ maxWidth: 280, margin: "0 auto" }}>
-          <PillButton onClick={start}>Find my places</PillButton>
+        <div style={{ maxWidth: 300, margin: "0 auto" }}>
+          <PillButton onClick={start}>Discover my places</PillButton>
         </div>
-        <p style={{ font: "400 13px var(--font-body)", color: "var(--color-faint)", marginTop: 14 }}>
-          Takes about 2 minutes.
+        <p style={{ font: "400 13px var(--font-body)", color: "var(--astravia-text-subtle)", marginTop: 14 }}>
+          Free · No account needed · About 2 minutes
         </p>
       </div>
 
@@ -95,22 +94,22 @@ export default function LandingPage() {
         />
       </div>
 
-      <div style={{ padding: "40px 32px 0" }}>
+      <div style={{ padding: "40px 24px 0" }}>
         <h2
           style={{
-            font: "600 24px var(--font-display)",
-            color: "var(--color-ink)",
+            font: "600 22px var(--font-display)",
+            color: "var(--astravia-ink)",
             textAlign: "center",
             margin: "0 auto 12px",
             maxWidth: 440
           }}
         >
-          How Astravia finds your places
+          How it works
         </h2>
         <p
           style={{
             font: "400 15px/1.7 var(--font-body)",
-            color: "var(--color-muted)",
+            color: "var(--astravia-text-secondary)",
             maxWidth: 460,
             margin: "0 auto 16px",
             textAlign: "center"
@@ -123,13 +122,16 @@ export default function LandingPage() {
           <button
             type="button"
             onClick={() => setShowHowItWorks((v) => !v)}
+            aria-expanded={showHowItWorks}
             style={{
               border: "none",
               background: "none",
-              color: "var(--color-accent-strong)",
+              color: "var(--astravia-ink)",
               font: "600 13px var(--font-body)",
               cursor: "pointer",
-              padding: 0
+              padding: 0,
+              textDecoration: "underline",
+              textUnderlineOffset: 3
             }}
           >
             {showHowItWorks ? "Hide how astrocartography works ↑" : "How astrocartography works →"}
@@ -141,7 +143,7 @@ export default function LandingPage() {
             <p
               style={{
                 font: "400 15px/1.7 var(--font-body)",
-                color: "var(--color-muted)",
+                color: "var(--astravia-text-secondary)",
                 maxWidth: 480,
                 margin: "0 auto 24px",
                 textAlign: "center"
@@ -157,36 +159,31 @@ export default function LandingPage() {
                 <div
                   key={a.id}
                   style={{
-                    background: "var(--color-surface)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: 14,
+                    background: "var(--astravia-surface)",
+                    border: "1px solid var(--astravia-border)",
+                    borderRadius: "var(--astravia-radius-control)",
                     padding: "18px 20px",
-                    boxShadow: "var(--shadow-card)"
+                    boxShadow: "var(--astravia-shadow-card)"
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <span
-                      style={{
-                        font: "700 22px var(--font-display)",
-                        backgroundImage: "var(--gradient-accent)",
-                        backgroundClip: "text",
-                        WebkitBackgroundClip: "text",
-                        color: "transparent",
-                        WebkitTextFillColor: "transparent"
-                      }}
-                    >
+                    <span style={{ font: "700 20px var(--font-display)", color: "var(--astravia-ink)" }}>
                       {a.id}
                     </span>
-                    <span style={{ font: "600 12px var(--font-body)", color: "var(--color-faint)" }}>
+                    <span style={{ font: "600 12px var(--font-body)", color: "var(--astravia-text-subtle)" }}>
                       {a.fullName}
                     </span>
                   </div>
                   <p
-                    style={{ font: "400 13px/1.5 var(--font-body)", color: "var(--color-muted)", margin: "8px 0 6px" }}
+                    style={{
+                      font: "400 13px/1.5 var(--font-body)",
+                      color: "var(--astravia-text-secondary)",
+                      margin: "8px 0 6px"
+                    }}
                   >
                     {a.position}
                   </p>
-                  <p style={{ font: "600 13px var(--font-body)", color: "var(--color-accent-strong)", margin: 0 }}>
+                  <p style={{ font: "600 13px var(--font-body)", color: "var(--astravia-ink)", margin: 0 }}>
                     {a.meaning}
                   </p>
                 </div>
@@ -196,7 +193,7 @@ export default function LandingPage() {
             <p
               style={{
                 font: "400 14px/1.7 var(--font-body)",
-                color: "var(--color-muted)",
+                color: "var(--astravia-text-secondary)",
                 maxWidth: 480,
                 margin: "28px auto 0",
                 textAlign: "center"
@@ -214,9 +211,9 @@ export default function LandingPage() {
       <p
         style={{
           font: "400 12px/1.6 var(--font-body)",
-          color: "var(--color-faint)",
+          color: "var(--astravia-text-subtle)",
           textAlign: "center",
-          padding: "24px 32px 0"
+          padding: "24px 24px 0"
         }}
       >
         Astrocartography is an interpretive astrology practice, not a scientifically validated method for

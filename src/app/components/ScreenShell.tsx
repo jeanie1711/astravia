@@ -18,7 +18,7 @@ export function ScreenShell({
     maxWidth,
     width: "100%",
     margin: "0 auto",
-    background: "var(--color-bg)",
+    background: "var(--astravia-background)",
     minHeight: "100vh",
     paddingBottom: 60,
     boxSizing: "border-box"

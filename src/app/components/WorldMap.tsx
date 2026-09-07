@@ -15,10 +15,10 @@ const VIEW_W = 400;
 const VIEW_H = 200;
 
 // Plain equirectangular projection -- deliberately not a literal coastline
-// map (product feedback 2026-09-06 asked for a "simplified world map," and
-// there's no verified, licensed coastline dataset already in this project
-// to draw from). A graticule plus real projected pin positions reads as a
-// map without asserting geography we can't back up.
+// map (a "simplified world map" was requested, and there's no verified,
+// licensed coastline dataset already in this project to draw from). A
+// graticule plus real projected pin positions reads as a map without
+// asserting geography we can't back up.
 function project(lat: number, lon: number): { x: number; y: number } {
   const x = ((lon + 180) / 360) * VIEW_W;
   const y = ((90 - lat) / 180) * VIEW_H;
@@ -28,11 +28,12 @@ function project(lat: number, lon: number): { x: number; y: number } {
 const MERIDIANS = [-120, -60, 0, 60, 120];
 const PARALLELS = [-60, -30, 0, 30, 60];
 
-// A simplified world/region map with a handful of ranked pins (product
-// feedback 2026-09-06, item 4): Astravia is a location-discovery product
-// and previously had no map at all. Tap a pin to preview that result
-// inline -- no pan/zoom, no drawn astrocartography lines, well short of
-// the "interactive astrocartography map" CLAUDE.md's scope guard excludes.
+// A simplified world/region map with a handful of ranked pins: Astravia is
+// a location-discovery product and previously had no map at all. Tap a
+// pin to preview that result inline -- no pan/zoom, no drawn
+// astrocartography lines, well short of the "interactive astrocartography
+// map" CLAUDE.md's scope guard excludes. The #1 pin uses sunlit gold, its
+// one reserved "discovery moment" role (product feedback 2026-09-07, §3).
 export function WorldMap({
   pins,
   onSelect
@@ -46,9 +47,9 @@ export function WorldMap({
   return (
     <div
       style={{
-        background: "linear-gradient(180deg, var(--color-sky-bg) 0%, var(--color-bg) 100%)",
-        border: "1px solid var(--color-border)",
-        borderRadius: 18,
+        background: "linear-gradient(180deg, var(--astravia-surface-alt) 0%, var(--astravia-background) 100%)",
+        border: "1px solid var(--astravia-border)",
+        borderRadius: "var(--astravia-radius-card)",
         padding: "16px 16px 0",
         marginBottom: 20,
         overflow: "hidden"
@@ -64,7 +65,7 @@ export function WorldMap({
               y1={0}
               x2={x}
               y2={VIEW_H}
-              stroke="var(--color-sky)"
+              stroke="var(--astravia-border-strong)"
               strokeWidth={0.5}
               strokeDasharray="2 4"
               opacity={0.6}
@@ -80,7 +81,7 @@ export function WorldMap({
               y1={y}
               x2={VIEW_W}
               y2={y}
-              stroke="var(--color-sky)"
+              stroke="var(--astravia-border-strong)"
               strokeWidth={lat === 0 ? 0.8 : 0.5}
               strokeDasharray={lat === 0 ? undefined : "2 4"}
               opacity={lat === 0 ? 0.8 : 0.6}
@@ -102,11 +103,11 @@ export function WorldMap({
               role="button"
               aria-label={`${pin.title}, rank ${pin.rank}`}
             >
-              {isTop && <circle r={r + 5} fill="var(--color-accent)" opacity={0.25} />}
+              {isTop && <circle r={r + 5} fill="var(--astravia-overall)" opacity={0.22} />}
               <circle
                 r={r}
-                fill={isActive ? "var(--color-accent-strong)" : "var(--color-surface)"}
-                stroke={isTop ? "var(--color-accent-strong)" : "var(--color-muted)"}
+                fill={isActive ? "var(--astravia-ink)" : "var(--astravia-surface)"}
+                stroke={isTop ? "var(--astravia-overall)" : "var(--astravia-text-subtle)"}
                 strokeWidth={1.5}
               />
               <text
@@ -114,7 +115,7 @@ export function WorldMap({
                 dy="0.32em"
                 fontSize={isTop ? 9 : 8}
                 fontWeight={700}
-                fill={isActive ? "var(--color-ink-on-dark)" : "var(--color-ink)"}
+                fill={isActive ? "var(--astravia-white)" : "var(--astravia-ink)"}
                 style={{ pointerEvents: "none" }}
               >
                 {pin.rank}
@@ -134,7 +135,7 @@ export function WorldMap({
             justifyContent: "space-between",
             width: "100%",
             border: "none",
-            borderTop: "1px solid var(--color-border)",
+            borderTop: "1px solid var(--astravia-border)",
             background: "transparent",
             padding: "12px 4px",
             cursor: "pointer",
@@ -143,12 +144,12 @@ export function WorldMap({
           }}
         >
           <span>
-            <span style={{ font: "600 14px var(--font-body)", color: "var(--color-ink)" }}>{active.title}</span>
-            <span style={{ font: "400 12px var(--font-body)", color: "var(--color-muted)", marginLeft: 8 }}>
+            <span style={{ font: "600 14px var(--font-body)", color: "var(--astravia-ink)" }}>{active.title}</span>
+            <span style={{ font: "400 12px var(--font-body)", color: "var(--astravia-text-secondary)", marginLeft: 8 }}>
               {active.subtitle}
             </span>
           </span>
-          <span style={{ font: "600 12px var(--font-body)", color: "var(--color-accent-strong)" }}>View →</span>
+          <span style={{ font: "600 12px var(--font-body)", color: "var(--astravia-ink)" }}>View →</span>
         </button>
       )}
     </div>

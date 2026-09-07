@@ -7,8 +7,9 @@ export function SaveButton({
   saved: boolean;
   onToggle: () => void;
   size?: number;
-  // Hero card renders on a coral gradient banner -- needs a light glyph
-  // instead of the usual ink-colored one to stay legible.
+  // Reserved for a save toggle placed on a dark/colored surface -- unused
+  // now that the hero card is a pearl-white surface (§13), kept for any
+  // future dark surface.
   onDark?: boolean;
 }) {
   return (
@@ -27,7 +28,7 @@ export function SaveButton({
         padding: 4,
         lineHeight: 1,
         fontSize: size,
-        color: saved ? "var(--color-accent-strong)" : onDark ? "var(--color-ink-on-dark)" : "var(--color-faint)",
+        color: saved ? "var(--astravia-overall)" : onDark ? "var(--astravia-white)" : "var(--astravia-text-subtle)",
         transition: "transform 0.15s ease",
         transform: saved ? "scale(1.08)" : "scale(1)"
       }}

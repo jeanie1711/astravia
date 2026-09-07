@@ -9,10 +9,10 @@ import type { CalculateRequest, CalculateResponse } from "../../journey/types";
 
 // Spec S05: rotating messages reflecting real stages, no fake delay.
 const CALC_MESSAGES = [
-  "Calculating your planetary lines…",
-  "Comparing cities around the world…",
+  "Mapping your planetary lines…",
+  "Comparing places around the world…",
   "Checking your birth-time range…",
-  "Finding your strongest patterns…"
+  "Finding patterns that stay strong…"
 ];
 
 export default function CalculatingPage() {
@@ -53,8 +53,12 @@ export default function CalculatingPage() {
         return (await res.json()) as CalculateResponse;
       })
       .then((data) => {
-        setJourney((prev) => ({ ...prev, results: data }));
-        router.push("/explore/view-mode");
+        // Defaults straight to "Places" instead of a separate lens-choice
+        // screen (product feedback 2026-09-07, §15: don't force a separate
+        // explanatory screen when a switch already exists on the results
+        // page itself).
+        setJourney((prev) => ({ ...prev, results: data, viewMode: prev.viewMode ?? "city" }));
+        router.push("/results");
       })
       .catch(() => setError("We couldn't calculate your results."))
       .finally(() => clearInterval(interval));
@@ -67,7 +71,7 @@ export default function CalculatingPage() {
     return (
       <ScreenShell>
         <div style={{ padding: "80px 32px 0", textAlign: "center" }}>
-          <h2 style={{ font: "600 22px var(--font-display)", color: "var(--color-ink)", margin: "0 0 12px" }}>
+          <h2 style={{ font: "600 22px var(--font-display)", color: "var(--astravia-ink)", margin: "0 0 12px" }}>
             {error}
           </h2>
           <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
@@ -102,34 +106,33 @@ export default function CalculatingPage() {
           padding: "0 32px"
         }}
       >
+        <div style={{ width: 120, height: 3, borderRadius: 100, overflow: "hidden", marginBottom: 32 }}>
+          <div style={{ width: "100%", height: "100%", background: "var(--astravia-spectrum)" }} />
+        </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 28 }}>
           {[0, 0.2, 0.4].map((delay) => (
             <div
               key={delay}
+              className="astravia-loading-dot"
               style={{
                 width: 10,
                 height: 10,
                 borderRadius: "50%",
-                background: "var(--color-accent)",
-                animation: "astravia-pulse 1.1s ease-in-out infinite",
+                background: "var(--astravia-ink)",
                 animationDelay: `${delay}s`
               }}
             />
           ))}
         </div>
-        <h2 style={{ margin: "0 0 12px", font: "600 26px var(--font-display)", color: "var(--color-ink)" }}>
+        <h2 style={{ margin: "0 0 12px", font: "600 24px var(--font-display)", color: "var(--astravia-ink)" }}>
           Mapping your places…
         </h2>
-        <p style={{ margin: 0, font: "400 15px var(--font-body)", color: "var(--color-muted)", height: 20 }}>
+        <p
+          style={{ margin: 0, font: "400 15px var(--font-body)", color: "var(--astravia-text-secondary)", height: 20 }}
+        >
           {CALC_MESSAGES[msgIdx]}
         </p>
       </div>
-      <style>{`
-        @keyframes astravia-pulse {
-          0%, 100% { opacity: 0.3; transform: scale(0.85); }
-          50% { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
     </ScreenShell>
   );
 }

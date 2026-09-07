@@ -1,20 +1,19 @@
 import type { ButtonHTMLAttributes } from "react";
 
-type Variant = "primary" | "secondary" | "accent";
+type Variant = "primary" | "secondary";
 
+// Primary: deep teal gradient fill, white text (.astravia-btn-primary in
+// globals.css supplies the gradient + hover lift, since inline styles
+// can't express :hover). Secondary: pearl surface, teal text, a quiet
+// border. The old bold coral "accent" variant is retired -- Sunlit
+// Editorial keeps large CTAs in teal; gold stays reserved for small
+// emphasis details elsewhere (product feedback 2026-09-07, §18).
 const VARIANT_STYLE: Record<Variant, React.CSSProperties> = {
-  primary: { background: "var(--color-ink)", color: "var(--color-ink-on-dark)", border: "none" },
+  primary: { color: "var(--astravia-white)", border: "none" },
   secondary: {
-    background: "var(--color-surface)",
-    color: "var(--color-ink)",
-    border: "1px solid var(--color-border-strong)"
-  },
-  // Background comes from the .astravia-btn-accent class (gradient + hover
-  // lift, defined in globals.css -- inline styles can't express :hover).
-  accent: {
-    color: "var(--color-surface)",
-    border: "none",
-    boxShadow: "var(--shadow-cta)"
+    background: "var(--astravia-surface)",
+    color: "var(--astravia-ink)",
+    border: "1px solid var(--astravia-border-strong)"
   }
 };
 
@@ -29,11 +28,12 @@ export function PillButton({
     <button
       type="button"
       {...props}
-      className={variant === "accent" ? ["astravia-btn-accent", className].filter(Boolean).join(" ") : className}
+      className={variant === "primary" ? ["astravia-btn-primary", className].filter(Boolean).join(" ") : className}
       style={{
         width: fullWidth ? "100%" : undefined,
-        padding: "16px",
-        borderRadius: 100,
+        minHeight: 52,
+        padding: "0 22px",
+        borderRadius: "var(--astravia-radius-pill)",
         font: "600 16px var(--font-body)",
         cursor: props.disabled ? "not-allowed" : "pointer",
         opacity: props.disabled ? 0.4 : 1,

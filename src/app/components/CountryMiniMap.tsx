@@ -28,7 +28,7 @@ export function CountryMiniMap({ points }: { points: MiniMapPoint[] }) {
   return (
     <div
       style={{
-        background: "var(--color-sky-bg)",
+        background: "var(--astravia-surface-alt)",
         borderRadius: 12,
         padding: 8,
         width: 84,
@@ -46,8 +46,8 @@ export function CountryMiniMap({ points }: { points: MiniMapPoint[] }) {
               cx={x}
               cy={y}
               r={isTop ? 7 : 5}
-              fill={isTop ? "var(--color-accent-strong)" : "var(--color-surface)"}
-              stroke="var(--color-accent-strong)"
+              fill={isTop ? "var(--astravia-overall)" : "var(--astravia-surface)"}
+              stroke={isTop ? "var(--astravia-overall)" : "var(--astravia-ink)"}
               strokeWidth={1.2}
             />
           );

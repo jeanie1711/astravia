@@ -6,6 +6,7 @@ import { BackHeader } from "../../components/BackHeader";
 import { errorTextStyle, FieldLabel, inputStyle } from "../../components/FieldLabel";
 import { PillButton } from "../../components/PillButton";
 import { ScreenShell } from "../../components/ScreenShell";
+import { StepProgress } from "../../components/StepProgress";
 import { useJourney } from "../../journey/JourneyContext";
 import type { PlaceSearchResult } from "../../api/place-search/route";
 
@@ -68,12 +69,13 @@ export default function BirthDetailsPage() {
 
   return (
     <ScreenShell>
-      <BackHeader stepLabel="Step 1 of 3 · Birth details" onBack={() => router.push("/")} />
+      <BackHeader stepLabel="Step 1 of 3" onBack={() => router.push("/")} />
+      <StepProgress step={1} total={3} />
       <div style={{ padding: "24px 24px 0" }}>
-        <h2 style={{ margin: "0 0 8px", font: "600 27px var(--font-display)", color: "var(--color-ink)" }}>
+        <h2 style={{ margin: "0 0 8px", font: "600 26px var(--font-display)", color: "var(--astravia-ink)" }}>
           Your birth details
         </h2>
-        <p style={{ margin: "0 0 24px", font: "400 15px/1.5 var(--font-body)", color: "var(--color-muted)" }}>
+        <p style={{ margin: "0 0 24px", font: "400 15px/1.5 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
           Birth time matters because astrocartography lines can move noticeably within a short time.
         </p>
 
@@ -116,10 +118,10 @@ export default function BirthDetailsPage() {
                 padding: 0,
                 position: "absolute",
                 width: "100%",
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-border-strong)",
-                borderRadius: 10,
-                boxShadow: "var(--shadow-card)",
+                background: "var(--astravia-surface)",
+                border: "1px solid var(--astravia-border-strong)",
+                borderRadius: "var(--astravia-radius-control)",
+                boxShadow: "var(--astravia-shadow-card)",
                 zIndex: 10,
                 overflow: "hidden"
               }}
@@ -141,7 +143,7 @@ export default function BirthDetailsPage() {
                       background: "none",
                       cursor: "pointer",
                       font: "14px var(--font-body)",
-                      color: "var(--color-ink)"
+                      color: "var(--astravia-ink)"
                     }}
                   >
                     {s.label}

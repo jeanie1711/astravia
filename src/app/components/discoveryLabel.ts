@@ -2,14 +2,18 @@ import type { CountryNarrative, Stars } from "../../scoring/types";
 
 export type DiscoveryType = "STRONG_PATTERN" | "FAMILIAR" | "UNEXPECTED" | "WORTH_EXPLORING" | "WILDCARD";
 
-export type DiscoveryCopy = { label: string; description: string };
+// `accent` marks the two genuine "discovery moment" framings, which get a
+// small sunlit-gold star glyph next to an otherwise neutral tag (product
+// feedback 2026-09-07, §3 lists "discovery moments" as a valid small use
+// of gold; §19 says general descriptive tags stay neutral, not brightly
+// colored) -- gold marks the moment, it never fills the whole badge.
+export type DiscoveryCopy = { label: string; description: string; accent: boolean };
 
 // Population thresholds for a plain familiarity proxy -- real, already-
 // sourced data (not an invented city fact), used only to frame the result
-// honestly rather than as an astrological claim. Product feedback
-// 2026-09-06: an unfamiliar country appearing with no context (Russia,
-// Tajikistan, Svalbard...) reads as a data error rather than an
-// intentional "unexpected discovery."
+// honestly rather than as an astrological claim. An unfamiliar country
+// appearing with no context (Russia, Tajikistan, Svalbard...) reads as a
+// data error rather than an intentional "unexpected discovery."
 const WELL_KNOWN_POPULATION = 2_000_000;
 const OBSCURE_POPULATION = 300_000;
 
@@ -34,24 +38,29 @@ export function classifyDiscovery(
 const DISCOVERY_COPY: Record<DiscoveryType, DiscoveryCopy> = {
   STRONG_PATTERN: {
     label: "Strong regional pattern",
-    description: "Several cities here align consistently, not just one -- the clustering itself is the signal."
+    description: "Several cities here align consistently, not just one -- the clustering itself is the signal.",
+    accent: false
   },
   FAMILIAR: {
     label: "Familiar possibility",
-    description: "A widely recognized place that also carries a genuine signal here."
+    description: "A widely recognized place that also carries a genuine signal here.",
+    accent: false
   },
   UNEXPECTED: {
     label: "Unexpected match",
     description:
-      "A less familiar place surfaced by a genuinely strong signal. This is an astrological match, not yet a practical relocation recommendation."
+      "A less familiar place surfaced by a genuinely strong signal. This is an astrological match, not yet a practical relocation recommendation.",
+    accent: true
   },
   WORTH_EXPLORING: {
     label: "Worth exploring",
-    description: "A moderately familiar place with a real, if less dominant, signal."
+    description: "A moderately familiar place with a real, if less dominant, signal.",
+    accent: false
   },
   WILDCARD: {
     label: "Wildcard",
-    description: "An unusual, less familiar result. Worth a curious look, not a strong recommendation."
+    description: "An unusual, less familiar result. Worth a curious look, not a strong recommendation.",
+    accent: true
   }
 };
 
@@ -59,18 +68,9 @@ export function getDiscoveryCopy(type: DiscoveryType): DiscoveryCopy {
   return DISCOVERY_COPY[type];
 }
 
-// Reuses the existing corridor/anchor hues for the two "structurally
-// strong" cases, and puts the sky/sage/sun secondary accents (globals.css)
-// to their intended use as category highlights for the three
-// familiarity-driven cases -- no new tokens needed.
-const DISCOVERY_COLORS: Record<DiscoveryType, { fg: string; bg: string }> = {
-  STRONG_PATTERN: { fg: "var(--color-corridor)", bg: "var(--color-corridor-bg)" },
-  FAMILIAR: { fg: "var(--color-anchor)", bg: "var(--color-anchor-bg)" },
-  UNEXPECTED: { fg: "#3a7a8c", bg: "var(--color-sky-bg)" },
-  WORTH_EXPLORING: { fg: "#4d7a3f", bg: "var(--color-sage-bg)" },
-  WILDCARD: { fg: "#9c7423", bg: "var(--color-sun-bg)" }
-};
-
-export function getDiscoveryColors(type: DiscoveryType): { fg: string; bg: string } {
-  return DISCOVERY_COLORS[type];
+// A single neutral pale-sky/teal treatment for every discovery badge
+// (product feedback 2026-09-07, §19: general descriptive tags stay
+// neutral -- only a life-theme tag earns its own bright color).
+export function getDiscoveryColors(): { fg: string; bg: string } {
+  return { fg: "var(--astravia-ink)", bg: "var(--astravia-surface-alt)" };
 }

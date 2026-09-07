@@ -2,10 +2,8 @@ export function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
-        font: "600 11px var(--font-body)",
-        letterSpacing: "0.08em",
-        textTransform: "uppercase",
-        color: "var(--color-muted)",
+        font: "600 13px var(--font-body)",
+        color: "var(--astravia-ink)",
         marginBottom: 8
       }}
     >
@@ -16,17 +14,18 @@ export function FieldLabel({ children }: { children: React.ReactNode }) {
 
 export const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: "14px 16px",
-  borderRadius: 10,
-  border: "1px solid var(--color-border-strong)",
-  background: "var(--color-surface)",
+  minHeight: 48,
+  padding: "12px 16px",
+  borderRadius: "var(--astravia-radius-control)",
+  border: "1px solid var(--astravia-border-strong)",
+  background: "var(--astravia-surface)",
   font: "15px var(--font-body)",
-  color: "var(--color-ink)",
+  color: "var(--astravia-ink)",
   boxSizing: "border-box"
 };
 
 export const errorTextStyle: React.CSSProperties = {
   font: "400 13px var(--font-body)",
-  color: "#B3453C",
+  color: "#b3453c",
   marginTop: 6
 };

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { BackHeader } from "../../components/BackHeader";
 import { PillButton } from "../../components/PillButton";
 import { ScreenShell } from "../../components/ScreenShell";
+import { StepProgress } from "../../components/StepProgress";
 import { useJourney } from "../../journey/JourneyContext";
 import type { UncertaintyMinutes } from "../../journey/types";
 
@@ -24,17 +25,26 @@ function OptionCard({
   return (
     <div
       onClick={onClick}
+      role="radio"
+      aria-checked={selected}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       style={{
         padding: "16px 18px",
-        borderRadius: 12,
-        background: "var(--color-surface)",
+        borderRadius: "var(--astravia-radius-control)",
+        background: selected ? "var(--astravia-surface-alt)" : "var(--astravia-surface)",
         marginBottom: 12,
         cursor: "pointer",
-        border: selected ? "2px solid var(--color-accent)" : "1px solid var(--color-border-strong)"
+        border: selected ? "2px solid var(--astravia-ink)" : "1px solid var(--astravia-border-strong)"
       }}
     >
-      <div style={{ font: "600 15px var(--font-body)", color: "var(--color-ink)" }}>{title}</div>
-      <div style={{ font: "400 13px var(--font-body)", color: "var(--color-muted)", marginTop: 2 }}>
+      <div style={{ font: "600 15px var(--font-body)", color: "var(--astravia-ink)" }}>{title}</div>
+      <div style={{ font: "400 13px var(--font-body)", color: "var(--astravia-text-secondary)", marginTop: 2 }}>
         {description}
       </div>
     </div>
@@ -63,13 +73,15 @@ export default function ConfidencePage() {
 
   return (
     <ScreenShell>
-      <BackHeader stepLabel="Step 2 of 3 · Birth-time confidence" />
+      <BackHeader stepLabel="Step 2 of 3" />
+      <StepProgress step={2} total={3} />
       <div style={{ padding: "24px 24px 0" }}>
-        <h2 style={{ margin: "0 0 8px", font: "600 27px var(--font-display)", color: "var(--color-ink)" }}>
+        <h2 style={{ margin: "0 0 8px", font: "600 26px var(--font-display)", color: "var(--astravia-ink)" }}>
           How confident are you about your birth time?
         </h2>
-        <p style={{ margin: "0 0 24px", font: "400 15px/1.5 var(--font-body)", color: "var(--color-muted)" }}>
-          If you're unsure, we'll check how much your strongest locations change across that time range.
+        <p style={{ margin: "0 0 24px", font: "400 15px/1.5 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
+          If you're unsure, we'll check how much your strongest locations change across that time range, so nothing
+          is presented with more certainty than it deserves.
         </p>
 
         <OptionCard
@@ -92,15 +104,16 @@ export default function ConfidencePage() {
                 key={r}
                 type="button"
                 onClick={() => setRange(r)}
+                aria-pressed={range === r}
                 style={{
                   flex: 1,
-                  padding: 10,
-                  borderRadius: 100,
-                  border: "1px solid var(--color-border-strong)",
+                  minHeight: 44,
+                  borderRadius: "var(--astravia-radius-pill)",
+                  border: range === r ? "none" : "1px solid var(--astravia-border-strong)",
                   font: "600 13px var(--font-body)",
                   cursor: "pointer",
-                  background: range === r ? "var(--color-ink)" : "transparent",
-                  color: range === r ? "var(--color-bg)" : "var(--color-ink)"
+                  background: range === r ? "var(--astravia-ink)" : "var(--astravia-surface)",
+                  color: range === r ? "var(--astravia-white)" : "var(--astravia-ink)"
                 }}
               >
                 {r === 60 ? "± 1 hour" : `± ${r} min`}

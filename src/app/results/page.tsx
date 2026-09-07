@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { BackHeader } from "../components/BackHeader";
 import { CountryMiniMap } from "../components/CountryMiniMap";
 import { classifyDiscovery, getDiscoveryColors, getDiscoveryCopy } from "../components/discoveryLabel";
 import { GoalBreakdownBars } from "../components/GoalBreakdownBars";
@@ -11,23 +12,16 @@ import { ScreenShell } from "../components/ScreenShell";
 import { StarRating } from "../components/StarRating";
 import { useSavedPlaces } from "../components/useSavedPlaces";
 import { WorldMap, type MapPin } from "../components/WorldMap";
+import { confidenceLabel } from "../../interpretation/display";
 import { useJourney } from "../journey/JourneyContext";
+import { GOAL_COLOR, GOAL_LABEL } from "../journey/goalTheme";
 import { deriveGoalOrder } from "../journey/priorities";
 import type { CalculateRequest, CalculateResponse, CalculateResult } from "../journey/types";
-import type { Goal, ScorableGoal, Stars } from "../../scoring/types";
+import type { Goal, Stars } from "../../scoring/types";
 import { getArchetypeCopy } from "../../interpretation/archetypes";
 
-const OVERALL_INFO_SEEN_KEY = "astravia_overall_info_seen";
-
-const SCORABLE_TAB_NAME: Record<ScorableGoal, string> = {
-  CAREER: "Career",
-  LOVE: "Love & Relationships",
-  HOME: "Home & Family",
-  GROWTH: "Personal Growth"
-};
-
-// Kept deliberately small (§ product feedback 2026-09-04): a focused,
-// convincing shortlist beats a long, noisy one.
+// Kept deliberately small: a focused, convincing shortlist beats a long,
+// noisy one.
 const MAX_CITIES_SHOWN = 3;
 const MAX_COUNTRIES_SHOWN = 3;
 
@@ -35,7 +29,6 @@ export default function ResultsPage() {
   const router = useRouter();
   const { journey, hydrated, setJourney } = useJourney();
   const [loading, setLoading] = useState(false);
-  const [showOverallInfo, setShowOverallInfo] = useState(false);
   const { saved, toggle: toggleSaved } = useSavedPlaces();
 
   useEffect(() => {
@@ -44,10 +37,11 @@ export default function ResultsPage() {
       router.replace("/explore/birth-details");
       return;
     }
-    // Force the S05b choice once per fresh calculation -- avoids landing
-    // here (e.g. via back button) with no lens chosen yet.
+    // Defaults to "Places" rather than routing through a separate
+    // lens-choice screen (product feedback 2026-09-07, §15) -- the
+    // segmented control below already lets the user switch anytime.
     if (!journey.viewMode) {
-      router.replace("/explore/view-mode");
+      setJourney((prev) => ({ ...prev, viewMode: "city" }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, journey.results, journey.viewMode]);
@@ -70,25 +64,17 @@ export default function ResultsPage() {
     setJourney((prev) => ({ ...prev, viewMode: mode }));
   }
 
-  // Two-tier goal picker (product feedback 2026-09-06): "Overall" used to
-  // sit in the same row as the four life-area goals, which is exactly why
-  // it read as a confusing fifth one. Selecting "Whole picture" explains
-  // itself once via a dismissible tooltip (localStorage-gated) rather than
-  // a dark box repeated on every screen.
+  // Two-tier goal picker: "Overall" used to sit in the same row as the
+  // four life-area goals, which is exactly why it read as a confusing
+  // fifth one. Separated into its own mode instead -- the split itself is
+  // meant to be self-evident, so no explanatory box accompanies it
+  // (product feedback 2026-09-07, §14).
   function selectWholePicture() {
     switchGoal("OVERALL");
-    if (typeof window !== "undefined" && window.localStorage.getItem(OVERALL_INFO_SEEN_KEY) !== "1") {
-      setShowOverallInfo(true);
-    }
   }
 
   function selectLifeArea() {
     if (journey.results?.goal === "OVERALL") switchGoal("CAREER");
-  }
-
-  function dismissOverallInfo() {
-    setShowOverallInfo(false);
-    if (typeof window !== "undefined") window.localStorage.setItem(OVERALL_INFO_SEEN_KEY, "1");
   }
 
   const results = journey.results;
@@ -100,7 +86,7 @@ export default function ResultsPage() {
   // most is also the first pill on the results page -- falls back to the
   // default order when no priorities were recorded (e.g. an older session).
   const orderedGoals = deriveGoalOrder(journey.priorities ?? []);
-  const goalName = results.goal === "OVERALL" ? "your overall picture" : SCORABLE_TAB_NAME[results.goal];
+  const goalName = results.goal === "OVERALL" ? "your overall picture" : GOAL_LABEL[results.goal];
   const topCities = results.results.slice(0, MAX_CITIES_SHOWN);
   const topCountries = results.countries.slice(0, MAX_COUNTRIES_SHOWN);
   const activeTopStars = viewMode === "city" ? topCities[0]?.ranked.stars ?? 1 : topCountries[0]?.stars ?? 1;
@@ -112,134 +98,134 @@ export default function ResultsPage() {
   }
 
   return (
-    <ScreenShell maxWidth={640}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "24px 28px 0"
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span aria-hidden="true" style={{ font: "600 12px var(--font-display)", color: "var(--color-faint-2)" }}>
-            ✦ Astravia
-          </span>
-          <span
+    <ScreenShell maxWidth={680}>
+      <BackHeader
+        stepLabel="Your places"
+        onBack={() => router.push("/explore/goal")}
+        right={
+          <button
+            type="button"
+            onClick={() => router.push("/explore/birth-details")}
             style={{
-              font: "600 11px var(--font-body)",
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "var(--color-faint)"
+              border: "none",
+              background: "none",
+              color: "var(--astravia-ink)",
+              font: "600 13px var(--font-body)",
+              cursor: "pointer",
+              padding: 0
             }}
           >
-            Your places
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => router.push("/explore/birth-details")}
+            Edit details
+          </button>
+        }
+      />
+
+      <div style={{ padding: "20px 24px 0" }}>
+        <div
           style={{
-            border: "none",
-            background: "none",
-            color: "var(--color-accent-strong)",
-            font: "600 13px var(--font-body)",
-            cursor: "pointer"
+            display: "inline-flex",
+            gap: 4,
+            padding: 4,
+            borderRadius: "var(--astravia-radius-pill)",
+            background: "var(--astravia-surface-alt)",
+            marginBottom: 18
           }}
         >
-          Edit details
-        </button>
-      </div>
-
-      <div style={{ padding: "16px 28px 0" }}>
-        <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
           <button
             type="button"
             onClick={() => switchView("city")}
+            aria-pressed={viewMode === "city"}
             style={{
-              padding: "7px 14px",
-              borderRadius: 100,
-              border: viewMode === "city" ? "2px solid var(--color-accent)" : "1px solid var(--color-border)",
-              background: viewMode === "city" ? "var(--color-surface)" : "#ffffff",
-              font: "600 12px var(--font-body)",
-              color: "var(--color-ink)",
+              minHeight: 40,
+              padding: "0 16px",
+              borderRadius: "var(--astravia-radius-pill)",
+              border: "none",
+              background: viewMode === "city" ? "var(--astravia-surface)" : "transparent",
+              boxShadow: viewMode === "city" ? "var(--astravia-shadow-card)" : "none",
+              font: "600 13px var(--font-body)",
+              color: "var(--astravia-ink)",
               cursor: "pointer"
             }}
           >
-            By city
+            Places
           </button>
           <button
             type="button"
             onClick={() => switchView("country")}
+            aria-pressed={viewMode === "country"}
             style={{
-              padding: "7px 14px",
-              borderRadius: 100,
-              border: viewMode === "country" ? "2px solid var(--color-accent)" : "1px solid var(--color-border)",
-              background: viewMode === "country" ? "var(--color-surface)" : "#ffffff",
-              font: "600 12px var(--font-body)",
-              color: "var(--color-ink)",
+              minHeight: 40,
+              padding: "0 16px",
+              borderRadius: "var(--astravia-radius-pill)",
+              border: "none",
+              background: viewMode === "country" ? "var(--astravia-surface)" : "transparent",
+              boxShadow: viewMode === "country" ? "var(--astravia-shadow-card)" : "none",
+              font: "600 13px var(--font-body)",
+              color: "var(--astravia-ink)",
               cursor: "pointer"
             }}
           >
-            By country
+            Countries
           </button>
         </div>
 
-        <h2 style={{ margin: "0 0 6px", font: "600 30px var(--font-display)", color: "var(--color-ink)" }}>
+        <h2 style={{ margin: "0 0 6px", font: "600 28px var(--font-display)", color: "var(--astravia-ink)" }}>
           {results.goal === "OVERALL"
             ? viewMode === "city"
-              ? "Your overall picture, by place"
-              : "Your overall picture, by country"
+              ? "Your whole picture, by place"
+              : "Your whole picture, by country"
             : viewMode === "city"
               ? `Your strongest places for ${goalName}`
               : `Your strongest countries for ${goalName}`}
         </h2>
         {isMixed ? (
-          <p style={{ margin: "0 0 8px", font: "400 14px/1.5 var(--font-body)", color: "var(--color-muted)" }}>
-            <strong style={{ color: "var(--color-ink)" }}>Your map is more mixed for this goal.</strong> These are
-            the {viewMode === "city" ? "locations" : "countries"} with the clearest signals, even though none are
-            exceptionally strong in the current model.
+          <p style={{ margin: "0 0 8px", font: "400 14px/1.5 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
+            <strong style={{ color: "var(--astravia-ink)" }}>Your map is more mixed for this goal.</strong> These
+            are the {viewMode === "city" ? "locations" : "countries"} with the clearest signals, even though none
+            are exceptionally strong in the current model.
           </p>
         ) : (
-          <p style={{ margin: "0 0 8px", font: "400 14px var(--font-body)", color: "var(--color-muted)" }}>
+          <p style={{ margin: "0 0 8px", font: "400 14px var(--font-body)", color: "var(--astravia-text-secondary)" }}>
             Based on the birth details and time range you entered.
           </p>
         )}
-        <p style={{ margin: "0 0 20px", font: "400 13px/1.5 var(--font-body)", color: "var(--color-faint)" }}>
+        <p style={{ margin: "0 0 20px", font: "400 13px/1.5 var(--font-body)", color: "var(--astravia-text-subtle)" }}>
           {results.goal === "OVERALL"
             ? viewMode === "city"
-              ? "★ shows how strongly a place supports all four goals together. Open a place to see the breakdown."
-              : "★ shows how strongly a country supports all four goals together, based on its strongest cities."
+              ? "Match strength shows how strongly a place supports all four goals together. Open a place to see the breakdown."
+              : "Match strength shows how strongly a country supports all four goals together, based on the consistency of its strongest cities, not the country as a single point on the map."
             : viewMode === "city"
-              ? "★ shows how strongly a place fits " +
+              ? "Match strength shows how strongly a place fits " +
                 goalName +
                 ". Open a place to see how much that could shift if your birth time isn't exact."
-              : "★ shows how strongly a country fits " +
+              : "Match strength shows how strongly a country fits " +
                 goalName +
-                " overall, based on its strongest cities together, not just its single best one."}
+                " overall, based on the consistency and strength of its matching cities, not the country as a single astrological point."}
         </p>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
           <div
             style={{
               display: "inline-flex",
               gap: 4,
               padding: 4,
-              borderRadius: 100,
-              background: "var(--color-tag-bg)"
+              borderRadius: "var(--astravia-radius-pill)",
+              background: "var(--astravia-surface-alt)"
             }}
           >
             <button
               type="button"
               onClick={selectLifeArea}
+              aria-pressed={results.goal !== "OVERALL"}
               style={{
-                padding: "8px 16px",
-                borderRadius: 100,
+                minHeight: 40,
+                padding: "0 16px",
+                borderRadius: "var(--astravia-radius-pill)",
                 border: "none",
-                background: results.goal !== "OVERALL" ? "var(--color-surface)" : "transparent",
-                boxShadow: results.goal !== "OVERALL" ? "var(--shadow-card)" : "none",
-                font: "600 12px var(--font-body)",
-                color: "var(--color-ink)",
+                background: results.goal !== "OVERALL" ? "var(--astravia-surface)" : "transparent",
+                boxShadow: results.goal !== "OVERALL" ? "var(--astravia-shadow-card)" : "none",
+                font: "600 13px var(--font-body)",
+                color: "var(--astravia-ink)",
                 cursor: "pointer"
               }}
             >
@@ -248,43 +234,28 @@ export default function ResultsPage() {
             <button
               type="button"
               onClick={selectWholePicture}
+              aria-pressed={results.goal === "OVERALL"}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
-                padding: "8px 16px",
-                borderRadius: 100,
+                minHeight: 40,
+                padding: "0 16px",
+                borderRadius: "var(--astravia-radius-pill)",
                 border: "none",
-                background: results.goal === "OVERALL" ? "var(--gradient-accent)" : "transparent",
-                boxShadow: results.goal === "OVERALL" ? "var(--shadow-cta)" : "none",
-                font: "600 12px var(--font-body)",
-                color: results.goal === "OVERALL" ? "var(--color-ink-on-dark)" : "var(--color-ink)",
+                background: results.goal === "OVERALL" ? "var(--astravia-surface)" : "transparent",
+                boxShadow: results.goal === "OVERALL" ? "var(--astravia-shadow-card)" : "none",
+                font: "600 13px var(--font-body)",
+                color: "var(--astravia-ink)",
                 cursor: "pointer"
               }}
             >
-              <span aria-hidden="true">◎</span> Whole picture
+              <span aria-hidden="true" style={{ color: "var(--astravia-overall)" }}>
+                ✦
+              </span>
+              Whole picture
             </button>
           </div>
-          {results.goal === "OVERALL" && (
-            <button
-              type="button"
-              onClick={() => setShowOverallInfo((v) => !v)}
-              aria-label="What is the whole picture?"
-              style={{
-                border: "1px solid var(--color-border-strong)",
-                background: "var(--color-surface)",
-                color: "var(--color-muted)",
-                width: 24,
-                height: 24,
-                borderRadius: "50%",
-                cursor: "pointer",
-                font: "600 12px var(--font-body)",
-                flexShrink: 0
-              }}
-            >
-              i
-            </button>
-          )}
         </div>
 
         {results.goal !== "OVERALL" && (
@@ -294,87 +265,65 @@ export default function ResultsPage() {
                 key={g}
                 type="button"
                 onClick={() => switchGoal(g)}
+                aria-pressed={g === results.goal}
                 style={{
-                  padding: "8px 14px",
-                  borderRadius: 100,
-                  border: g === results.goal ? "2px solid var(--color-accent)" : "1px solid var(--color-border)",
-                  background: g === results.goal ? "var(--color-surface)" : "#ffffff",
-                  font: "600 12px var(--font-body)",
-                  color: "var(--color-ink)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 7,
+                  minHeight: 40,
+                  padding: "0 14px",
+                  borderRadius: "var(--astravia-radius-pill)",
+                  border: g === results.goal ? "2px solid var(--astravia-ink)" : "1px solid var(--astravia-border)",
+                  background: g === results.goal ? "var(--astravia-surface-alt)" : "var(--astravia-surface)",
+                  font: "600 13px var(--font-body)",
+                  color: "var(--astravia-ink)",
                   cursor: "pointer"
                 }}
               >
-                {SCORABLE_TAB_NAME[g]}
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: GOAL_COLOR[g]
+                  }}
+                />
+                {GOAL_LABEL[g]}
               </button>
             ))}
           </div>
         )}
 
-        {results.goal === "OVERALL" && showOverallInfo && (
-          <div
-            style={{
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-border-strong)",
-              borderRadius: 12,
-              padding: "12px 16px",
-              marginBottom: 20,
-              display: "flex",
-              gap: 10,
-              alignItems: "flex-start",
-              boxShadow: "var(--shadow-card)"
-            }}
-          >
-            <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1.4 }}>
-              ◎
-            </span>
-            <p style={{ margin: 0, font: "400 13px/1.5 var(--font-body)", color: "var(--color-muted)", flex: 1 }}>
-              This isn't a fifth goal. It blends Career, Love, Home, and Growth into one big-picture score.
-            </p>
-            <button
-              type="button"
-              onClick={dismissOverallInfo}
-              aria-label="Dismiss"
-              style={{
-                border: "none",
-                background: "none",
-                color: "var(--color-faint)",
-                cursor: "pointer",
-                font: "16px var(--font-body)",
-                padding: 0,
-                lineHeight: 1
-              }}
-            >
-              ×
-            </button>
-          </div>
-        )}
-
         {loading && (
-          <p style={{ font: "400 13px var(--font-body)", color: "var(--color-muted)" }}>Recalculating…</p>
+          <p style={{ font: "400 13px var(--font-body)", color: "var(--astravia-text-secondary)" }}>
+            Recalculating…
+          </p>
         )}
 
         {results.pattern && (
           <div
             style={{
-              background: "var(--color-surface)",
-              border: "1px solid rgba(232,126,67,0.3)",
-              borderRadius: 14,
+              background: "var(--astravia-surface)",
+              border: "1px solid var(--astravia-border)",
+              borderRadius: "var(--astravia-radius-card)",
               padding: "18px 20px",
-              marginBottom: 32
+              marginBottom: 32,
+              boxShadow: "var(--astravia-shadow-card)"
             }}
           >
             <div
               style={{
                 font: "600 11px var(--font-body)",
-                letterSpacing: "0.1em",
+                letterSpacing: "0.06em",
                 textTransform: "uppercase",
-                color: "var(--color-accent-strong)",
+                color: "var(--astravia-text-subtle)",
                 marginBottom: 6
               }}
             >
               Your location story
             </div>
-            <div style={{ font: "500 15px/1.5 var(--font-display)", color: "var(--color-ink)" }}>
+            <div style={{ font: "500 15px/1.5 var(--font-display)", color: "var(--astravia-ink)" }}>
               {results.pattern.sentence}
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
@@ -383,10 +332,10 @@ export default function ResultsPage() {
                   key={chip}
                   style={{
                     padding: "5px 12px",
-                    borderRadius: 100,
-                    background: "var(--color-tag-bg)",
+                    borderRadius: "var(--astravia-radius-pill)",
+                    background: "var(--astravia-surface-alt)",
                     font: "600 11px var(--font-body)",
-                    color: "var(--color-accent-strong)"
+                    color: "var(--astravia-ink)"
                   }}
                 >
                   {chip}
@@ -401,9 +350,9 @@ export default function ResultsPage() {
             <div
               style={{
                 font: "600 12px var(--font-body)",
-                letterSpacing: "0.1em",
+                letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: "var(--color-faint)",
+                color: "var(--astravia-text-subtle)",
                 marginBottom: 14
               }}
             >
@@ -433,56 +382,56 @@ export default function ResultsPage() {
                 return (
                   <div
                     key={r.ranked.cityId}
-                    className="astravia-card-top astravia-stagger"
+                    className="astravia-card-top astravia-sheen astravia-stagger"
                     style={{
                       ["--stagger-index" as string]: 0,
-                      borderRadius: 20,
+                      background: "var(--astravia-surface)",
+                      borderRadius: "var(--astravia-radius-card)",
                       overflow: "hidden",
                       marginBottom: 14,
-                      boxShadow: "var(--shadow-card)"
+                      boxShadow: "var(--astravia-shadow-card)"
                     }}
                   >
-                    <div style={{ background: "var(--gradient-accent)", padding: "20px 22px 16px" }}>
+                    <div style={{ height: 3, background: "var(--astravia-spectrum)" }} />
+                    <div style={{ padding: "20px 22px 22px" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                         <div
                           style={{
                             font: "600 11px var(--font-body)",
-                            letterSpacing: "0.1em",
+                            letterSpacing: "0.06em",
                             textTransform: "uppercase",
-                            color: "var(--color-ink-on-dark)",
-                            opacity: 0.85
+                            color: "var(--astravia-text-subtle)"
                           }}
                         >
                           Your strongest place for {goalName}
                         </div>
-                        <SaveButton
-                          saved={saved.has(r.ranked.cityId)}
-                          onToggle={() => toggleSaved(r.ranked.cityId)}
-                          onDark
-                        />
+                        <SaveButton saved={saved.has(r.ranked.cityId)} onToggle={() => toggleSaved(r.ranked.cityId)} />
                       </div>
                       <div
                         style={{
-                          font: "600 28px var(--font-display)",
-                          color: "var(--color-ink-on-dark)",
+                          font: "600 30px var(--font-display)",
+                          color: "var(--astravia-ink)",
                           marginTop: 6
                         }}
                       >
                         {r.city.name}, {r.city.countryName}
                       </div>
-                    </div>
-                    <div style={{ background: "var(--color-surface)", padding: "18px 22px 22px" }}>
-                      <StarRating
-                        stars={r.ranked.stars}
-                        score={r.ranked.internalScore}
-                        showLabel
-                        caption="Match strength"
-                      />
+                      <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 12, flexWrap: "wrap" }}>
+                        <StarRating stars={r.ranked.stars} score={r.ranked.internalScore} showLabel />
+                        <span
+                          style={{
+                            font: "600 12px var(--font-body)",
+                            color: "var(--astravia-text-secondary)"
+                          }}
+                        >
+                          Confidence: {confidenceLabel(r.ranked.stability)}
+                        </span>
+                      </div>
                       <p
                         style={{
                           margin: "14px 0 0",
-                          font: "500 16px/1.5 var(--font-display)",
-                          color: "var(--color-ink)"
+                          font: "500 17px/1.5 var(--font-display)",
+                          color: "var(--astravia-ink)"
                         }}
                       >
                         {archetypeCopy.description}
@@ -496,10 +445,10 @@ export default function ResultsPage() {
                                 key={theme}
                                 style={{
                                   padding: "5px 12px",
-                                  borderRadius: 100,
-                                  background: "var(--color-tag-bg)",
+                                  borderRadius: "var(--astravia-radius-pill)",
+                                  background: "var(--astravia-surface-alt)",
                                   font: "600 11px var(--font-body)",
-                                  color: "var(--color-accent-strong)"
+                                  color: "var(--astravia-ink)"
                                 }}
                               >
                                 {theme}
@@ -508,11 +457,7 @@ export default function ResultsPage() {
                         </div>
                       )}
                       {r.goalBreakdown && <GoalBreakdownBars breakdown={r.goalBreakdown} />}
-                      <PillButton
-                        variant="accent"
-                        style={{ marginTop: 16 }}
-                        onClick={() => router.push(`/place/${r.ranked.cityId}`)}
-                      >
+                      <PillButton style={{ marginTop: 18 }} onClick={() => router.push(`/place/${r.ranked.cityId}`)}>
                         Why {r.city.name}? →
                       </PillButton>
                     </div>
@@ -520,77 +465,91 @@ export default function ResultsPage() {
                 );
               }
 
-              return (
-                <div
-                  key={r.ranked.cityId}
-                  className="astravia-card-hover astravia-stagger"
-                  style={{
-                    ["--stagger-index" as string]: i,
-                    background: "var(--color-surface)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: 14,
-                    padding: "14px 18px",
-                    marginBottom: 10
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ font: "600 15px var(--font-body)", color: "var(--color-ink)" }}>
-                      <span style={{ color: "var(--color-faint)", fontWeight: 600 }}>#{i + 1}</span> {r.city.name},{" "}
-                      {r.city.countryName}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <StarRating stars={r.ranked.stars} score={r.ranked.internalScore} size={13} />
-                      <SaveButton
-                        saved={saved.has(r.ranked.cityId)}
-                        onToggle={() => toggleSaved(r.ranked.cityId)}
-                        size={15}
-                      />
-                    </div>
-                  </div>
-                  {story && (
-                    <>
-                      <div
-                        style={{
-                          font: "600 11px var(--font-body)",
-                          letterSpacing: "0.03em",
-                          color: "var(--color-accent-strong)",
-                          marginTop: 8
-                        }}
-                      >
-                        {[story.primaryTheme, ...story.secondaryThemes.slice(0, 1)].filter(Boolean).join(" · ")}
-                      </div>
-                      <p style={{ margin: "6px 0 0", font: "400 13px/1.5 var(--font-body)", color: "var(--color-muted)" }}>
-                        {story.hook}
-                      </p>
-                    </>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/place/${r.ranked.cityId}`)}
+              return null;
+            })}
+
+            <div className="astravia-secondary-grid">
+              {topCities.slice(1).map((r, i) => {
+                const rank = i + 2;
+                const story = results.stories[r.ranked.cityId];
+                return (
+                  <div
+                    key={r.ranked.cityId}
+                    className="astravia-card-hover astravia-stagger"
                     style={{
-                      marginTop: 8,
-                      border: "none",
-                      background: "none",
-                      color: "var(--color-accent-strong)",
-                      font: "600 12px var(--font-body)",
-                      cursor: "pointer",
-                      padding: 0
+                      ["--stagger-index" as string]: rank,
+                      background: "var(--astravia-surface)",
+                      border: "1px solid var(--astravia-border)",
+                      borderRadius: "var(--astravia-radius-control)",
+                      padding: "14px 18px"
                     }}
                   >
-                    Explore this place →
-                  </button>
-                </div>
-              );
-            })}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ font: "600 15px var(--font-body)", color: "var(--astravia-ink)" }}>
+                        <span style={{ color: "var(--astravia-text-subtle)", fontWeight: 600 }}>#{rank}</span>{" "}
+                        {r.city.name}, {r.city.countryName}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                        <StarRating stars={r.ranked.stars} score={r.ranked.internalScore} size={13} />
+                        <SaveButton
+                          saved={saved.has(r.ranked.cityId)}
+                          onToggle={() => toggleSaved(r.ranked.cityId)}
+                          size={15}
+                        />
+                      </div>
+                    </div>
+                    {story && (
+                      <>
+                        <div
+                          style={{
+                            font: "600 11px var(--font-body)",
+                            color: "var(--astravia-text-secondary)",
+                            marginTop: 8
+                          }}
+                        >
+                          {[story.primaryTheme, ...story.secondaryThemes.slice(0, 1)].filter(Boolean).join(" · ")}
+                        </div>
+                        <p
+                          style={{
+                            margin: "6px 0 0",
+                            font: "400 13px/1.5 var(--font-body)",
+                            color: "var(--astravia-text-secondary)"
+                          }}
+                        >
+                          {story.hook}
+                        </p>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/place/${r.ranked.cityId}`)}
+                      style={{
+                        marginTop: 8,
+                        border: "none",
+                        background: "none",
+                        color: "var(--astravia-ink)",
+                        font: "600 12px var(--font-body)",
+                        cursor: "pointer",
+                        padding: 0,
+                        textDecoration: "underline",
+                        textUnderlineOffset: 3
+                      }}
+                    >
+                      Explore this place →
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </>
         ) : (
           <>
             <div
               style={{
                 font: "600 12px var(--font-body)",
-                letterSpacing: "0.1em",
+                letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: "var(--color-faint)",
+                color: "var(--astravia-text-subtle)",
                 marginBottom: 14
               }}
             >
@@ -601,110 +560,125 @@ export default function ResultsPage() {
               const cityResults = co.topCityIds.map(findResult).filter((c): c is CalculateResult => c !== undefined);
               const discoveryType = classifyDiscovery(co.narrative, co.stars, cityResults[0]?.city.population);
               const discoveryCopy = getDiscoveryCopy(discoveryType);
-              const discoveryColors = getDiscoveryColors(discoveryType);
+              const discoveryColors = getDiscoveryColors();
 
               return (
-              <div
-                key={co.countryCode}
-                className={`astravia-card-hover astravia-stagger${i === 0 ? " astravia-card-top" : ""}`}
-                style={{
-                  ["--stagger-index" as string]: i,
-                  background: "var(--color-surface)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 16,
-                  padding: "20px 22px",
-                  marginBottom: 14,
-                  boxShadow: "var(--shadow-card)"
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                  <div style={{ font: "600 11px var(--font-body)", color: "var(--color-faint)" }}>#{i + 1}</div>
-                  <StarRating stars={co.stars} score={co.internalScore} showLabel caption="Match strength" />
-                </div>
-                <div style={{ font: "600 20px var(--font-display)", color: "var(--color-ink)", marginTop: 10 }}>
-                  {results.countryNames[co.countryCode] ?? co.countryCode}
-                </div>
-
-                <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginTop: 12 }}>
-                  <CountryMiniMap
-                    points={cityResults.map((c, ci) => ({
-                      id: c.ranked.cityId,
-                      rank: ci + 1,
-                      lat: c.city.latitude,
-                      lon: c.city.longitude
-                    }))}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        display: "inline-block",
-                        font: "600 10px var(--font-body)",
-                        letterSpacing: "0.06em",
-                        textTransform: "uppercase",
-                        color: discoveryColors.fg,
-                        background: discoveryColors.bg,
-                        borderRadius: 100,
-                        padding: "3px 9px",
-                        whiteSpace: "nowrap"
-                      }}
-                    >
-                      {discoveryCopy.label}
-                    </div>
-                    <p style={{ font: "400 13px/1.5 var(--font-body)", color: "var(--color-muted)", margin: "6px 0 0" }}>
-                      {discoveryCopy.description}
-                    </p>
-                  </div>
-                </div>
-
-                {co.goalBreakdown && <GoalBreakdownBars breakdown={co.goalBreakdown} />}
                 <div
+                  key={co.countryCode}
+                  className={`astravia-card-hover astravia-stagger${i === 0 ? " astravia-card-top" : ""}`}
                   style={{
-                    font: "600 11px var(--font-body)",
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    color: "var(--color-faint)",
-                    marginTop: 16,
-                    marginBottom: 8
+                    ["--stagger-index" as string]: i,
+                    background: "var(--astravia-surface)",
+                    border: "1px solid var(--astravia-border)",
+                    borderRadius: "var(--astravia-radius-card)",
+                    padding: "20px 22px",
+                    marginBottom: 14,
+                    boxShadow: "var(--astravia-shadow-card)"
                   }}
                 >
-                  Best matches
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {co.topCityIds.map((id) => {
-                    const cityResult = findResult(id);
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => router.push(`/place/${id}`)}
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                    <div style={{ font: "600 11px var(--font-body)", color: "var(--astravia-text-subtle)" }}>
+                      #{i + 1}
+                    </div>
+                    <StarRating stars={co.stars} score={co.internalScore} showLabel />
+                  </div>
+                  <div style={{ font: "600 20px var(--font-display)", color: "var(--astravia-ink)", marginTop: 10 }}>
+                    {results.countryNames[co.countryCode] ?? co.countryCode}
+                  </div>
+
+                  <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginTop: 12 }}>
+                    <CountryMiniMap
+                      points={cityResults.map((c, ci) => ({
+                        id: c.ranked.cityId,
+                        rank: ci + 1,
+                        lat: c.city.latitude,
+                        lon: c.city.longitude
+                      }))}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
                         style={{
-                          display: "flex",
+                          display: "inline-flex",
                           alignItems: "center",
-                          justifyContent: "space-between",
-                          border: "none",
-                          background: "var(--color-bg)",
-                          borderRadius: 10,
-                          padding: "8px 10px",
-                          cursor: "pointer",
-                          textAlign: "left",
-                          font: "inherit"
+                          gap: 5,
+                          font: "600 10px var(--font-body)",
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                          color: discoveryColors.fg,
+                          background: discoveryColors.bg,
+                          borderRadius: "var(--astravia-radius-pill)",
+                          padding: "3px 9px",
+                          whiteSpace: "nowrap"
                         }}
                       >
-                        <span style={{ font: "600 13px var(--font-body)", color: "var(--color-ink)" }}>
-                          {results.cityNames[id]?.name ?? id}
-                        </span>
-                        {cityResult && (
-                          <StarRating
-                            stars={cityResult.ranked.stars as Stars}
-                            score={cityResult.ranked.internalScore}
-                            size={12}
-                          />
+                        {discoveryCopy.accent && (
+                          <span aria-hidden="true" style={{ color: "var(--astravia-overall)" }}>
+                            ✦
+                          </span>
                         )}
-                      </button>
-                    );
-                  })}
+                        {discoveryCopy.label}
+                      </div>
+                      <p
+                        style={{
+                          font: "400 13px/1.5 var(--font-body)",
+                          color: "var(--astravia-text-secondary)",
+                          margin: "6px 0 0"
+                        }}
+                      >
+                        {discoveryCopy.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  {co.goalBreakdown && <GoalBreakdownBars breakdown={co.goalBreakdown} />}
+                  <div
+                    style={{
+                      font: "600 11px var(--font-body)",
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      color: "var(--astravia-text-subtle)",
+                      marginTop: 16,
+                      marginBottom: 8
+                    }}
+                  >
+                    Best matches
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {co.topCityIds.map((id) => {
+                      const cityResult = findResult(id);
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => router.push(`/place/${id}`)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            border: "none",
+                            background: "var(--astravia-background)",
+                            borderRadius: "var(--astravia-radius-control)",
+                            padding: "8px 10px",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            font: "inherit"
+                          }}
+                        >
+                          <span style={{ font: "600 13px var(--font-body)", color: "var(--astravia-ink)" }}>
+                            {results.cityNames[id]?.name ?? id}
+                          </span>
+                          {cityResult && (
+                            <StarRating
+                              stars={cityResult.ranked.stars as Stars}
+                              score={cityResult.ranked.internalScore}
+                              size={12}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
               );
             })}
           </>

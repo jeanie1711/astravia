@@ -9,7 +9,6 @@ import { ScreenShell } from "../../components/ScreenShell";
 import { StarRating } from "../../components/StarRating";
 import { useSavedPlaces } from "../../components/useSavedPlaces";
 import { useJourney } from "../../journey/JourneyContext";
-import { getArchetypeCopy } from "../../../interpretation/archetypes";
 import { confidenceLabel } from "../../../interpretation/display";
 
 const INFLUENCE_LABEL: Record<string, string> = {
@@ -56,8 +55,6 @@ export default function CityStoryPage() {
     );
   }
 
-  const archetypeCopy = getArchetypeCopy(story.archetypeId);
-
   function share() {
     if (navigator.share) {
       navigator.share({ text: story!.shareText }).catch(() => {});
@@ -81,46 +78,34 @@ export default function CityStoryPage() {
           {story.city}
         </h1>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 14, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", marginTop: 14 }}>
           <StarRating stars={story.stars} score={ranked.internalScore} size={18} showLabel />
-          <span style={{ font: "600 12px var(--font-body)", color: "var(--astravia-text-secondary)" }}>
-            Confidence: {confidenceLabel(story.birthTimeConfidence)}
-          </span>
         </div>
-        <p style={{ margin: "6px 0 0", font: "400 12px/1.5 var(--font-body)", color: "var(--astravia-text-subtle)" }}>
+        <p style={{ margin: "8px 0 0", font: "400 13px/1.5 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
+          <strong style={{ color: "var(--astravia-ink)" }}>
+            Confidence: {confidenceLabel(story.birthTimeConfidence)}.
+          </strong>{" "}
           {story.confidenceExplanation}
         </p>
 
-        <div
-          style={{
-            font: "600 12px var(--font-body)",
-            letterSpacing: "0.02em",
-            color: "var(--astravia-ink)",
-            marginTop: 14
-          }}
-        >
-          {[story.primaryTheme, ...story.secondaryThemes].filter(Boolean).join(" · ")}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
+          {[story.primaryTheme, ...story.secondaryThemes].filter(Boolean).map((theme) => (
+            <span
+              key={theme}
+              style={{
+                padding: "7px 15px",
+                borderRadius: "var(--astravia-radius-pill)",
+                background: "var(--astravia-ink)",
+                color: "var(--astravia-white)",
+                font: "600 13px var(--font-body)"
+              }}
+            >
+              {theme}
+            </span>
+          ))}
         </div>
 
-        {story.archetypeId !== "UNCLASSIFIED" && (
-          <span
-            style={{
-              display: "inline-block",
-              marginTop: 12,
-              padding: "5px 13px",
-              borderRadius: "var(--astravia-radius-pill)",
-              background: "var(--astravia-surface-alt)",
-              color: "var(--astravia-ink)",
-              font: "600 11px var(--font-body)",
-              letterSpacing: "0.04em",
-              textTransform: "uppercase"
-            }}
-          >
-            {archetypeCopy.name}
-          </span>
-        )}
-
-        <SectionHeading>The short version</SectionHeading>
+        <SectionHeading>The gist</SectionHeading>
         <p style={{ margin: 0, font: "400 16px/1.65 var(--font-body)", color: "var(--astravia-ink)" }}>
           {story.whyItStandsOut}
         </p>
@@ -183,7 +168,7 @@ export default function CityStoryPage() {
                   <span aria-hidden="true" style={{ color: "var(--astravia-love)" }}>
                     ◆
                   </span>
-                  What to watch
+                  The flip side
                 </div>
                 <ul style={{ margin: 0, paddingLeft: 18 }}>
                   {story.tradeOffs.map((t, i) => (

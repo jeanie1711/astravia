@@ -54,4 +54,23 @@ describe("S007 Overall is not the mean", () => {
     expect(overall.internalScore).not.toBeCloseTo(mean, 6);
     expect(overall.internalScore).toBeGreaterThan(mean); // breadth + stability bonuses push it up
   });
+
+  it("borrows its primary/secondary/paran influences from the strongest contributing goal (product feedback 2026-09-08)", () => {
+    // Before this fix, computeOverall always returned
+    // primaryInfluence: undefined, which forced composeCityStory() onto
+    // its generic "your map is more mixed" fallback for every Overall
+    // result -- including a 5-star/BALANCED top match, producing a
+    // self-contradictory City Story ("Strongest match" next to "none
+    // stand out as an exceptional match").
+    const results: Record<ScorableGoal, RankedCity> = {
+      CAREER: goalResult("CAREER", 0.9, 5),
+      LOVE: goalResult("LOVE", 0.6, 3),
+      HOME: goalResult("HOME", 0.6, 3),
+      GROWTH: goalResult("GROWTH", 0.6, 3)
+    };
+    const overall = computeOverall("test-city", results);
+    expect(overall.primaryInfluence).toEqual(results.CAREER.primaryInfluence);
+    expect(overall.secondaryInfluences).toBe(results.CAREER.secondaryInfluences);
+    expect(overall.paranInfluence).toBe(results.CAREER.paranInfluence);
+  });
 });

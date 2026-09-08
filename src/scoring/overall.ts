@@ -60,9 +60,17 @@ export function computeOverall(cityId: string, goalResults: Record<ScorableGoal,
     internalScore,
     stars,
     label: STAR_LABELS[stars],
-    primaryInfluence: undefined,
-    secondaryInfluences: [],
-    paranInfluence: undefined,
+    // Borrowed from the strongest contributing goal, same as coherence and
+    // archetypeId below -- without this, composeCityStory() always saw
+    // primaryInfluence === undefined for every Overall result and fell
+    // back to the generic "your map is more mixed" narrative, even for a
+    // 5-star/BALANCED top result (self-contradictory: "Strongest match"
+    // next to "none stand out as an exceptional match"). Product feedback
+    // 2026-09-08: Overall's City Story page should have the same content
+    // depth as any single-goal result, not a sparse fallback.
+    primaryInfluence: strongestGoalResult.primaryInfluence,
+    secondaryInfluences: strongestGoalResult.secondaryInfluences,
+    paranInfluence: strongestGoalResult.paranInfluence,
     coherence: strongestGoalResult.coherence,
     stability: weakestStability,
     archetypeId

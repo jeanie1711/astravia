@@ -372,3 +372,17 @@ About a 5.9x overall speedup. Measured locally via `tsx` (not the compiled Next.
 **Verification:** typecheck clean, all 172 tests pass unmodified (no scoring/data-model logic touched). Verified live in-browser: the results-page world map now shows a recognizable continent silhouette with pins correctly positioned (e.g. a Pitcairn Islands result pin lands in the South Pacific); country mini-maps for China, Turkey, and Madagascar each show that country's actual, recognizable outline shape with its top cities marked.
 
 **Status:** IMPLEMENTED.
+
+---
+
+## 2026-09-08 — Fixed: Overall's City Story always fell back to the generic "mixed" narrative
+
+**Decision needed:** none -- this is a genuine correctness bug fix, not a product decision. The Product Owner reported that opening a top-ranked "Whole picture" result showed sparse, low-value content (just a generic sentence and a bare confidence line) and asked whether it could get the same content depth as a single-goal result.
+
+**Root cause:** `computeOverall()` (`src/scoring/overall.ts`) always returned `primaryInfluence: undefined, secondaryInfluences: [], paranInfluence: undefined`, regardless of stars or archetype. `composeCityStory()` branches on `!rankedCity.primaryInfluence` to decide whether to compose the full City Story (Gist, opportunities, trade-offs, feel, best-for, key influences) or fall back to the fixed, generic "Your map is more mixed for this goal... even though none stand out as an exceptional match" copy. Since Overall's `primaryInfluence` was unconditionally `undefined`, **every** Overall result took the generic fallback path -- including 5-star/BALANCED top matches, producing a visibly self-contradictory City Story ("★★★★★ Strongest match" immediately next to "none stand out as an exceptional match").
+
+**Fix:** `computeOverall()` now also borrows `primaryInfluence`, `secondaryInfluences`, and `paranInfluence` from `strongestGoalResult` (the single goal with the highest `internalScore` among the four) -- the same source it already used for `coherence` and (conditionally) `archetypeId`. This is presentation/narrative-layer only: `internalScore`, `stars`, and the ranking math are completely unchanged, so it isn't a scoring-methodology change under CLAUDE.md §3, just a data-completeness gap being closed so the existing, already-approved single-goal narrative composition can actually run for Overall too.
+
+**Test impact:** added a case to `tests/scoring/overall.test.ts` asserting the borrowed-influence behavior. All existing tests (including both prior Overall tests, which only assert on `internalScore`) pass unmodified. Verified live in-browser: an Overall top result ("Bujumbura", BALANCED archetype) now shows the full structure -- theme chips, a real Gist paragraph naming the actual Venus-MC influence and its paran, populated "What may open up"/"The flip side" lists, and a "What life here might feel like" quote -- matching a single-goal result's depth exactly, as requested.
+
+**Status:** FIXED.

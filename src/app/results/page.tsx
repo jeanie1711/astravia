@@ -68,8 +68,13 @@ export default function ResultsPage() {
   // four life-area goals, which is exactly why it read as a confusing
   // fifth one. Separated into its own mode instead -- the split itself is
   // meant to be self-evident, so no explanatory box accompanies it
-  // (product feedback 2026-09-07, §14).
-  function selectWholePicture() {
+  // (product feedback 2026-09-07, §14). Labeled "All life areas" rather
+  // than "Whole picture" (product feedback 2026-09-08): Overall's score
+  // actively rewards being strong across all four goals at once (a
+  // breadth bonus, plus a penalty for one effortful standout goal --
+  // src/scoring/overall.ts) rather than just summarizing them, and the
+  // label should say that plainly.
+  function selectAllLifeAreas() {
     switchGoal("OVERALL");
   }
 
@@ -86,7 +91,7 @@ export default function ResultsPage() {
   // most is also the first pill on the results page -- falls back to the
   // default order when no priorities were recorded (e.g. an older session).
   const orderedGoals = deriveGoalOrder(journey.priorities ?? []);
-  const goalName = results.goal === "OVERALL" ? "your overall picture" : GOAL_LABEL[results.goal];
+  const goalName = results.goal === "OVERALL" ? "all life areas" : GOAL_LABEL[results.goal];
   const topCities = results.results.slice(0, MAX_CITIES_SHOWN);
   const topCountries = results.countries.slice(0, MAX_COUNTRIES_SHOWN);
   const activeTopStars = viewMode === "city" ? topCities[0]?.ranked.stars ?? 1 : topCountries[0]?.stars ?? 1;
@@ -170,13 +175,7 @@ export default function ResultsPage() {
         </div>
 
         <h2 style={{ margin: "0 0 6px", font: "600 28px var(--font-display)", color: "var(--astravia-ink)" }}>
-          {results.goal === "OVERALL"
-            ? viewMode === "city"
-              ? "Your whole picture, by place"
-              : "Your whole picture, by country"
-            : viewMode === "city"
-              ? `Your strongest places for ${goalName}`
-              : `Your strongest countries for ${goalName}`}
+          {viewMode === "city" ? `Your strongest places for ${goalName}` : `Your strongest countries for ${goalName}`}
         </h2>
         {isMixed ? (
           <p style={{ margin: "0 0 8px", font: "400 14px/1.5 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
@@ -233,7 +232,7 @@ export default function ResultsPage() {
             </button>
             <button
               type="button"
-              onClick={selectWholePicture}
+              onClick={selectAllLifeAreas}
               aria-pressed={results.goal === "OVERALL"}
               style={{
                 display: "inline-flex",
@@ -253,7 +252,7 @@ export default function ResultsPage() {
               <span aria-hidden="true" style={{ color: "var(--astravia-overall)" }}>
                 ✦
               </span>
-              Whole picture
+              All life areas
             </button>
           </div>
         </div>

@@ -8,6 +8,19 @@ import { PillButton } from "./components/PillButton";
 import { Wordmark } from "./components/Wordmark";
 import { useJourney } from "./journey/JourneyContext";
 
+const PLANETS: Array<{ symbol: string; name: string; theme: string }> = [
+  { symbol: "☉", name: "Sun", theme: "identity, vitality, recognition" },
+  { symbol: "☽", name: "Moon", theme: "emotional life, instinct, care" },
+  { symbol: "☿", name: "Mercury", theme: "communication, ideas, curiosity" },
+  { symbol: "♀", name: "Venus", theme: "attraction, harmony, connection" },
+  { symbol: "♂", name: "Mars", theme: "drive, action, assertiveness" },
+  { symbol: "♃", name: "Jupiter", theme: "growth, opportunity, optimism" },
+  { symbol: "♄", name: "Saturn", theme: "responsibility, structure, discipline" },
+  { symbol: "♅", name: "Uranus", theme: "independence, change, innovation" },
+  { symbol: "♆", name: "Neptune", theme: "imagination, sensitivity, ideals" },
+  { symbol: "♇", name: "Pluto", theme: "transformation, intensity, power" }
+];
+
 const ANGLES: Array<{ id: string; fullName: string; position: string; meaning: string }> = [
   {
     id: "MC",
@@ -195,15 +208,41 @@ export default function LandingPage() {
                 font: "400 14px/1.7 var(--font-body)",
                 color: "var(--astravia-text-secondary)",
                 maxWidth: 480,
-                margin: "28px auto 0",
+                margin: "28px auto 16px",
                 textAlign: "center"
               }}
             >
               Astrocartography draws one line on the world map for every planet-and-angle pair: everywhere on Earth
-              where, at your exact birth moment, that planet sat at that exact position. Astravia tracks ten planets
-              this way, from the Sun and Moon through Mercury, Venus, and Mars, out to Jupiter, Saturn, Uranus,
-              Neptune, and Pluto, each carrying its own traditional theme.
+              where, at your exact birth moment, that planet sat at that exact position. Astravia traces ten planets
+              against these four points, each carrying its own traditional theme:
             </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
+              {PLANETS.map((p) => (
+                <div
+                  key={p.name}
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: 8,
+                    background: "var(--astravia-surface)",
+                    border: "1px solid var(--astravia-border)",
+                    borderRadius: "var(--astravia-radius-control)",
+                    padding: "9px 12px"
+                  }}
+                >
+                  <span style={{ font: "700 14px var(--font-display)", color: "var(--astravia-overall)", width: 14, flexShrink: 0 }}>
+                    {p.symbol}
+                  </span>
+                  <span style={{ font: "700 12.5px var(--font-display)", color: "var(--astravia-ink)", flexShrink: 0 }}>
+                    {p.name}
+                  </span>
+                  <span style={{ font: "400 11px var(--font-body)", color: "var(--astravia-text-secondary)", lineHeight: 1.3 }}>
+                    {p.theme}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

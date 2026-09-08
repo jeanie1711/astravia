@@ -131,7 +131,7 @@ export default function CityStoryPage() {
                   }}
                 >
                   <span aria-hidden="true" style={{ color: "var(--astravia-home)" }}>
-                    ＋
+                    ◇
                   </span>
                   What may open up
                 </div>

@@ -175,7 +175,13 @@ export default function ResultsPage() {
         </div>
 
         <h2 style={{ margin: "0 0 6px", font: "600 28px var(--font-display)", color: "var(--astravia-ink)" }}>
-          {viewMode === "city" ? `Your strongest places for ${goalName}` : `Your strongest countries for ${goalName}`}
+          {results.goal === "OVERALL"
+            ? viewMode === "city"
+              ? "The most balanced places across all life areas"
+              : "The most balanced countries across all life areas"
+            : viewMode === "city"
+              ? `Your strongest places for ${goalName}`
+              : `Your strongest countries for ${goalName}`}
         </h2>
         {isMixed ? (
           <p style={{ margin: "0 0 8px", font: "400 14px/1.5 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
@@ -402,7 +408,9 @@ export default function ResultsPage() {
                             color: "var(--astravia-text-subtle)"
                           }}
                         >
-                          Your strongest place for {goalName}
+                          {results.goal === "OVERALL"
+                            ? "The most balanced across all life areas"
+                            : `Your strongest place for ${goalName}`}
                         </div>
                         <SaveButton saved={saved.has(r.ranked.cityId)} onToggle={() => toggleSaved(r.ranked.cityId)} />
                       </div>

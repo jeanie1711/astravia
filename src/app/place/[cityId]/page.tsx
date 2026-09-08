@@ -105,7 +105,7 @@ export default function CityStoryPage() {
           ))}
         </div>
 
-        <SectionHeading>The gist</SectionHeading>
+        <SectionHeading>Why {story.city} stands out</SectionHeading>
         <p style={{ margin: 0, font: "400 16px/1.65 var(--font-body)", color: "var(--astravia-ink)" }}>
           {story.whyItStandsOut}
         </p>

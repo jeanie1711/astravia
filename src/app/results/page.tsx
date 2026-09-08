@@ -588,6 +588,7 @@ export default function ResultsPage() {
 
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginTop: 12 }}>
                     <CountryMiniMap
+                      countryCode={co.countryCode}
                       points={cityResults.map((c, ci) => ({
                         id: c.ranked.cityId,
                         rank: ci + 1,

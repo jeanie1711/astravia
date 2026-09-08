@@ -349,3 +349,26 @@ About a 5.9x overall speedup. Measured locally via `tsx` (not the compiled Next.
 **Test/build impact:** typecheck clean; all 172 existing tests pass unmodified (this was a presentation-layer-only change; no scoring, calculation, or classification logic changed). No new automated UI tests were added (the project has no component/rendering test setup) -- verification was manual, in-browser, at the breakpoints listed above.
 
 **Status:** IMPLEMENTED.
+
+---
+
+## 2026-09-08 — Replaced dot-only maps with real, projected country/world outlines
+
+**Decision needed:** none blocking, but this reverses a prior call. The Product Owner reported the results-page map and country mini-maps read as "very confusing dots" and asked for either a real simple map of the city/country or a photo. This entry documents why photos weren't pursued and how the real-map alternative was sourced, since the 2026-09-06 entry had deliberately avoided drawing coastlines, citing no verified boundary dataset in the project at the time.
+
+**Why not photos:** a photo per city (955 cities) would need either a paid stock-photo API (recurring cost + licensing, against CLAUDE.md §5's near-zero-infra-cost rule) or an AI-generation pipeline for hundreds of images (a real new cost/complexity source, and still not clearly better than a map for "where is this relative to home" orientation, which was the actual complaint). A real map addresses the stated confusion more directly and stays free.
+
+**What changed:** confirmed this sandbox actually has outbound internet access (not previously tested), which unblocks fetching a legitimate dataset. Added `scripts/import-world-geo.ts`, a one-time/occasional build script (matching the existing `scripts/import-cities.ts` pattern) that:
+
+- Fetches `world-atlas@2`'s `land-110m.json` (world landmass, for the results-page world map) and `countries-110m.json` (per-country boundaries) from jsdelivr's CDN -- TopoJSON built from Natural Earth 1:110m data, public domain (see `data/raw/world-atlas/SOURCES.md`, gitignored like `data/raw/geonames/` per existing convention -- only the compiled output is committed).
+- Converts TopoJSON arcs to GeoJSON via `topojson-client`, maps each country's ISO 3166-1 numeric id to its alpha-2 code via `i18n-iso-countries` (to match `City.countryCode`), and projects every coordinate through the *exact* equirectangular formula `WorldMap.tsx` already used for pins, so pins and coastlines share one coordinate frame with no separate calibration step.
+- Writes flat SVG path strings to `src/data/world-geo.json` (~132KB) -- a static bundled asset, not a runtime fetch; the deployed app never calls jsdelivr. `topojson-client`/`i18n-iso-countries` are devDependencies used only by the generator script, never imported by app code.
+- **Coverage gap, by design:** 110m resolution only ships ~177 country polygons; small islands/territories (Anguilla, Bonaire, Aruba, etc.) and 3 disputed territories with no standard ISO numeric code (Kosovo, Somaliland, N. Cyprus) have no outline. `getCountryOutline()` returns `undefined` for these and `CountryMiniMap.tsx` falls back to its previous dot-only panel -- a graceful gap, not a crash, and it only affects country results that are already geographically obscure (i.e. cases the discovery-label heuristic would likely already flag as Wildcard/Unexpected).
+
+**Component changes:**
+- `WorldMap.tsx`: the meridian/parallel graticule is replaced with the real world landmass silhouette (one `<path>`, filled in a quiet neutral), keeping only a faint equator line for orientation. Pins render exactly as before.
+- `CountryMiniMap.tsx`: now takes a `countryCode` prop (results/page.tsx updated to pass it). Renders the real country outline when available, auto-cropping the SVG `viewBox` to the union of the outline's bounding box and the plotted cities' positions (padded, with a floor on the span so a single-city or geographically tiny country doesn't zoom into a degenerate point). Falls back to the prior plain-dot layout when no outline exists for that code.
+
+**Verification:** typecheck clean, all 172 tests pass unmodified (no scoring/data-model logic touched). Verified live in-browser: the results-page world map now shows a recognizable continent silhouette with pins correctly positioned (e.g. a Pitcairn Islands result pin lands in the South Pacific); country mini-maps for China, Turkey, and Madagascar each show that country's actual, recognizable outline shape with its top cities marked.
+
+**Status:** IMPLEMENTED.

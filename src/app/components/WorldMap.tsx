@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { WORLD_GEO } from "../../data/world-geo";
 
 export type MapPin = {
   id: string;
@@ -11,29 +12,26 @@ export type MapPin = {
   subtitle: string;
 };
 
-const VIEW_W = 400;
-const VIEW_H = 200;
+const VIEW_W = WORLD_GEO.viewW;
+const VIEW_H = WORLD_GEO.viewH;
 
-// Plain equirectangular projection -- deliberately not a literal coastline
-// map (a "simplified world map" was requested, and there's no verified,
-// licensed coastline dataset already in this project to draw from). A
-// graticule plus real projected pin positions reads as a map without
-// asserting geography we can't back up.
+// Equirectangular projection -- must match scripts/import-world-geo.ts
+// exactly, since that script pre-projects the world outline at this same
+// VIEW_W/VIEW_H so pins and coastlines line up.
 function project(lat: number, lon: number): { x: number; y: number } {
   const x = ((lon + 180) / 360) * VIEW_W;
   const y = ((90 - lat) / 180) * VIEW_H;
   return { x, y };
 }
 
-const MERIDIANS = [-120, -60, 0, 60, 120];
-const PARALLELS = [-60, -30, 0, 30, 60];
-
-// A simplified world/region map with a handful of ranked pins: Astravia is
-// a location-discovery product and previously had no map at all. Tap a
-// pin to preview that result inline -- no pan/zoom, no drawn
-// astrocartography lines, well short of the "interactive astrocartography
-// map" CLAUDE.md's scope guard excludes. The #1 pin uses sunlit gold, its
-// one reserved "discovery moment" role (product feedback 2026-09-07, §3).
+// A simplified world map with a handful of ranked pins (product feedback
+// 2026-09-08: plain dots on a graticule read as "hard to understand" with
+// no geography to anchor them). The landmass outline is real, projected
+// Natural Earth data (see src/data/world-geo.ts), not a decorative shape --
+// still well short of a literal "interactive astrocartography map"
+// (no pan/zoom, no drawn astrocartography lines). Tap a pin to preview
+// that result inline. The #1 pin uses sunlit gold, its one reserved
+// "discovery moment" role.
 export function WorldMap({
   pins,
   onSelect
@@ -56,38 +54,17 @@ export function WorldMap({
       }}
     >
       <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} style={{ width: "100%", height: "auto", display: "block" }}>
-        {MERIDIANS.map((lon) => {
-          const { x } = project(0, lon);
-          return (
-            <line
-              key={`m-${lon}`}
-              x1={x}
-              y1={0}
-              x2={x}
-              y2={VIEW_H}
-              stroke="var(--astravia-border-strong)"
-              strokeWidth={0.5}
-              strokeDasharray="2 4"
-              opacity={0.6}
-            />
-          );
-        })}
-        {PARALLELS.map((lat) => {
-          const { y } = project(lat, 0);
-          return (
-            <line
-              key={`p-${lat}`}
-              x1={0}
-              y1={y}
-              x2={VIEW_W}
-              y2={y}
-              stroke="var(--astravia-border-strong)"
-              strokeWidth={lat === 0 ? 0.8 : 0.5}
-              strokeDasharray={lat === 0 ? undefined : "2 4"}
-              opacity={lat === 0 ? 0.8 : 0.6}
-            />
-          );
-        })}
+        <path d={WORLD_GEO.world} fill="var(--astravia-border)" stroke="none" fillRule="evenodd" />
+        <line
+          x1={0}
+          y1={VIEW_H / 2}
+          x2={VIEW_W}
+          y2={VIEW_H / 2}
+          stroke="var(--astravia-border-strong)"
+          strokeWidth={0.6}
+          strokeDasharray="2 3"
+          opacity={0.7}
+        />
 
         {pins.map((pin) => {
           const { x, y } = project(pin.lat, pin.lon);

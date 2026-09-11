@@ -6,6 +6,7 @@ import { BackHeader } from "../components/BackHeader";
 import { CountryMiniMap } from "../components/CountryMiniMap";
 import { classifyDiscovery, getDiscoveryColors, getDiscoveryCopy } from "../components/discoveryLabel";
 import { GoalBreakdownBars } from "../components/GoalBreakdownBars";
+import { PaywallModal } from "../components/PaywallModal";
 import { PillButton } from "../components/PillButton";
 import { SaveButton } from "../components/SaveButton";
 import { ScreenShell } from "../components/ScreenShell";
@@ -13,6 +14,7 @@ import { StarRating } from "../components/StarRating";
 import { useSavedPlaces } from "../components/useSavedPlaces";
 import { WorldMap, type MapPin } from "../components/WorldMap";
 import { confidenceLabel } from "../../interpretation/display";
+import { PRICE_LABEL } from "../../config/payments";
 import { useJourney } from "../journey/JourneyContext";
 import { GOAL_COLOR, GOAL_LABEL } from "../journey/goalTheme";
 import { deriveGoalOrder } from "../journey/priorities";
@@ -30,6 +32,8 @@ export default function ResultsPage() {
   const { journey, hydrated, setJourney } = useJourney();
   const [loading, setLoading] = useState(false);
   const { saved, toggle: toggleSaved } = useSavedPlaces();
+  const [paywall, setPaywall] = useState<{ open: boolean; context?: string }>({ open: false });
+  const [verifyingCheckout, setVerifyingCheckout] = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -46,8 +50,43 @@ export default function ResultsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, journey.results, journey.viewMode]);
 
+  // Returning from Stripe Checkout (docs/DECISIONS.md, 2026-09-09 paywall
+  // entry): verify the session server-side before unlocking -- the
+  // redirect alone is not trusted. Read the query string directly
+  // instead of useSearchParams() to avoid a Suspense-boundary
+  // requirement for a one-time, non-reactive check.
+  useEffect(() => {
+    if (!hydrated) return;
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get("checkout");
+    if (!checkout) return;
+
+    if (checkout === "success") {
+      const sessionId = params.get("session_id");
+      if (sessionId) {
+        setVerifyingCheckout(true);
+        fetch(`/api/verify-checkout?session_id=${encodeURIComponent(sessionId)}`)
+          .then((res) => res.json())
+          .then((data: { paid?: boolean }) => {
+            if (data.paid) setJourney((prev) => ({ ...prev, unlocked: true }));
+          })
+          .finally(() => {
+            setVerifyingCheckout(false);
+            router.replace("/results");
+          });
+        return;
+      }
+    }
+    router.replace("/results");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
+
   async function switchGoal(goal: Goal) {
     if (!journey.birth || goal === journey.results?.goal) return;
+    if (!journey.unlocked) {
+      setPaywall({ open: true });
+      return;
+    }
     setLoading(true);
     const request: CalculateRequest = { birth: journey.birth, uncertaintyMinutes: journey.uncertaintyMinutes, goal };
     const res = await fetch("/api/calculate", {
@@ -61,6 +100,10 @@ export default function ResultsPage() {
   }
 
   function switchView(mode: "city" | "country") {
+    if (mode === "country" && !journey.unlocked) {
+      setPaywall({ open: true });
+      return;
+    }
     setJourney((prev) => ({ ...prev, viewMode: mode }));
   }
 
@@ -94,6 +137,11 @@ export default function ResultsPage() {
   const goalName = results.goal === "OVERALL" ? "all life areas" : GOAL_LABEL[results.goal];
   const topCities = results.results.slice(0, MAX_CITIES_SHOWN);
   const topCountries = results.countries.slice(0, MAX_COUNTRIES_SHOWN);
+  // Freemium gate (docs/DECISIONS.md, 2026-09-09): only city #1 of
+  // whichever life area the user first calculated is free. Since
+  // switchGoal/switchView already refuse to run while locked, results.goal
+  // never actually changes pre-purchase, so this stays stable.
+  const unlocked = journey.unlocked === true;
   const activeTopStars = viewMode === "city" ? topCities[0]?.ranked.stars ?? 1 : topCountries[0]?.stars ?? 1;
   const isMixed = activeTopStars <= 3;
 
@@ -306,6 +354,35 @@ export default function ResultsPage() {
           </p>
         )}
 
+        {verifyingCheckout && (
+          <p style={{ font: "400 13px var(--font-body)", color: "var(--astravia-text-secondary)" }}>
+            Confirming your payment…
+          </p>
+        )}
+
+        {unlocked && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap",
+              background: "var(--astravia-home-bg)",
+              borderRadius: "var(--astravia-radius-control)",
+              padding: "14px 18px",
+              marginBottom: 24
+            }}
+          >
+            <div style={{ font: "600 13px/1.4 var(--font-body)", color: "var(--astravia-ink)" }}>
+              Your full report is unlocked for this chart.
+            </div>
+            <PillButton fullWidth={false} onClick={() => router.push("/report")}>
+              Get your PDF report →
+            </PillButton>
+          </div>
+        )}
+
         {results.pattern && (
           <div
             style={{
@@ -464,7 +541,11 @@ export default function ResultsPage() {
                         </div>
                       )}
                       {r.goalBreakdown && <GoalBreakdownBars breakdown={r.goalBreakdown} />}
-                      <PillButton style={{ marginTop: 18 }} onClick={() => router.push(`/place/${r.ranked.cityId}`)}>
+                      <PillButton
+                        className="astravia-btn-shine"
+                        style={{ marginTop: 18 }}
+                        onClick={() => router.push(`/place/${r.ranked.cityId}`)}
+                      >
                         Why {r.city.name}? →
                       </PillButton>
                     </div>
@@ -505,7 +586,7 @@ export default function ResultsPage() {
                         />
                       </div>
                     </div>
-                    {story && (
+                    {unlocked && story && (
                       <>
                         <div
                           style={{
@@ -527,9 +608,23 @@ export default function ResultsPage() {
                         </p>
                       </>
                     )}
+                    {!unlocked && (
+                      <p
+                        style={{
+                          margin: "6px 0 0",
+                          font: "400 13px/1.5 var(--font-body)",
+                          color: "var(--astravia-text-subtle)",
+                          fontStyle: "italic"
+                        }}
+                      >
+                        Locked. Unlock the full report to see why.
+                      </p>
+                    )}
                     <button
                       type="button"
-                      onClick={() => router.push(`/place/${r.ranked.cityId}`)}
+                      onClick={() =>
+                        unlocked ? router.push(`/place/${r.ranked.cityId}`) : setPaywall({ open: true })
+                      }
                       style={{
                         marginTop: 8,
                         border: "none",
@@ -542,13 +637,30 @@ export default function ResultsPage() {
                         textUnderlineOffset: 3
                       }}
                     >
-                      Explore this place →
+                      {unlocked ? "Explore this place →" : "Unlock to explore →"}
                     </button>
                   </div>
                 );
               })}
             </div>
           </>
+        ) : !unlocked ? (
+          <div
+            style={{
+              background: "var(--astravia-surface)",
+              border: "1px solid var(--astravia-border)",
+              borderRadius: "var(--astravia-radius-card)",
+              padding: "24px 22px",
+              textAlign: "center"
+            }}
+          >
+            <p style={{ margin: "0 0 14px", font: "500 15px/1.5 var(--font-display)", color: "var(--astravia-ink)" }}>
+              Country results are part of the full report.
+            </p>
+            <PillButton className="astravia-btn-shine" fullWidth={false} onClick={() => setPaywall({ open: true })}>
+              Unlock full report for {PRICE_LABEL}
+            </PillButton>
+          </div>
         ) : (
           <>
             <div
@@ -692,6 +804,8 @@ export default function ResultsPage() {
           </>
         )}
       </div>
+
+      <PaywallModal open={paywall.open} context={paywall.context} onClose={() => setPaywall({ open: false })} />
     </ScreenShell>
   );
 }

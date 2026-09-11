@@ -38,7 +38,7 @@ export function classifyDiscovery(
 const DISCOVERY_COPY: Record<DiscoveryType, DiscoveryCopy> = {
   STRONG_PATTERN: {
     label: "Strong regional pattern",
-    description: "Several cities here align consistently, not just one -- the clustering itself is the signal.",
+    description: "Several cities here align consistently, not just one; the clustering itself is the signal.",
     accent: false
   },
   FAMILIAR: {

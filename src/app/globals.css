@@ -119,6 +119,18 @@ input {
   transform: translateY(0);
 }
 
+/* Metallic sheen for the app's highest-priority CTAs (the #1 result's
+   "Why this place?" button, and every "Unlock full report" button): a
+   brushed-teal gradient with a lighter highlight band, distinct enough
+   from the standard flat CTA to read as "this one matters most." */
+.astravia-btn-shine {
+  background: linear-gradient(100deg, #0d3441 0%, #1d6577 35%, #2f8a97 50%, #1d6577 65%, #0d3441 100%);
+}
+
+.astravia-btn-shine:hover {
+  background: linear-gradient(100deg, #0f3d4c 0%, #226f82 35%, #38a0ae 50%, #226f82 65%, #0f3d4c 100%);
+}
+
 /* A soft glow on the #1 result card -- cool teal undertone, not the old
    coral glow -- so the top match reads as a real highlight. */
 .astravia-card-top {
@@ -257,5 +269,23 @@ input {
 @media (min-width: 560px) {
   .astravia-two-col {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Full PDF report (src/app/report/page.tsx, docs/DECISIONS.md 2026-09-09
+   paywall entry): one browser-print page per report section, and the
+   in-app chrome (back button, print button) never ends up in the saved
+   PDF. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .report-page {
+    page-break-after: always;
+  }
+
+  .report-page:last-child {
+    page-break-after: auto;
   }
 }

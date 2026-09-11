@@ -84,6 +84,13 @@ export type JourneyState = {
   // confusion (city ranking and country ranking use different formulas --
   // 04-scoring-ranking-spec.md §11).
   viewMode?: ViewMode;
+  // Set true after a verified Stripe payment for THIS calculated chart
+  // (docs/DECISIONS.md, 2026-09-09 paywall entry). Deliberately not a
+  // persistent account entitlement -- it lives in the same sessionStorage
+  // journey state as everything else and is reset on every fresh
+  // calculation, matching the one-off "pay again if you redo the chart"
+  // product decision.
+  unlocked?: boolean;
 };
 
 export const INITIAL_JOURNEY_STATE: JourneyState = {

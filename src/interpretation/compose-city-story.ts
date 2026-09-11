@@ -27,7 +27,7 @@ function shareText(cityName: string, goalName: string, stars: number, theme: str
     return `Apparently ${cityName} is one of my strongest ${goalName} cities ${"★".repeat(stars)}`;
   }
   if (stars === 3 && theme) {
-    return `${cityName} showed up as a strong ${goalName} match -- and the reason is interesting.`;
+    return `${cityName} showed up as a strong ${goalName} match, and the reason is interesting.`;
   }
   return `${cityName} appeared in my astro map for ${goalName}.`;
 }

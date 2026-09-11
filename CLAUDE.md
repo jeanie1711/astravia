@@ -112,7 +112,7 @@ Specifically, do not add:
 - authentication;
 - accounts;
 - database-backed profiles/history;
-- payment/subscriptions;
+- payment/subscriptions — **carve-out approved 2026-09-09** (docs/DECISIONS.md): a one-off, session-scoped Stripe Checkout unlock for the full report + PDF export is in scope. Recurring subscriptions, saved payment methods, and persistent purchase history/accounts remain excluded — the entitlement lives only in the existing sessionStorage journey state and resets on every fresh calculation;
 - AI chat;
 - daily horoscope;
 - natal chart reports;

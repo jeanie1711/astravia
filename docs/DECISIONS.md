@@ -386,3 +386,31 @@ About a 5.9x overall speedup. Measured locally via `tsx` (not the compiled Next.
 **Test impact:** added a case to `tests/scoring/overall.test.ts` asserting the borrowed-influence behavior. All existing tests (including both prior Overall tests, which only assert on `internalScore`) pass unmodified. Verified live in-browser: an Overall top result ("Bujumbura", BALANCED archetype) now shows the full structure -- theme chips, a real Gist paragraph naming the actual Venus-MC influence and its paran, populated "What may open up"/"The flip side" lists, and a "What life here might feel like" quote -- matching a single-goal result's depth exactly, as requested.
 
 **Status:** FIXED.
+
+---
+
+## 2026-09-09 — Freemium paywall + PDF export: how to implement given no accounts/database
+
+**Decision needed:** How to implement the Product Owner's approved freemium paywall (free: city #1 of the originally chosen life area; paid: everything else + a PDF report) given CLAUDE.md §4's "no accounts, no database-backed profiles/history" constraint, and which payment provider to build against.
+
+**Context:** Originally captured as out-of-scope backlog in `docs/FUTURE.md` ("Freemium / paywall unlock model", 2026-09-04) specifically because it conflicted with the MVP scope guard. The Product Owner has now explicitly approved building it, with these product decisions confirmed in conversation:
+- Free tier: only the #1 result for whichever life area the user originally calculated. Every other city, the other three life areas, "All life areas", and the Countries view are locked.
+- Price: $2.99 one-time.
+- What paying buys: a **one-off** unlock for that specific calculated chart plus a PDF export — not a persistent account entitlement. The Product Owner's own framing: once the PDF is exported, the transaction is complete; losing the PDF means paying again on a fresh visit. This removes the need for accounts or a database entirely.
+- PDF mechanism: browser print-to-PDF (`window.print()` with print CSS) rather than a new PDF-generation dependency, per CLAUDE.md §5's near-zero-infra-cost rule, and it directly reuses the page structure and copy already designed and approved earlier in the same conversation (a 6-page sample: cover, introduction with the 4-angle and 10-planet explainer grids, Career, Love, Home, Growth, "All life areas" last, closing disclaimer).
+- Payment provider: Stripe Checkout, built in test mode now. Vietnam is not in Stripe's supported account-country list, so the Product Owner will separately decide between a foreign entity (e.g. Stripe Atlas) or a merchant-of-record provider (Lemon Squeezy, Paddle) for live payouts — that business decision doesn't block building the flow.
+
+**Options considered:**
+- *Entitlement storage:* a persistent entitlement (localStorage keyed by a purchase token, or a real account+database) vs. a one-off entitlement scoped to the current calculation, held in the same sessionStorage `JourneyState` that already holds birth details and results.
+- *Payment verification:* trusting the Stripe Checkout success-redirect alone vs. a server-side call to retrieve and check the Checkout Session's `payment_status` before unlocking (with or without a webhook).
+- *Payment provider:* Stripe direct vs. a merchant-of-record (Lemon Squeezy/Paddle) from day one.
+
+**Recommended/chosen option:**
+- Entitlement is a single `unlocked?: boolean` on `JourneyState` — no new persistence layer. It's set true only after a verified payment and reset to `false` on every fresh `/api/calculate` run (`explore/calculating/page.tsx`), matching the "pay again if you redo the chart" product decision exactly.
+- Verification: `src/app/api/checkout/route.ts` creates a Stripe Checkout Session (no birth data or results in metadata, per CLAUDE.md §14); on the success redirect, `src/app/api/verify-checkout/route.ts` retrieves that session server-side and checks `payment_status === "paid"` before the client sets `unlocked`. No webhook, no database — there's nothing to persist beyond the current browser session.
+- Provider: Stripe SDK now, isolated behind one adapter file (`src/payments/stripe.ts`) that is the only place touching the Stripe SDK directly, so a later switch to a merchant-of-record provider touches one file, not the checkout UI or gating logic. `STRIPE_SECRET_KEY` is the project's first environment variable (`.env.example` documents it; `.env.local` is already gitignored).
+- Gating enforcement: both the results page and the individual city-story page (`/place/[cityId]`) independently check `journey.unlocked`, since a locked city's URL is directly reachable (bookmark, back button) and must not rely solely on the results page hiding the link.
+
+**Impact:** `src/app/journey/types.ts` (new `unlocked` field), `src/app/explore/calculating/page.tsx`, `src/app/results/page.tsx`, `src/app/place/[cityId]/page.tsx`, two new API routes, one new `/report` route, one new shared `PaywallModal` component, `src/config/payments.ts` and `src/payments/stripe.ts`, and a CLAUDE.md §4 carve-out note. `docs/FUTURE.md`'s original entry is marked implemented, pointing here.
+
+**Status:** APPROVED — implemented 2026-09-09.

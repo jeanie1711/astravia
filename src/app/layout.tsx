@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], variabl
 
 export const metadata: Metadata = {
   title: "Astravia",
-  description: "Discover the places that stand out in your astrocartography -- and understand why."
+  description: "Discover the places that stand out in your astrocartography, and understand why."
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

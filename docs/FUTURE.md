@@ -8,6 +8,11 @@ opportunistically.
 
 ## Freemium / paywall unlock model
 
+**Status:** IMPLEMENTED 2026-09-09 — see `docs/DECISIONS.md`'s 2026-09-09
+entry for the approved design (session-scoped one-off unlock, no
+accounts/database, Stripe Checkout in test mode). Kept below as the
+original backlog record.
+
 **Captured:** 2026-09-04
 
 **Idea:** Show a small number of results for free (top city + 1-2 more) with

@@ -37,7 +37,7 @@ export function lookupSynthesis(a: Influence, b: Influence): CombinationSynthesi
 
   if (challengingCount === 0) {
     return {
-      synthesis: `${capitalize(interpA.coreTheme)} meets ${interpB.coreTheme} -- a clear, doubled-down signal.`,
+      synthesis: `${capitalize(interpA.coreTheme)} meets ${interpB.coreTheme}, a clear, doubled-down signal.`,
       story: `Two easeful themes reinforce each other here; ${interpA.tradeOff[0]} is still worth keeping in mind.`
     };
   }
@@ -45,13 +45,13 @@ export function lookupSynthesis(a: Influence, b: Influence): CombinationSynthesi
   if (challengingCount === 1) {
     const [easeful, challenging] = isChallenging(planetCategory(a.body)) ? [interpB, interpA] : [interpA, interpB];
     return {
-      synthesis: `${capitalize(easeful.coreTheme)} meets ${challenging.coreTheme} -- a layered story, opportunity alongside effort.`,
+      synthesis: `${capitalize(easeful.coreTheme)} meets ${challenging.coreTheme}, a layered story, opportunity alongside effort.`,
       story: `Real opportunity here comes paired with real demands; ${challenging.tradeOff[0]} matters as much as the upside.`
     };
   }
 
   return {
-    synthesis: `${capitalize(interpA.coreTheme)} compounds with ${interpB.coreTheme} -- powerful, but demanding on every side.`,
+    synthesis: `${capitalize(interpA.coreTheme)} compounds with ${interpB.coreTheme}, powerful but demanding on every side.`,
     story: `Never romanticised: ${interpA.tradeOff[0]} and ${interpB.tradeOff[0]} both matter here.`
   };
 }

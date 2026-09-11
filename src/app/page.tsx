@@ -6,47 +6,8 @@ import { useState } from "react";
 import { ScreenShell } from "./components/ScreenShell";
 import { PillButton } from "./components/PillButton";
 import { Wordmark } from "./components/Wordmark";
+import { ANGLES, PLANETS } from "./content/astroExplainer";
 import { useJourney } from "./journey/JourneyContext";
-
-const PLANETS: Array<{ symbol: string; name: string; theme: string }> = [
-  { symbol: "☉", name: "Sun", theme: "identity, vitality, recognition" },
-  { symbol: "☽", name: "Moon", theme: "emotional life, instinct, care" },
-  { symbol: "☿", name: "Mercury", theme: "communication, ideas, curiosity" },
-  { symbol: "♀", name: "Venus", theme: "attraction, harmony, connection" },
-  { symbol: "♂", name: "Mars", theme: "drive, action, assertiveness" },
-  { symbol: "♃", name: "Jupiter", theme: "growth, opportunity, optimism" },
-  { symbol: "♄", name: "Saturn", theme: "responsibility, structure, discipline" },
-  { symbol: "♅", name: "Uranus", theme: "independence, change, innovation" },
-  { symbol: "♆", name: "Neptune", theme: "imagination, sensitivity, ideals" },
-  { symbol: "♇", name: "Pluto", theme: "transformation, intensity, power" }
-];
-
-const ANGLES: Array<{ id: string; fullName: string; position: string; meaning: string }> = [
-  {
-    id: "MC",
-    fullName: "Medium Coeli",
-    position: "The highest point in the sky, directly overhead.",
-    meaning: "Career, reputation, and public life"
-  },
-  {
-    id: "IC",
-    fullName: "Imum Coeli",
-    position: "The point opposite MC, directly underfoot.",
-    meaning: "Home, roots, and private life"
-  },
-  {
-    id: "ASC",
-    fullName: "Ascendant",
-    position: "The eastern horizon, where a planet is rising.",
-    meaning: "Identity, and how you show up in the world"
-  },
-  {
-    id: "DSC",
-    fullName: "Descendant",
-    position: "The western horizon, where a planet is setting.",
-    meaning: "Relationships, and the people around you"
-  }
-];
 
 // Homepage hierarchy per product feedback 2026-09-07, §9: lead with the
 // outcome, not the mechanism. MC/IC/ASC/DSC and the astrocartography
@@ -91,9 +52,6 @@ export default function LandingPage() {
         <div style={{ maxWidth: 300, margin: "0 auto" }}>
           <PillButton onClick={start}>Discover my places</PillButton>
         </div>
-        <p style={{ font: "400 13px var(--font-body)", color: "var(--astravia-text-subtle)", marginTop: 14 }}>
-          Free · No account needed · About 2 minutes
-        </p>
       </div>
 
       <div aria-hidden="true" style={{ marginTop: 40, lineHeight: 0 }}>

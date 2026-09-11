@@ -57,7 +57,7 @@ export default function CalculatingPage() {
         // screen (product feedback 2026-09-07, §15: don't force a separate
         // explanatory screen when a switch already exists on the results
         // page itself).
-        setJourney((prev) => ({ ...prev, results: data, viewMode: prev.viewMode ?? "city" }));
+        setJourney((prev) => ({ ...prev, results: data, viewMode: prev.viewMode ?? "city", unlocked: false }));
         router.push("/results");
       })
       .catch(() => setError("We couldn't calculate your results."))

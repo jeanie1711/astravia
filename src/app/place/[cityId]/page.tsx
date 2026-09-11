@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { BackHeader } from "../../components/BackHeader";
+import { PaywallModal } from "../../components/PaywallModal";
 import { PillButton } from "../../components/PillButton";
 import { SaveButton } from "../../components/SaveButton";
 import { ScreenShell } from "../../components/ScreenShell";
@@ -10,6 +11,7 @@ import { StarRating } from "../../components/StarRating";
 import { useSavedPlaces } from "../../components/useSavedPlaces";
 import { useJourney } from "../../journey/JourneyContext";
 import { confidenceLabel } from "../../../interpretation/display";
+import { PRICE_LABEL } from "../../../config/payments";
 
 const INFLUENCE_LABEL: Record<string, string> = {
   MC: "public life / career direction",
@@ -27,6 +29,7 @@ export default function CityStoryPage() {
   const params = useParams<{ cityId: string }>();
   const { journey, hydrated } = useJourney();
   const [techOpen, setTechOpen] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const { saved, toggle: toggleSaved } = useSavedPlaces();
 
   const results = journey.results;
@@ -45,12 +48,64 @@ export default function CityStoryPage() {
         <BackHeader stepLabel="City story" onBack={() => router.push("/results")} />
         <div style={{ padding: "24px" }}>
           <p style={{ font: "400 15px var(--font-body)", color: "var(--astravia-text-secondary)" }}>
-            We couldn't find that result -- it may have come from a different search. Head back to your places.
+            We couldn't find that result. It may have come from a different search. Head back to your places.
           </p>
           <PillButton onClick={() => router.push("/results")} style={{ marginTop: 16 }}>
             Back to your places
           </PillButton>
         </div>
+      </ScreenShell>
+    );
+  }
+
+  // Freemium gate (docs/DECISIONS.md, 2026-09-09): only the #1 result is
+  // free. A savvy user could still reach a locked city's URL directly
+  // (bookmark, back button), so this page enforces the gate itself rather
+  // than relying only on the results page hiding the link.
+  const unlocked = journey.unlocked === true;
+  const freeCityId = results.results[0]?.ranked.cityId;
+  const isFree = unlocked || params.cityId === freeCityId;
+
+  if (!isFree) {
+    return (
+      <ScreenShell maxWidth={640}>
+        <BackHeader stepLabel="City story" onBack={() => router.push("/results")} />
+        <div style={{ padding: "24px" }}>
+          <div style={{ font: "600 12px var(--font-body)", letterSpacing: "0.04em", color: "var(--astravia-text-subtle)" }}>
+            {story.country}
+          </div>
+          <h1 style={{ margin: "2px 0 0", font: "600 30px var(--font-display)", color: "var(--astravia-ink)" }}>
+            {story.city}
+          </h1>
+          <div style={{ display: "flex", alignItems: "center", marginTop: 14 }}>
+            <StarRating stars={story.stars} score={ranked.internalScore} size={18} showLabel />
+          </div>
+          <p style={{ margin: "18px 0 0", font: "400 15px/1.6 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
+            {story.hook}
+          </p>
+          <div
+            style={{
+              marginTop: 24,
+              background: "var(--astravia-surface)",
+              border: "1px solid var(--astravia-border)",
+              borderRadius: "var(--astravia-radius-card)",
+              padding: "20px",
+              textAlign: "center"
+            }}
+          >
+            <p style={{ margin: "0 0 14px", font: "500 15px/1.5 var(--font-display)", color: "var(--astravia-ink)" }}>
+              The full story for {story.city} is part of the full report.
+            </p>
+            <PillButton className="astravia-btn-shine" onClick={() => setShowPaywall(true)}>
+              Unlock full report for {PRICE_LABEL}
+            </PillButton>
+          </div>
+        </div>
+        <PaywallModal
+          open={showPaywall}
+          context={`See ${story.city}, ${story.country}`}
+          onClose={() => setShowPaywall(false)}
+        />
       </ScreenShell>
     );
   }

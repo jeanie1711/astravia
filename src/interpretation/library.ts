@@ -226,7 +226,7 @@ const ENTRIES: Array<Omit<Interpretation, "id">> = [
     coreTheme: "energetic, competitive relationships",
     opportunity: ["dynamic collaborators", "direct negotiation", "passionate connection"],
     tradeOff: ["arguments", "rivalry", "projection of anger"],
-    feel: ["Like other people activate you -- sometimes productively, sometimes not."],
+    feel: ["Like other people activate you, sometimes productively, sometimes not."],
     bestFor: ["negotiation", "competitive partnerships", "boundary work"],
     tone: "relational"
   },
@@ -249,7 +249,7 @@ const ENTRIES: Array<Omit<Interpretation, "id">> = [
     coreTheme: "home, family growth, belonging, generosity",
     opportunity: ["larger sense of home", "family support", "hospitality", "settling abroad", "emotional spaciousness"],
     tradeOff: ["excess", "taking on too much", "idealising a place as \"the answer\""],
-    feel: ["Like there may be more room here -- literally or emotionally."],
+    feel: ["Like there may be more room here, literally or emotionally."],
     bestFor: ["relocation", "family", "home-building", "long-term base"],
     tone: "inward"
   },
@@ -283,7 +283,7 @@ const ENTRIES: Array<Omit<Interpretation, "id">> = [
     coreTheme: "responsibility, structure, long-term achievement",
     opportunity: ["authority", "mastery", "durable reputation", "disciplined career building"],
     tradeOff: ["pressure", "delay", "heavy responsibility", "loneliness at the top"],
-    feel: ["Like progress has to be earned -- but it can last."],
+    feel: ["Like progress has to be earned, but it can last."],
     bestFor: ["mastery", "senior responsibility", "institution-building", "long-term career"],
     tone: "outward"
   },
@@ -305,7 +305,7 @@ const ENTRIES: Array<Omit<Interpretation, "id">> = [
     coreTheme: "discipline, self-definition through responsibility",
     opportunity: ["resilience", "mastery", "boundaries", "serious personal development"],
     tradeOff: ["restriction", "self-criticism", "loneliness", "slower progress"],
-    feel: ["Like life becomes more serious -- and asks you to become stronger."],
+    feel: ["Like life becomes more serious, and asks you to become stronger."],
     bestFor: ["mastery", "discipline", "long-term transformation"],
     tone: "outward"
   },
@@ -373,7 +373,7 @@ const ENTRIES: Array<Omit<Interpretation, "id">> = [
     coreTheme: "imagination, ideals and ambiguity in vocation",
     opportunity: ["creative/spiritual work", "compassionate service", "visionary direction"],
     tradeOff: ["unclear career boundaries", "idealisation", "confusion about status or direction"],
-    feel: ["Like vocation becomes more inspiring -- and harder to define."],
+    feel: ["Like vocation becomes more inspiring, and harder to define."],
     bestFor: ["creative work", "service", "reflection", "vision-led projects"],
     tone: "outward"
   },
@@ -384,7 +384,7 @@ const ENTRIES: Array<Omit<Interpretation, "id">> = [
     coreTheme: "sensitivity, retreat, imagination at home",
     opportunity: ["sanctuary", "creativity", "spiritual reflection", "compassionate family connection"],
     tradeOff: ["blurred domestic boundaries", "escapism", "idealising home"],
-    feel: ["Like home can become a refuge -- or a place where reality gets softer."],
+    feel: ["Like home can become a refuge, or a place where reality gets softer."],
     bestFor: ["retreat", "creativity", "spiritual practice", "rest with strong boundaries"],
     tone: "inward"
   },

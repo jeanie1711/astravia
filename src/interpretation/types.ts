@@ -25,6 +25,17 @@ export type TechnicalDetail = {
   scenarioDistancesKm: number[];
 };
 
+// One row for the "astrology behind this match" section (2026-09-13 City
+// Story redesign) -- pairs each influence already named elsewhere on the
+// result with its own plain-language theme, so the astrology section
+// reads as a short reference rather than a bare list of body-angle codes.
+export type InfluenceDetail = {
+  role: "Primary" | "Paran" | "Secondary";
+  body: Body;
+  angle: Angle;
+  description: string;
+};
+
 export type CityResult = {
   city: string;
   country: string;
@@ -38,12 +49,27 @@ export type CityResult = {
   secondaryThemes: string[];
 
   hook: string;
+  // One-line synthesis of the primary influence (and its reinforcement,
+  // when one exists) into a single memorable thesis for the result --
+  // shown as a standout line right under the theme tags.
+  tagline: string;
 
+  // 2-4 paragraphs joined by "\n\n" (render with white-space: pre-line,
+  // or split on "\n\n" for separate <p> tags) -- opens with what's
+  // central to this result, expands the primary influence into the
+  // goal's real-world shape, then folds in the reinforcement/paran when
+  // present, closing on a short synthesis line.
   whyItStandsOut: string;
   opportunities: string[];
   tradeOffs: string[];
 
+  // Short quoted feel line (unchanged from before -- still the first
+  // sentence of the primary interpretation's own feel copy).
   howItMayFeel: string;
+  // A second, longer paragraph expanding on howItMayFeel using the
+  // primary's tone and the reinforcement's texture, when one exists.
+  // Empty string for the weak-result fallback (nothing to expand on).
+  howItMayFeelDetail: string;
   bestFor: string[];
 
   birthTimeConfidence: StabilityLabel;
@@ -57,6 +83,10 @@ export type CityResult = {
   // -- it's a qualitatively different kind of signal (06-interpretation-
   // library.md §5).
   paranInfluence: Influence | undefined;
+  // Plain-language theme for each influence above, in display order
+  // (primary, then paran when present, then secondaries) -- backs the
+  // "astrology behind this match" section.
+  influenceDetails: InfluenceDetail[];
 
   technicalDetails: TechnicalDetail[];
 

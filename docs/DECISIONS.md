@@ -464,3 +464,25 @@ About a 5.9x overall speedup. Measured locally via `tsx` (not the compiled Next.
 **Impact:** `src/app/components/PaywallModal.tsx`, `.env.example` (documents the var), `.env.local` (sets it to `false` for local testing).
 
 **Status:** IMPLEMENTED. Currently unset in Vercel Production -> payment is bypassed on production until the Product Owner sets `NEXT_PUBLIC_SKIP_PAYMENT=false` there post-approval.
+
+---
+
+## 2026-09-13 — City Story rewrite: multi-paragraph narrative, richer astrology reference section (interpretation v1.1)
+
+**Decision needed:** none for the underlying facts (interpretation methodology/library content is unchanged) -- this is a composition-layer rewrite the Product Owner requested directly, providing a full worked example (Adamstown/Career: Mercury-MC primary + Saturn-DSC paran) as the target structure and voice.
+
+**Context:** The City Story page's `whyItStandsOut`/`howItMayFeel` were single terse sentences assembled by concatenating library fields with minimal connective text. The Product Owner wanted a noticeably richer, more editorial narrative (multi-paragraph "why this fits you," an expanded feel section, a one-line tagline, and a proper "astrology behind this match" reference section) -- reusing the existing 40-entry library's coreTheme/opportunity/tradeOff/feel/bestFor data, not hand-authored per-city text (955 cities x 4 goals makes that impossible to maintain, and CLAUDE.md §3 prohibits inventing new astrological meaning without the full change-approval process anyway).
+
+**What changed:**
+- New `src/interpretation/voice.ts`: a small, bounded phrase-vocabulary layer -- one entry per planet (10 items each) for its inner-faculty phrase, tagline raw material/outcome nouns, the "opens the door" closing phrase, and the reinforcement's "quality" phrase; one entry per challenging planet (5 items) for the weight/tension it adds; one per tone (5) and per goal (5) for small connective words. Every phrase is derived from that planet's own already-approved coreTheme vocabulary across its four entries -- no new astrological claims, just prose synthesis.
+- `src/interpretation/combinations.ts` (v0.3): `lookupSynthesis` now takes an explicit `isParan` flag and an order-dependent `(primary, reinforcement)` contract (previously order-independent), producing a full paragraph per coherence tier instead of one sentence. The LAYERED tier is now direction-aware: when the primary itself is the challenging influence, the reinforcement is framed as lightening the story, not adding more weight to it (a real bug caught during review -- the first draft used the same "adds weight" phrasing regardless of which side carried the tension).
+- `src/interpretation/compose-city-story.ts`: assembles `whyItStandsOut` as 3-4 paragraphs (opening + primary elaboration + reinforcement synthesis, when one exists + closing line), joined by `"\n\n"`. New fields: `tagline` (one-line synthesis), `howItMayFeelDetail` (a second paragraph expanding the existing short feel quote), `influenceDetails` (primary/paran/secondary influences paired with their own plain-language theme, backing the new astrology reference section).
+- `src/interpretation/types.ts`: `CityResult` gains `tagline`, `howItMayFeelDetail`, `influenceDetails` (new `InfluenceDetail` type).
+- `src/app/place/[cityId]/page.tsx`: restructured per the approved layout -- goal-specific star label ("Strongest career match" via new `StarRating` `label` prop and `matchLabel()` helper), a short uppercase tag line (goal + up to 2 themes), the tagline, a relabeled "Birth-time precision" block, renamed section headings ("Why {city} might fit you", "What could grow here", "Where it may stretch you", "Best for", "The astrology behind this match"), opportunities/trade-offs/best-for as plain bulleted lists instead of two-column icon boxes, and the astrology section showing each influence's own theme text.
+- `src/app/report/page.tsx`: the PDF report's per-goal section picks up the same tagline, multi-paragraph `whyItStandsOut` (`white-space: pre-line`), and `howItMayFeelDetail`, with the two-column opportunity/trade-off boxes relabeled to match (kept two-column there since it suits the print layout).
+- `MODEL_VERSIONS.interpretation` bumped 1.0 -> 1.1 (CLAUDE.md §16): composition method changed materially even though the 40-entry library content itself did not.
+- Golden/unit tests updated to match the new (intentionally different) wording and to cover the new fields: `tests/interpretation/combinations.test.ts`, `tests/interpretation/compose-city-story.test.ts`, `tests/golden/case-001-city-story.test.ts`.
+
+**Impact:** Presentation/composition layer only -- no scoring, ranking, or astronomical calculation touched; no interpretation *meaning* changed (same 40 entries, same coherence-tier logic), only how it's turned into prose. All 173 tests pass. Verified live for two real combinations (Mercury-MC+Saturn-DSC paran; Mars-MC primary+Moon-DSC secondary, the "primary is the challenging side" branch) against the Product Owner's reference example.
+
+**Status:** IMPLEMENTED.

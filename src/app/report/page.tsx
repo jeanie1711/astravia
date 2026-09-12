@@ -348,14 +348,19 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
               </span>
             ))}
           </div>
-          <p style={{ font: "400 14px/1.7 var(--font-body)", color: "var(--astravia-ink)", margin: "0 0 18px" }}>
+          {heroStory.tagline && (
+            <p style={{ font: "italic 500 15px/1.6 var(--font-display)", color: "var(--astravia-ink)", margin: "0 0 14px" }}>
+              {heroStory.tagline}
+            </p>
+          )}
+          <div style={{ font: "400 14px/1.7 var(--font-body)", color: "var(--astravia-ink)", margin: "0 0 18px", whiteSpace: "pre-line" }}>
             {heroStory.whyItStandsOut}
-          </p>
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
             {heroStory.opportunities.length > 0 && (
               <div style={{ background: "var(--astravia-surface-alt)", borderRadius: 12, padding: "14px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, font: "700 12px var(--font-body)", color: "var(--astravia-home)", marginBottom: 8 }}>
-                  <span aria-hidden="true">◇</span> What may open up
+                  <span aria-hidden="true">◇</span> What could grow here
                 </div>
                 <ul style={{ margin: 0, paddingLeft: 16 }}>
                   {heroStory.opportunities.map((o, i) => (
@@ -369,7 +374,7 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
             {heroStory.tradeOffs.length > 0 && (
               <div style={{ background: "var(--astravia-surface-alt)", borderRadius: 12, padding: "14px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, font: "700 12px var(--font-body)", color: "var(--astravia-love)", marginBottom: 8 }}>
-                  <span aria-hidden="true">◆</span> The flip side
+                  <span aria-hidden="true">◆</span> Where it may stretch you
                 </div>
                 <ul style={{ margin: 0, paddingLeft: 16 }}>
                   {heroStory.tradeOffs.map((t, i) => (
@@ -396,6 +401,11 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
                 What life here might feel like
               </div>
               <div style={{ font: "600 16px var(--font-display)", color: "var(--astravia-ink)" }}>{heroStory.howItMayFeel}</div>
+              {heroStory.howItMayFeelDetail && (
+                <p style={{ margin: "8px 0 0", font: "400 12.5px/1.55 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
+                  {heroStory.howItMayFeelDetail}
+                </p>
+              )}
             </div>
           )}
           {heroStory.bestFor.length > 0 && (

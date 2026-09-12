@@ -7,5 +7,10 @@ export const MODEL_VERSIONS = {
   // (04-scoring-ranking-spec.md §5.1) are specified but not yet
   // implemented -- see §16 there.
   scoring: "1.0",
-  interpretation: "1.0"
+  // City Story composition rewrite (docs/DECISIONS.md, 2026-09-13):
+  // whyItStandsOut/howItMayFeel expand into multi-paragraph narrative
+  // prose (new tagline, howItMayFeelDetail, influenceDetails fields),
+  // built from the same 40-entry library via a new phrase-vocabulary
+  // layer (voice.ts) rather than changed library content or scoring.
+  interpretation: "1.1"
 } as const;

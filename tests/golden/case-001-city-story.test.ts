@@ -47,7 +47,8 @@ describe("Golden Case 001 - full City Story composition", () => {
 
     // Traceability: primary first, technical details match calculation output.
     expect(story.primaryInfluence).toEqual({ body: "Sun", angle: "MC" });
-    expect(story.whyItStandsOut.startsWith("Your ☉ Sun–MC influence is especially strong here.")).toBe(true);
+    expect(story.whyItStandsOut).toContain("☉ Sun–MC influence");
+    expect(story.influenceDetails[0]).toMatchObject({ role: "Primary", body: "Sun", angle: "MC" });
     const sunDetail = story.technicalDetails.find((d) => d.line.includes("Sun"));
     expect(sunDetail?.distanceKm).toBeCloseTo(38, -1); // close to the ~38km reference fixture
 
@@ -64,10 +65,12 @@ describe("Golden Case 001 - full City Story composition", () => {
     // Safety/integrity.
     const combinedText = [
       story.hook,
+      story.tagline,
       story.whyItStandsOut,
       ...story.opportunities,
       ...story.tradeOffs,
       story.howItMayFeel,
+      story.howItMayFeelDetail,
       story.shareText
     ].join(" ");
     expect(findProhibitedPhrases(combinedText)).toEqual([]);

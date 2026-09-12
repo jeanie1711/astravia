@@ -15,6 +15,18 @@ const STAR_LABEL: Record<Stars, string> = {
 
 const GLYPHS = "★★★★★";
 
+// Builds a goal-specific match label ("Strongest career match") for the
+// City Story header, reusing the same intensity words as the default
+// STAR_LABEL above. The two lower tiers stay goal-agnostic ("Worth
+// exploring") -- appending a goal name there ("Worth exploring career")
+// reads worse than the plain phrase, per the same 2026-09-07 §13 reasoning
+// STAR_LABEL itself follows.
+export function matchLabel(stars: Stars, goalName: string): string {
+  if (stars <= 2) return STAR_LABEL[stars];
+  const intensity = STAR_LABEL[stars].replace(/ match$/, "");
+  return `${intensity} ${goalName} match`;
+}
+
 // Star glyphs with a partial fill -- no printed number, no decimal score;
 // the fill itself carries the granularity, and the word label makes the
 // meaning explicit rather than relying on color/shape alone (product
@@ -28,12 +40,18 @@ export function StarRating({
   score,
   size = 16,
   showLabel = false,
+  label,
   caption
 }: {
   stars: Stars;
   score?: number;
   size?: number;
   showLabel?: boolean;
+  // Overrides the default word label (e.g. "Strongest career match"
+  // instead of the generic "Strongest match") -- the City Story header
+  // uses this to name the goal directly; every other caller leaves it
+  // unset and gets the original generic wording.
+  label?: string;
   // A small "Match strength" eyebrow above the row -- with birth-time
   // confidence shown elsewhere on the same screens, this stars-and-word
   // rating needs its own name so the two don't read as one blended score.
@@ -41,12 +59,13 @@ export function StarRating({
 }) {
   const fillValue = score !== undefined ? scoreToDisplayValue(score, stars) : stars;
   const fillPercent = Math.min(100, Math.max(0, (fillValue / 5) * 100));
+  const wordLabel = label ?? STAR_LABEL[stars];
 
   const row = (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
       <span
         role="img"
-        aria-label={`${stars} out of 5: ${STAR_LABEL[stars]}`}
+        aria-label={`${stars} out of 5: ${wordLabel}`}
         style={{ position: "relative", display: "inline-block", fontSize: size, lineHeight: 1, whiteSpace: "nowrap" }}
       >
         <span style={{ color: "var(--astravia-track)" }}>{GLYPHS}</span>
@@ -74,7 +93,7 @@ export function StarRating({
             color: "var(--astravia-text-secondary)"
           }}
         >
-          {STAR_LABEL[stars]}
+          {wordLabel}
         </span>
       )}
     </span>

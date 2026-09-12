@@ -21,9 +21,16 @@ function baseRankedCity(overrides: Partial<RankedCity>): RankedCity {
 }
 
 function allText(result: ReturnType<typeof composeCityStory>): string {
-  return [result.hook, result.whyItStandsOut, ...result.opportunities, ...result.tradeOffs, result.howItMayFeel, result.shareText].join(
-    " "
-  );
+  return [
+    result.hook,
+    result.tagline,
+    result.whyItStandsOut,
+    ...result.opportunities,
+    ...result.tradeOffs,
+    result.howItMayFeel,
+    result.howItMayFeelDetail,
+    result.shareText
+  ].join(" ");
 }
 
 const distances: InfluenceDistance[] = [
@@ -34,16 +41,20 @@ const distances: InfluenceDistance[] = [
 describe("composeCityStory", () => {
   it("I001: primary influence is introduced before any secondary content", () => {
     const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
-    expect(result.whyItStandsOut.startsWith("Your ☉ Sun–MC influence is especially strong here.")).toBe(true);
+    const primaryIndex = result.whyItStandsOut.indexOf("☉ Sun–MC influence");
+    const secondaryIndex = result.whyItStandsOut.indexOf("Neptune");
+    expect(primaryIndex).toBeGreaterThanOrEqual(0);
+    expect(secondaryIndex).toBeGreaterThan(primaryIndex);
   });
 
   it("I002: uses the category-tier synthesis pattern instead of concatenating two independent definitions", () => {
     // Sun (Personal) + Neptune (Transformative) is a mixed pair -> Layered
-    // tier (04-scoring-ranking-spec.md v0.2 §6).
+    // tier (04-scoring-ranking-spec.md v0.2 §6), primary (Sun) is the
+    // easeful side here so the reinforcement is what "adds" weight.
     const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
-    expect(result.whyItStandsOut).toContain("a layered story, opportunity alongside effort");
+    expect(result.whyItStandsOut).toContain("not simply a straightforward Sun story");
     expect(result.whyItStandsOut).toContain("visibility, professional identity, recognition");
-    expect(result.whyItStandsOut).toContain("sensitivity, imagination, porous identity");
+    expect(result.whyItStandsOut).toContain("intuition and art");
   });
 
   it("I003: a 5-star result still has a non-empty trade-off", () => {
@@ -82,8 +93,30 @@ describe("composeCityStory", () => {
       distances
     );
     expect(result.paranInfluence).toEqual({ body: "Jupiter", angle: "ASC" });
-    expect(result.whyItStandsOut).toContain("A paran of Sun and Jupiter also sits close by.");
+    expect(result.whyItStandsOut).toContain("Sun–Jupiter paran");
     expect(result.secondaryThemes).toContain("personal growth"); // Jupiter-ASC's bestFor[0]
+    expect(result.influenceDetails.some((d) => d.role === "Paran" && d.body === "Jupiter")).toBe(true);
+  });
+
+  it("composes a one-line tagline synthesizing the primary and its reinforcement", () => {
+    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
+    expect(result.tagline.length).toBeGreaterThan(0);
+    expect(result.tagline).toContain("presence");
+    expect(result.tagline).toContain("recognition");
+  });
+
+  it("expands howItMayFeel with a second paragraph when a reinforcement exists", () => {
+    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
+    expect(result.howItMayFeel).toBe("Like staying in the background becomes harder.");
+    expect(result.howItMayFeelDetail.length).toBeGreaterThan(0);
+  });
+
+  it("lists every influence's plain-language theme for the astrology reference section", () => {
+    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
+    expect(result.influenceDetails).toEqual([
+      { role: "Primary", body: "Sun", angle: "MC", description: "Visibility, professional identity, recognition." },
+      { role: "Secondary", body: "Neptune", angle: "ASC", description: "Sensitivity, imagination, porous identity." }
+    ]);
   });
 
   it("falls back to the weak-result copy when there is no primary influence", () => {
@@ -95,5 +128,8 @@ describe("composeCityStory", () => {
     );
     expect(result.whyItStandsOut).toContain("Your map is more mixed for this goal.");
     expect(result.primaryInfluence).toBeUndefined();
+    expect(result.tagline).toBe("");
+    expect(result.howItMayFeelDetail).toBe("");
+    expect(result.influenceDetails).toEqual([]);
   });
 });

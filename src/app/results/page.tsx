@@ -14,7 +14,7 @@ import { StarRating } from "../components/StarRating";
 import { useSavedPlaces } from "../components/useSavedPlaces";
 import { WorldMap, type MapPin } from "../components/WorldMap";
 import { confidenceLabel } from "../../interpretation/display";
-import { PENDING_CHECKOUT_STORAGE_KEY, PRICE_LABEL } from "../../config/payments";
+import { PENDING_CHECKOUT_STORAGE_KEY } from "../../config/payments";
 import { useJourney } from "../journey/JourneyContext";
 import { GOAL_COLOR, GOAL_LABEL } from "../journey/goalTheme";
 import type { CalculateRequest, CalculateResponse, CalculateResult } from "../journey/types";
@@ -662,7 +662,7 @@ export default function ResultsPage() {
               Country results are part of the full report.
             </p>
             <PillButton className="astravia-btn-shine" fullWidth={false} onClick={() => setPaywall({ open: true })}>
-              Unlock full report for {PRICE_LABEL}
+              Unlock full report
             </PillButton>
           </div>
         ) : (

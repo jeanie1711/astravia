@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PENDING_CHECKOUT_STORAGE_KEY, PRICE_LABEL } from "../../config/payments";
+import { PENDING_CHECKOUT_STORAGE_KEY } from "../../config/payments";
 import { useJourney } from "../journey/JourneyContext";
 import { PillButton } from "./PillButton";
 
@@ -136,7 +136,7 @@ export function PaywallModal({
         )}
 
         <PillButton className="astravia-btn-shine" onClick={startCheckout} disabled={loading}>
-          {loading ? "Redirecting…" : `Unlock full report for ${PRICE_LABEL}`}
+          {loading ? "Redirecting…" : "Unlock full report"}
         </PillButton>
         <button
           type="button"

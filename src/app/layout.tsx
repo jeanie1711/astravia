@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import { DM_Sans, Fraunces, Inter, Lora } from "next/font/google";
 import type { ReactNode } from "react";
-import { LanguageToggle } from "./components/LanguageToggle";
 import { JourneyProvider } from "./journey/JourneyContext";
 import { LanguageProvider } from "../i18n/LanguageContext";
 import "./globals.css";
+
+// <LanguageToggle /> is intentionally not rendered here (2026-09-13): the
+// switcher shipped but toggling proved inconsistent across the app, so
+// it's disabled at the source (src/i18n/LanguageContext.tsx's
+// SWITCHER_ENABLED) until that's root-caused. LanguageProvider stays in
+// the tree since every component still calls useLanguage()/
+// useTranslation(); with the switch disabled it always resolves to "en".
 
 // "vietnamese" subset added for the language switcher (2026-09-12) so
 // Vietnamese diacritics render from the webfont instead of falling back
@@ -35,7 +41,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <LanguageProvider>
           <JourneyProvider>{children}</JourneyProvider>
-          <LanguageToggle />
         </LanguageProvider>
       </body>
     </html>

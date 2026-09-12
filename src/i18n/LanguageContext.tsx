@@ -6,6 +6,15 @@ import type { Language } from "./types";
 const STORAGE_KEY = "astravia-language";
 const DEFAULT_LANGUAGE: Language = "en";
 
+// Kill switch (2026-09-13): the switcher shipped but reports came back of
+// inconsistent application -- toggling sometimes left some sections
+// translated and others not. Disabling here forces English everywhere
+// (including for any visitor who already has "vi" saved from testing)
+// without touching any of the underlying dictionaries/content/pipeline
+// wiring. Re-enabling once the inconsistency is root-caused is just: flip
+// this back to true and restore <LanguageToggle /> in layout.tsx.
+const SWITCHER_ENABLED = false;
+
 type LanguageContextValue = {
   language: Language;
   // False until the initial localStorage read completes (client-only --
@@ -18,6 +27,7 @@ type LanguageContextValue = {
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
 function readFromStorage(): Language {
+  if (!SWITCHER_ENABLED) return DEFAULT_LANGUAGE;
   if (typeof window === "undefined") return DEFAULT_LANGUAGE;
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -48,7 +58,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [language]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!SWITCHER_ENABLED || !hydrated) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, language);
     } catch {
@@ -58,6 +68,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [language, hydrated]);
 
   function setLanguage(next: Language) {
+    if (!SWITCHER_ENABLED) return;
     setLanguageState(next);
   }
 

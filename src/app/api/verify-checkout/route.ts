@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyCheckoutSession } from "../../../payments/stripe";
+import { verifyCheckoutSession } from "../../../payments/dodo";
 
 export async function GET(request: Request): Promise<NextResponse> {
   const sessionId = new URL(request.url).searchParams.get("session_id");

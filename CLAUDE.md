@@ -112,7 +112,7 @@ Specifically, do not add:
 - authentication;
 - accounts;
 - database-backed profiles/history;
-- payment/subscriptions — **carve-out approved 2026-09-09** (docs/DECISIONS.md): a one-off, session-scoped Stripe Checkout unlock for the full report + PDF export is in scope. Recurring subscriptions, saved payment methods, and persistent purchase history/accounts remain excluded — the entitlement lives only in the existing sessionStorage journey state and resets on every fresh calculation;
+- payment/subscriptions — **carve-out approved 2026-09-09** (docs/DECISIONS.md): a one-off, session-scoped checkout unlock for the full report + PDF export is in scope (Stripe originally, switched to Dodo Payments 2026-09-13 for Vietnam payout support — see docs/DECISIONS.md). Recurring subscriptions, saved payment methods, and persistent purchase history/accounts remain excluded — the entitlement lives only in the existing sessionStorage journey state and resets on every fresh calculation;
 - AI chat;
 - daily horoscope;
 - natal chart reports;

@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { PRICE_LABEL } from "../../config/payments";
+import { PENDING_CHECKOUT_STORAGE_KEY, PRICE_LABEL } from "../../config/payments";
 import { useJourney } from "../journey/JourneyContext";
 import { PillButton } from "./PillButton";
 
-// TEMPORARY (product owner request, 2026-09-11): skip the real Stripe
-// redirect and unlock immediately, so the post-payment flow can be
-// tested without a live Stripe key. Flip back to false (or delete this
-// block and the branch below) once a real test key is wired up.
-const DEV_SKIP_PAYMENT = true;
+// Real Dodo Payments checkout is now wired up (test-mode credentials
+// added 2026-09-13) -- this bypass stays here, defaulted off, only so a
+// future session without provider credentials can flip it back on to
+// test the post-payment flow.
+const DEV_SKIP_PAYMENT = false;
 
 export function PaywallModal({
   open,
@@ -46,7 +46,14 @@ export function PaywallModal({
         body: JSON.stringify({ returnPath: window.location.pathname })
       });
       if (!res.ok) throw new Error();
-      const { url } = (await res.json()) as { url: string };
+      const { url, sessionId } = (await res.json()) as { url: string; sessionId: string };
+      try {
+        window.sessionStorage.setItem(PENDING_CHECKOUT_STORAGE_KEY, sessionId);
+      } catch {
+        // sessionStorage unavailable (private browsing etc) -- verification
+        // will simply fail to find a pending session on return, same as a
+        // cancelled checkout.
+      }
       window.location.href = url;
     } catch {
       setError("Couldn't start checkout. Please try again.");

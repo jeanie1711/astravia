@@ -432,3 +432,21 @@ About a 5.9x overall speedup. Measured locally via `tsx` (not the compiled Next.
 **Impact:** No scoring/ranking/interpretation logic touched -- `priorities` was always presentation-layer only (docs/DECISIONS.md, 2026-09-06 Phase 2 entry), so removing it is a pure UI simplification. `tests/app/priorities.test.ts` removed with the module; 168/168 remaining tests pass unmodified.
 
 **Status:** IMPLEMENTED.
+
+---
+
+## 2026-09-13 — Payment provider switched from Stripe to Dodo Payments
+
+**Decision needed:** none -- direct Product Owner request in conversation. The 2026-09-09 entry already flagged that Stripe doesn't support merchant accounts registered in Vietnam and that the Product Owner would separately choose between a foreign entity (Stripe Atlas) or a merchant-of-record provider; they chose Dodo Payments (a merchant-of-record platform, like Lemon Squeezy/Paddle, that explicitly targets founders in countries Stripe doesn't support directly).
+
+**What changed:** `src/payments/stripe.ts` is replaced by `src/payments/dodo.ts`, using the official `dodopayments` npm SDK (`stripe` package removed). The adapter's exported shape is nearly identical (`createCheckoutSession`, `verifyCheckoutSession`) so the API routes barely changed, but two real API differences required adjustment:
+
+- **Pricing lives on a dashboard Product, not inline.** Stripe's `price_data` let the price be set at request time in code; Dodo's checkout session only takes a `product_id` + quantity, so the $2.99 price must be configured once on a Product created in the Dodo dashboard (`DODO_PAYMENTS_PRODUCT_ID` env var references it). `src/config/payments.ts`'s `PRICE_LABEL` is display copy only now, not wired to an actual charge amount.
+- **No session-id URL templating.** Stripe's `success_url` supports a `{CHECKOUT_SESSION_ID}` placeholder it substitutes at redirect time; Dodo has no equivalent for Checkout Sessions (only its separate Payment Links feature documents auto-appended redirect query params, and relying on undocumented behavior for the feature actually used felt too fragile). Since the session id is known immediately after `checkoutSessions.create()` resolves, `PaywallModal` now stashes it in `sessionStorage` (key `PENDING_CHECKOUT_STORAGE_KEY`) right before redirecting to Dodo's hosted checkout, and the results page reads it back from there on return instead of the URL. `return_url`/`cancel_url` stay fixed, fixed strings.
+- Verification is still a live server-side call (`client.checkoutSessions.retrieve(id)`, checking `payment_status === "succeeded"`) on the return redirect, not the redirect alone -- same no-webhook, no-database, one-off pattern as the original Stripe design (Dodo's own docs recommend fulfilling on a `payment.succeeded` webhook instead for reliability against a closed browser tab; accepting that same tradeoff here keeps the MVP's no-database constraint intact, consistent with the 2026-09-09 decision).
+
+**Impact:** `src/payments/dodo.ts` (new), `src/app/api/checkout/route.ts` and `src/app/api/verify-checkout/route.ts` (import swap + `sessionId` returned from the checkout route), `src/app/components/PaywallModal.tsx` (stashes the session id), `src/app/results/page.tsx` (reads it back), `src/config/payments.ts` (dropped the now-unused `PRICE_USD_CENTS`/`PRODUCT_NAME`/`PRODUCT_DESCRIPTION`, added `PENDING_CHECKOUT_STORAGE_KEY`), `.env.example`, CLAUDE.md §4's carve-out note.
+
+**Verification (2026-09-13):** Product Owner created a Dodo test-mode Product ("Astravia Full Report", Digital products tax category) and added real test-mode credentials. Confirmed live: `/api/checkout` returns a real `test.checkout.dodopayments.com` URL; the hosted checkout page shows the correct product/price and adapts currency/tax to billing country; an incomplete checkout correctly returns to the app with `unlocked` still `false` (the server-side `verifyCheckoutSession` call, not the redirect, is what's trusted); a completed test payment (card `4242 4242 4242 4242`) correctly unlocks the report. `DEV_SKIP_PAYMENT` in `PaywallModal.tsx` is now `false`.
+
+**Status:** IMPLEMENTED and verified live in test mode.

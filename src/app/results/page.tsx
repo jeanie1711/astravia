@@ -14,7 +14,7 @@ import { StarRating } from "../components/StarRating";
 import { useSavedPlaces } from "../components/useSavedPlaces";
 import { WorldMap, type MapPin } from "../components/WorldMap";
 import { confidenceLabel } from "../../interpretation/display";
-import { PRICE_LABEL } from "../../config/payments";
+import { PENDING_CHECKOUT_STORAGE_KEY, PRICE_LABEL } from "../../config/payments";
 import { useJourney } from "../journey/JourneyContext";
 import { GOAL_COLOR, GOAL_LABEL } from "../journey/goalTheme";
 import type { CalculateRequest, CalculateResponse, CalculateResult } from "../journey/types";
@@ -49,11 +49,14 @@ export default function ResultsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, journey.results, journey.viewMode]);
 
-  // Returning from Stripe Checkout (docs/DECISIONS.md, 2026-09-09 paywall
+  // Returning from Dodo Payments checkout (docs/DECISIONS.md, 2026-09-13
   // entry): verify the session server-side before unlocking -- the
   // redirect alone is not trusted. Read the query string directly
   // instead of useSearchParams() to avoid a Suspense-boundary
-  // requirement for a one-time, non-reactive check.
+  // requirement for a one-time, non-reactive check. The session id
+  // travels back via sessionStorage (stashed by PaywallModal before
+  // redirecting), not the URL -- Dodo's return_url is fixed and can't
+  // carry an id that didn't exist yet when the session was created.
   useEffect(() => {
     if (!hydrated) return;
     const params = new URLSearchParams(window.location.search);
@@ -61,7 +64,7 @@ export default function ResultsPage() {
     if (!checkout) return;
 
     if (checkout === "success") {
-      const sessionId = params.get("session_id");
+      const sessionId = window.sessionStorage.getItem(PENDING_CHECKOUT_STORAGE_KEY);
       if (sessionId) {
         setVerifyingCheckout(true);
         fetch(`/api/verify-checkout?session_id=${encodeURIComponent(sessionId)}`)
@@ -70,6 +73,7 @@ export default function ResultsPage() {
             if (data.paid) setJourney((prev) => ({ ...prev, unlocked: true }));
           })
           .finally(() => {
+            window.sessionStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
             setVerifyingCheckout(false);
             router.replace("/results");
           });

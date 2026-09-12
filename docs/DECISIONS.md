@@ -450,3 +450,17 @@ About a 5.9x overall speedup. Measured locally via `tsx` (not the compiled Next.
 **Verification (2026-09-13):** Product Owner created a Dodo test-mode Product ("Astravia Full Report", Digital products tax category) and added real test-mode credentials. Confirmed live: `/api/checkout` returns a real `test.checkout.dodopayments.com` URL; the hosted checkout page shows the correct product/price and adapts currency/tax to billing country; an incomplete checkout correctly returns to the app with `unlocked` still `false` (the server-side `verifyCheckoutSession` call, not the redirect, is what's trusted); a completed test payment (card `4242 4242 4242 4242`) correctly unlocks the report. `DEV_SKIP_PAYMENT` in `PaywallModal.tsx` is now `false`.
 
 **Status:** IMPLEMENTED and verified live in test mode.
+
+---
+
+## 2026-09-13 — Payment bypass moved to an env var, defaulted on for production
+
+**Decision needed:** none -- direct Product Owner request. Dodo Payments checkout is fully wired up and verified working in test mode, but the Dodo account itself is still going through live-mode verification. The Product Owner doesn't want real visitors on production reaching a checkout page visibly marked "Test Mode" in the meantime, but wants a way to flip payment back on the moment verification is approved without asking for another code change.
+
+**What changed:** `PaywallModal.tsx`'s `DEV_SKIP_PAYMENT` constant now reads `process.env.NEXT_PUBLIC_SKIP_PAYMENT !== "false"` instead of a hardcoded boolean. Unset (the current state on Vercel) or any value other than the literal string `"false"` means "Unlock full report" unlocks immediately with no checkout, same as the original dev-only bypass. Setting `NEXT_PUBLIC_SKIP_PAYMENT=false` in Vercel's Production environment variables and redeploying is the only action needed to require real payment again -- no code change. Locally, `.env.local` sets it to `false` so local development keeps exercising the real Dodo checkout flow already verified working.
+
+**Why the default is "skip" here specifically** (the inverse of the usual safe-default instinct): this is a deliberate, temporary, explicitly-requested state tied to a known upcoming trigger (Dodo verification approval), not a silent fallback that could accidentally give the product away -- the Product Owner is the one flipping it, on their own timeline.
+
+**Impact:** `src/app/components/PaywallModal.tsx`, `.env.example` (documents the var), `.env.local` (sets it to `false` for local testing).
+
+**Status:** IMPLEMENTED. Currently unset in Vercel Production -> payment is bypassed on production until the Product Owner sets `NEXT_PUBLIC_SKIP_PAYMENT=false` there post-approval.

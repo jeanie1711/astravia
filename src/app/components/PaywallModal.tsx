@@ -5,11 +5,18 @@ import { PENDING_CHECKOUT_STORAGE_KEY, PRICE_LABEL } from "../../config/payments
 import { useJourney } from "../journey/JourneyContext";
 import { PillButton } from "./PillButton";
 
-// Real Dodo Payments checkout is now wired up (test-mode credentials
-// added 2026-09-13) -- this bypass stays here, defaulted off, only so a
-// future session without provider credentials can flip it back on to
-// test the post-payment flow.
-const DEV_SKIP_PAYMENT = false;
+// Env-driven so the Product Owner can flip this from the Vercel
+// dashboard (set NEXT_PUBLIC_SKIP_PAYMENT and redeploy) without asking
+// for a code change each time. Defaults to skipping payment (true)
+// whenever the var is unset or anything other than the literal string
+// "false" -- deliberate for right now: real Dodo Payments checkout is
+// wired up and working in test mode, but production is bypassing it
+// until Dodo's account verification (live mode) is approved, so real
+// visitors don't hit a checkout page showing "Test Mode". Once
+// approved and live credentials are in place, set
+// NEXT_PUBLIC_SKIP_PAYMENT=false in Vercel and redeploy to require real
+// payment again.
+const DEV_SKIP_PAYMENT = process.env.NEXT_PUBLIC_SKIP_PAYMENT !== "false";
 
 export function PaywallModal({
   open,

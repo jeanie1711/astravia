@@ -2,7 +2,6 @@ import type { City } from "../../astro/types";
 import type { PatternResult } from "../../interpretation/compose-pattern";
 import type { CityResult } from "../../interpretation/types";
 import type { CountryResult, Goal, RankedCity, ScorableGoal, Stars } from "../../scoring/types";
-import type { LifePriorityId } from "./priorities";
 
 export type UncertaintyMinutes = 0 | 15 | 30 | 60;
 
@@ -71,12 +70,15 @@ export type ViewMode = "city" | "country";
 export type JourneyState = {
   birth?: BirthDraft;
   uncertaintyMinutes: UncertaintyMinutes;
+  // The goal currently being viewed/calculated -- switchGoal() on the
+  // results page reassigns this freely as the user taps between tabs.
   goal?: Goal;
-  // "What matters most in this chapter?" (S04, product feedback
-  // 2026-09-06): up to 3 life-priority picks, mapped to the 4 goals only
-  // to choose the first-calculated goal and the results-page tab order --
-  // never a scoring input (docs/DECISIONS.md, 2026-09-06 Phase 2 entry).
-  priorities?: LifePriorityId[];
+  // The life area picked on the home screen (2026-09-11 redesign), set
+  // once when the journey starts and never mutated afterward. Purely a
+  // presentation anchor for the results-page tab order (docs/DECISIONS.md,
+  // 2026-09-12 entry) -- never a scoring input, and distinct from `goal`
+  // above, which does change as the user explores.
+  initialGoal?: ScorableGoal;
   results?: CalculateResponse;
   // Chosen on S05b (View Mode), right after calculation finishes. Keeps the
   // results page from showing city-ranked and country-ranked lists side by

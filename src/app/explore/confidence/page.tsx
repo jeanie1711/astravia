@@ -68,13 +68,13 @@ export default function ConfidencePage() {
   function handleContinue() {
     const uncertaintyMinutes: UncertaintyMinutes = mode === "exact" ? 0 : range;
     setJourney((prev) => ({ ...prev, uncertaintyMinutes }));
-    router.push("/explore/goal");
+    router.push("/explore/calculating");
   }
 
   return (
     <ScreenShell>
-      <BackHeader stepLabel="Step 2 of 3" />
-      <StepProgress step={2} total={3} />
+      <BackHeader stepLabel="Step 2 of 2" />
+      <StepProgress step={2} total={2} />
       <div style={{ padding: "24px 24px 0" }}>
         <h2 style={{ margin: "0 0 8px", font: "600 26px var(--font-display)", color: "var(--astravia-ink)" }}>
           How confident are you about your birth time?

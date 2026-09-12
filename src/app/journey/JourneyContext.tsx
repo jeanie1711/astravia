@@ -14,7 +14,11 @@ type JourneyContextValue = {
   // is about to load.
   hydrated: boolean;
   setJourney: (update: JourneyState | ((prev: JourneyState) => JourneyState)) => void;
-  resetJourney: () => void;
+  // Optional overrides applied on top of the fresh initial state -- e.g.
+  // the home screen's life-area pick (2026-09-11 redesign), which should
+  // survive the reset rather than requiring a separate setJourney call
+  // racing against it.
+  resetJourney: (overrides?: Partial<JourneyState>) => void;
 };
 
 const JourneyContext = createContext<JourneyContextValue | undefined>(undefined);
@@ -56,8 +60,8 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     setJourneyState((prev) => (typeof update === "function" ? update(prev) : update));
   }
 
-  function resetJourney() {
-    setJourneyState(INITIAL_JOURNEY_STATE);
+  function resetJourney(overrides?: Partial<JourneyState>) {
+    setJourneyState({ ...INITIAL_JOURNEY_STATE, ...overrides });
     try {
       window.sessionStorage.removeItem(STORAGE_KEY);
     } catch {

@@ -17,9 +17,8 @@ import { confidenceLabel } from "../../interpretation/display";
 import { PRICE_LABEL } from "../../config/payments";
 import { useJourney } from "../journey/JourneyContext";
 import { GOAL_COLOR, GOAL_LABEL } from "../journey/goalTheme";
-import { deriveGoalOrder } from "../journey/priorities";
 import type { CalculateRequest, CalculateResponse, CalculateResult } from "../journey/types";
-import type { Goal, Stars } from "../../scoring/types";
+import { SCORABLE_GOALS, type Goal, type Stars } from "../../scoring/types";
 import { getArchetypeCopy } from "../../interpretation/archetypes";
 
 // Kept deliberately small: a focused, convincing shortlist beats a long,
@@ -129,11 +128,12 @@ export default function ResultsPage() {
   if (!results || !journey.viewMode) return null;
 
   const viewMode = journey.viewMode;
-  // Tabs render in the order implied by the user's own "what matters
-  // most" picks (S04) when any were made, so the goal they care about
-  // most is also the first pill on the results page -- falls back to the
-  // default order when no priorities were recorded (e.g. an older session).
-  const orderedGoals = deriveGoalOrder(journey.priorities ?? []);
+  // Tabs render with the home screen's picked life area first (2026-09-11
+  // redesign) -- falls back to the default order when there isn't one
+  // (e.g. an older session that started before this field existed).
+  const orderedGoals = journey.initialGoal
+    ? [journey.initialGoal, ...SCORABLE_GOALS.filter((g) => g !== journey.initialGoal)]
+    : SCORABLE_GOALS;
   const goalName = results.goal === "OVERALL" ? "all life areas" : GOAL_LABEL[results.goal];
   const topCities = results.results.slice(0, MAX_CITIES_SHOWN);
   const topCountries = results.countries.slice(0, MAX_COUNTRIES_SHOWN);

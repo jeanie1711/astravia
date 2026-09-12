@@ -414,3 +414,21 @@ About a 5.9x overall speedup. Measured locally via `tsx` (not the compiled Next.
 **Impact:** `src/app/journey/types.ts` (new `unlocked` field), `src/app/explore/calculating/page.tsx`, `src/app/results/page.tsx`, `src/app/place/[cityId]/page.tsx`, two new API routes, one new `/report` route, one new shared `PaywallModal` component, `src/config/payments.ts` and `src/payments/stripe.ts`, and a CLAUDE.md §4 carve-out note. `docs/FUTURE.md`'s original entry is marked implemented, pointing here.
 
 **Status:** APPROVED — implemented 2026-09-09.
+
+---
+
+## 2026-09-12 — Home screen redesign: life-area pick moves to the home screen, S04 goal-selection step removed
+
+**Decision needed:** none -- direct Product Owner request in conversation, not a spec ambiguity.
+
+**Context:** The home screen redesign (2026-09-11 handoff) added a life-area selector (Career/Relationships/Home & belonging/Personal growth) to the hero, originally wired to local component state only, purely to preview illustrative city cards. The Product Owner then asked for that selection to actually drive the journey, with the separate "What matters most in this chapter?" step (S04, `/explore/goal`) removed since it's now redundant.
+
+**What changed:**
+- `/explore/goal` (the up-to-3 `LifePriorityId` picker) is deleted, along with `src/app/journey/priorities.ts` (`LIFE_PRIORITIES`, `deriveGoalOrder`) and its test -- that whole mapping layer only existed to translate multiple fine-grained priorities into a single first-calculated goal, which is no longer needed now that the home screen picks one of the 4 `ScorableGoal`s directly.
+- `JourneyState.priorities` is replaced with `initialGoal?: ScorableGoal`: set once from the home screen's pill selection (`resetJourney({ goal, initialGoal })`) and never mutated afterward, kept distinct from `goal` (which `switchGoal` on the results page still freely reassigns as the user explores tabs). The results page's goal-tab order now reads `initialGoal` directly instead of `deriveGoalOrder`.
+- `resetJourney()` in `JourneyContext` now accepts optional overrides (`resetJourney(overrides?: Partial<JourneyState>)`) applied on top of `INITIAL_JOURNEY_STATE`, so the home screen's goal pick survives the reset in one call rather than two separate `setJourney` calls racing each other.
+- Onboarding is now 2 steps, not 3: `/explore/birth-details` ("Step 1 of 2") -> `/explore/confidence` ("Step 2 of 2") -> `/explore/calculating` -> `/results`.
+
+**Impact:** No scoring/ranking/interpretation logic touched -- `priorities` was always presentation-layer only (docs/DECISIONS.md, 2026-09-06 Phase 2 entry), so removing it is a pure UI simplification. `tests/app/priorities.test.ts` removed with the module; 168/168 remaining tests pass unmodified.
+
+**Status:** IMPLEMENTED.

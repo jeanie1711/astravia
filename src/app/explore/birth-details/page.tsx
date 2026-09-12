@@ -69,8 +69,8 @@ export default function BirthDetailsPage() {
 
   return (
     <ScreenShell>
-      <BackHeader stepLabel="Step 1 of 3" onBack={() => router.push("/")} />
-      <StepProgress step={1} total={3} />
+      <BackHeader stepLabel="Step 1 of 2" onBack={() => router.push("/")} />
+      <StepProgress step={1} total={2} />
       <div style={{ padding: "24px 24px 0" }}>
         <h2 style={{ margin: "0 0 8px", font: "600 26px var(--font-display)", color: "var(--astravia-ink)" }}>
           Your birth details

@@ -6,18 +6,15 @@ import { PillButton } from "../../components/PillButton";
 import { ScreenShell } from "../../components/ScreenShell";
 import { useJourney } from "../../journey/JourneyContext";
 import type { CalculateRequest, CalculateResponse } from "../../journey/types";
-
-// Spec S05: rotating messages reflecting real stages, no fake delay.
-const CALC_MESSAGES = [
-  "Mapping your planetary lines…",
-  "Comparing places around the world…",
-  "Checking your birth-time range…",
-  "Finding patterns that stay strong…"
-];
+import { useLanguage } from "../../../i18n/LanguageContext";
+import { useTranslation } from "../../../i18n/useTranslation";
 
 export default function CalculatingPage() {
   const router = useRouter();
   const { journey, hydrated, setJourney } = useJourney();
+  const { language } = useLanguage();
+  const t = useTranslation();
+  const CALC_MESSAGES = t.calculating.messages;
   const [msgIdx, setMsgIdx] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const startedRef = useRef(false);
@@ -38,7 +35,8 @@ export default function CalculatingPage() {
     const request: CalculateRequest = {
       birth: journey.birth,
       uncertaintyMinutes: journey.uncertaintyMinutes,
-      goal: journey.goal
+      goal: journey.goal,
+      language
     };
 
     fetch("/api/calculate", {
@@ -60,7 +58,7 @@ export default function CalculatingPage() {
         setJourney((prev) => ({ ...prev, results: data, viewMode: prev.viewMode ?? "city", unlocked: false }));
         router.push("/results");
       })
-      .catch(() => setError("We couldn't calculate your results."))
+      .catch(() => setError(t.calculating.errorFallback))
       .finally(() => clearInterval(interval));
 
     return () => clearInterval(interval);
@@ -82,10 +80,10 @@ export default function CalculatingPage() {
                 router.refresh();
               }}
             >
-              Try again
+              {t.calculating.tryAgain}
             </PillButton>
             <PillButton variant="secondary" onClick={() => router.push("/explore/birth-details")}>
-              Review birth details
+              {t.calculating.reviewBirthDetails}
             </PillButton>
           </div>
         </div>
@@ -125,7 +123,7 @@ export default function CalculatingPage() {
           ))}
         </div>
         <h2 style={{ margin: "0 0 12px", font: "600 24px var(--font-display)", color: "var(--astravia-ink)" }}>
-          Mapping your places…
+          {t.calculating.headline}
         </h2>
         <p
           style={{ margin: 0, font: "400 15px var(--font-body)", color: "var(--astravia-text-secondary)", height: 20 }}

@@ -12,7 +12,7 @@ describe("lookupSynthesis", () => {
   it("Reinforcing: both Personal/Benefic -> a doubled-down synthesis naming the reinforcement's theme", () => {
     const sunMc = { body: "Sun" as const, angle: "MC" as const };
     const jupiterMc = { body: "Jupiter" as const, angle: "MC" as const };
-    const result = lookupSynthesis(sunMc, jupiterMc, false);
+    const result = lookupSynthesis(sunMc, jupiterMc, false, "en");
     expect(result.synthesis).toContain("Sun–Jupiter influence reinforces it");
     expect(result.synthesis).toContain("professional growth, opportunity, visibility");
   });
@@ -20,8 +20,8 @@ describe("lookupSynthesis", () => {
   it("names a paran distinctly from a plain secondary influence (06 §5)", () => {
     const sunMc = { body: "Sun" as const, angle: "MC" as const };
     const jupiterMc = { body: "Jupiter" as const, angle: "MC" as const };
-    const paran = lookupSynthesis(sunMc, jupiterMc, true);
-    const secondary = lookupSynthesis(sunMc, jupiterMc, false);
+    const paran = lookupSynthesis(sunMc, jupiterMc, true, "en");
+    const secondary = lookupSynthesis(sunMc, jupiterMc, false, "en");
     expect(paran.synthesis).toContain("paran");
     expect(secondary.synthesis).toContain("influence");
     expect(secondary.synthesis).not.toContain("paran");
@@ -30,7 +30,7 @@ describe("lookupSynthesis", () => {
   it("Complex/effortful: both Malefic/Transformative -> a compounding, demanding synthesis", () => {
     const marsMc = { body: "Mars" as const, angle: "MC" as const };
     const plutoMc = { body: "Pluto" as const, angle: "MC" as const };
-    const result = lookupSynthesis(marsMc, plutoMc, false);
+    const result = lookupSynthesis(marsMc, plutoMc, false, "en");
     expect(result.synthesis).toContain("doesn't come easily");
     expect(result.story).toContain("both deserve real attention");
   });
@@ -38,7 +38,7 @@ describe("lookupSynthesis", () => {
   it("Layered: primary easeful, reinforcement challenging -> weight is named", () => {
     const mercuryAsc = { body: "Mercury" as const, angle: "ASC" as const };
     const saturnDsc = { body: "Saturn" as const, angle: "DSC" as const };
-    const result = lookupSynthesis(mercuryAsc, saturnDsc, true);
+    const result = lookupSynthesis(mercuryAsc, saturnDsc, true, "en");
     expect(result.synthesis).toContain("not simply a straightforward Mercury story");
     expect(result.synthesis).toContain("weight and responsibility");
   });
@@ -46,7 +46,7 @@ describe("lookupSynthesis", () => {
   it("Layered: primary challenging, reinforcement easeful -> the reinforcement lightens it, doesn't add weight", () => {
     const saturnDsc = { body: "Saturn" as const, angle: "DSC" as const };
     const mercuryAsc = { body: "Mercury" as const, angle: "ASC" as const };
-    const result = lookupSynthesis(saturnDsc, mercuryAsc, false);
+    const result = lookupSynthesis(saturnDsc, mercuryAsc, false, "en");
     expect(result.synthesis).toContain("story of weight and responsibility");
     expect(result.synthesis).toContain("brings curiosity, adaptability, social intelligence into the mix");
   });
@@ -54,6 +54,6 @@ describe("lookupSynthesis", () => {
   it("is always defined -- category-pair coverage has no gaps", () => {
     const a = { body: "Saturn" as const, angle: "DSC" as const };
     const b = { body: "Mercury" as const, angle: "ASC" as const };
-    expect(lookupSynthesis(a, b, false)).toBeDefined();
+    expect(lookupSynthesis(a, b, false, "en")).toBeDefined();
   });
 });

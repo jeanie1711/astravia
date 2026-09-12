@@ -1,3 +1,5 @@
+import { useTranslation } from "../../i18n/useTranslation";
+
 export function SaveButton({
   saved,
   onToggle,
@@ -12,6 +14,7 @@ export function SaveButton({
   // future dark surface.
   onDark?: boolean;
 }) {
+  const t = useTranslation();
   return (
     <button
       type="button"
@@ -19,7 +22,7 @@ export function SaveButton({
         e.stopPropagation();
         onToggle();
       }}
-      aria-label={saved ? "Remove from saved places" : "Save this place"}
+      aria-label={saved ? t.common.unsaveAriaLabel : t.common.saveAriaLabel}
       aria-pressed={saved}
       style={{
         border: "none",

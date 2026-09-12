@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PENDING_CHECKOUT_STORAGE_KEY } from "../../config/payments";
 import { useJourney } from "../journey/JourneyContext";
 import { PillButton } from "./PillButton";
+import { useTranslation } from "../../i18n/useTranslation";
 
 // Env-driven so the Product Owner can flip this from the Vercel
 // dashboard (set NEXT_PUBLIC_SKIP_PAYMENT and redeploy) without asking
@@ -30,6 +31,7 @@ export function PaywallModal({
   context?: string | undefined;
 }) {
   const { setJourney } = useJourney();
+  const t = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +65,7 @@ export function PaywallModal({
       }
       window.location.href = url;
     } catch {
-      setError("Couldn't start checkout. Please try again.");
+      setError(t.paywall.errorMsg);
       setLoading(false);
     }
   }
@@ -100,7 +102,7 @@ export function PaywallModal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t.paywall.closeAriaLabel}
             style={{
               border: "none",
               background: "none",
@@ -116,17 +118,16 @@ export function PaywallModal({
         </div>
 
         <h2 style={{ margin: "0 0 8px", font: "600 22px var(--font-display)", color: "var(--astravia-ink)" }}>
-          {context ?? "Unlock your full report"}
+          {context ?? t.paywall.defaultTitle}
         </h2>
         <p style={{ margin: "0 0 18px", font: "400 14px/1.6 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
-          One small payment unlocks every place and life area for this chart, plus a downloadable PDF report you can
-          keep.
+          {t.paywall.pitch}
         </p>
 
         <ul style={{ margin: "0 0 22px", paddingLeft: 18, font: "400 14px/1.7 var(--font-body)", color: "var(--astravia-ink)" }}>
-          <li>All remaining places for every life area</li>
-          <li>Career, Love, Home, Growth, and All life areas in full</li>
-          <li>A downloadable PDF report you can keep</li>
+          <li>{t.paywall.bullet1}</li>
+          <li>{t.paywall.bullet2}</li>
+          <li>{t.paywall.bullet3}</li>
         </ul>
 
         {error && (
@@ -136,7 +137,7 @@ export function PaywallModal({
         )}
 
         <PillButton className="astravia-btn-shine" onClick={startCheckout} disabled={loading}>
-          {loading ? "Redirecting…" : "Unlock full report"}
+          {loading ? t.paywall.redirecting : t.common.unlockFullReport}
         </PillButton>
         <button
           type="button"
@@ -152,7 +153,7 @@ export function PaywallModal({
             padding: 4
           }}
         >
-          Not now
+          {t.paywall.notNow}
         </button>
       </div>
     </div>

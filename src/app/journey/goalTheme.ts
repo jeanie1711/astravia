@@ -1,3 +1,4 @@
+import type { Language } from "../../i18n/types";
 import type { ScorableGoal } from "../../scoring/types";
 
 // The single source of truth for each goal's display name and semantic
@@ -5,12 +6,23 @@ import type { ScorableGoal } from "../../scoring/types";
 // meaning and must stay identical everywhere a goal appears -- result
 // bars, tab markers, priority-chip accents, badges). Previously
 // duplicated between GoalBreakdownBars.tsx and results/page.tsx.
-export const GOAL_LABEL: Record<ScorableGoal, string> = {
+const GOAL_LABEL_EN: Record<ScorableGoal, string> = {
   CAREER: "Career",
   LOVE: "Love & Relationships",
   HOME: "Home & Family",
   GROWTH: "Personal Growth"
 };
+
+const GOAL_LABEL_VI: Record<ScorableGoal, string> = {
+  CAREER: "Sự nghiệp",
+  LOVE: "Tình cảm & Các mối quan hệ",
+  HOME: "Nhà cửa & Gia đình",
+  GROWTH: "Phát triển bản thân"
+};
+
+export function goalLabelFor(goal: ScorableGoal, language: Language): string {
+  return (language === "vi" ? GOAL_LABEL_VI : GOAL_LABEL_EN)[goal];
+}
 
 export const GOAL_COLOR: Record<ScorableGoal, string> = {
   CAREER: "var(--astravia-career)",

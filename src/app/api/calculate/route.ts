@@ -42,7 +42,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { birth, uncertaintyMinutes, goal } = body;
+  const { birth, uncertaintyMinutes, goal, language } = body;
 
   const resolution = resolveBirthInstant({
     birthDate: birth.birthDate,
@@ -165,7 +165,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       distanceKm: g.cityInfluence.distanceKm,
       scenarioDistancesKm: g.cityInfluence.scenarioDistancesKm
     }));
-    return composeCityStory(rankedCity, city.name, city.countryName, influenceDistances);
+    return composeCityStory(rankedCity, city.name, city.countryName, influenceDistances, language);
   }
 
   const stories: Record<string, CityResult> = {};
@@ -173,7 +173,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     stories[rankedCity.cityId] = composeStoryFor(rankedCity);
   }
 
-  const pattern = detectPattern(top.slice(0, PATTERN_SAMPLE_SIZE));
+  const pattern = detectPattern(top.slice(0, PATTERN_SAMPLE_SIZE), language);
 
   const byCountry = new Map<string, RankedCity[]>();
   for (const r of deduped) {
@@ -221,6 +221,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const response: CalculateResponse = {
     goal,
+    language,
     results: top.map((r) => ({ city: citiesById.get(r.cityId)!, ranked: r, goalBreakdown: cityGoalBreakdown(r.cityId) })),
     extraResults,
     stories,

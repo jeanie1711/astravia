@@ -43,7 +43,7 @@ describe("Golden Case 001 - full City Story composition", () => {
       scenarioDistancesKm: r.cityInfluence.scenarioDistancesKm
     }));
 
-    const story = composeCityStory(rankedCity, "Stockholm", "Sweden", influenceDistances);
+    const story = composeCityStory(rankedCity, "Stockholm", "Sweden", influenceDistances, "en");
 
     // Traceability: primary first, technical details match calculation output.
     expect(story.primaryInfluence).toEqual({ body: "Sun", angle: "MC" });
@@ -73,11 +73,11 @@ describe("Golden Case 001 - full City Story composition", () => {
       story.howItMayFeelDetail,
       story.shareText
     ].join(" ");
-    expect(findProhibitedPhrases(combinedText)).toEqual([]);
-    expect(findPracticalDomainClaims(combinedText)).toEqual([]);
+    expect(findProhibitedPhrases(combinedText, "en")).toEqual([]);
+    expect(findPracticalDomainClaims(combinedText, "en")).toEqual([]);
 
     // Determinism: same input -> same composed output.
-    const storyAgain = composeCityStory(rankedCity, "Stockholm", "Sweden", influenceDistances);
+    const storyAgain = composeCityStory(rankedCity, "Stockholm", "Sweden", influenceDistances, "en");
     expect(JSON.stringify(story)).toBe(JSON.stringify(storyAgain));
   });
 });

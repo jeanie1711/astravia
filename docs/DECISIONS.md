@@ -486,3 +486,26 @@ About a 5.9x overall speedup. Measured locally via `tsx` (not the compiled Next.
 **Impact:** Presentation/composition layer only -- no scoring, ranking, or astronomical calculation touched; no interpretation *meaning* changed (same 40 entries, same coherence-tier logic), only how it's turned into prose. All 173 tests pass. Verified live for two real combinations (Mercury-MC+Saturn-DSC paran; Mars-MC primary+Moon-DSC secondary, the "primary is the challenging side" branch) against the Product Owner's reference example.
 
 **Status:** IMPLEMENTED.
+
+---
+
+## 2026-09-12 — Vietnamese/English language switcher
+
+**Decision needed:** none for methodology (calculation/scoring/interpretation meaning is unchanged) -- direct Product Owner request to fully localize the product into Vietnamese, with a toggle between English and Vietnamese.
+
+**Context:** The app had zero i18n infrastructure (hardcoded English throughout, `<html lang="en">`, no locale routing). Two distinct surfaces needed covering: UI chrome (~150-200 strings across pages/components) and the interpretation content library (`src/interpretation/*`, ~750 strings, the bulk in `library.ts`'s 40 entries) that composes City Story/Your Pattern narrative text.
+
+**What changed:**
+- New `src/i18n/` module: `types.ts` (`Language = "en" | "vi"`), `LanguageContext.tsx` (client-side provider mirroring `JourneyContext.tsx`'s hydration/persistence pattern, but `localStorage`-backed under `astravia-language` since language is a site preference, not journey/session data -- it survives `resetJourney()`), `dictionaries/en.ts` + `dictionaries/vi.ts` (nested UI-copy dictionaries, `vi.ts` typed against `en.ts`'s shape so it can't silently drift), `useTranslation()` hook.
+- `LanguageToggle.tsx` mounted once in `layout.tsx`, a fixed "EN · VI" pill visible on every route (hidden under `@media print`).
+- `language` threaded as an explicit input through the whole calculation/interpretation pipeline (CLAUDE.md §3 determinism: same input + versions -> same output, and language is now part of that input): `CalculateRequest`/`CalculateResponse` carry it; `/api/calculate` passes it into `composeCityStory()`/`detectPattern()`; `CityResult` itself records the `language` it was composed in.
+- Content library restructured per-language rather than swapped in place: `library.ts` split into `library.en.ts`/`library.vi.ts` data files behind a thin `getInterpretation(body, angle, language)` dispatcher; `voice.ts`, `combinations.ts`, `compose-city-story.ts`, `compose-pattern.ts`, `archetypes.ts`, `display.ts`, `safety.ts` all gained a `language` parameter -- Vietnamese sentence templates were written as their own natural prose (not a find-and-replace of English word order), since Vietnamese grammar doesn't mirror English clause structure.
+- UI chrome (every page, `PaywallModal`, `BackHeader`, `SaveButton`, `WorldMap`, `GoalBreakdownBars`, `StarRating`, `discoveryLabel.ts`, `goalTheme.ts`, `astroExplainer.ts`) migrated from hardcoded strings to the dictionary/lookup-table pattern.
+- Results/report pages gained an effect that recomposes the currently-loaded chart when the language toggle changes, instead of requiring a fresh calculation.
+- No dependency added (`next-intl`/`react-i18next` considered, rejected as unnecessary machinery for a bounded two-language toggle -- CLAUDE.md §5/§15 cost/dependency discipline).
+
+**Why no version bump:** English output is byte-for-byte unchanged -- every existing test asserts the exact same English strings it did before, now with an explicit `"en"` argument. Language is an additive input dimension, not a change to calculation, scoring, or interpretation methodology.
+
+**Impact:** New `src/i18n/*`; every `src/interpretation/*` file gained a `language` parameter; every page/shared component gained UI-copy lookups; `journey/types.ts` gained `language` on `CalculateRequest`/`CalculateResponse`. All 176 tests pass (173 pre-existing + 3 new from parametrizing `library.test.ts` over both languages). Verified live: full journey walked end-to-end in Vietnamese (home -> birth details -> confidence -> calculating -> results -> a city story -> the full report), including the combination-synthesis paragraphs, safety-phrase filtering, and the results/report language-toggle recompute in both directions.
+
+**Status:** IMPLEMENTED.

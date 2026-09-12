@@ -2,6 +2,7 @@ import type { City } from "../../astro/types";
 import type { PatternResult } from "../../interpretation/compose-pattern";
 import type { CityResult } from "../../interpretation/types";
 import type { CountryResult, Goal, RankedCity, ScorableGoal, Stars } from "../../scoring/types";
+import type { Language } from "../../i18n/types";
 
 export type UncertaintyMinutes = 0 | 15 | 30 | 60;
 
@@ -20,6 +21,7 @@ export type CalculateRequest = {
   birth: BirthDraft;
   uncertaintyMinutes: UncertaintyMinutes;
   goal: Goal;
+  language: Language;
 };
 
 // Per-goal stars/score, attached only to Overall results (product feedback
@@ -41,6 +43,7 @@ export type CountryResultWithBreakdown = CountryResult & { goalBreakdown?: GoalB
 
 export type CalculateResponse = {
   goal: Goal;
+  language: Language;
   results: CalculateResult[];
   // Cities referenced only via a Country card's topCityIds (§11: a
   // country's best cities need not crack the global top-20 `results` list

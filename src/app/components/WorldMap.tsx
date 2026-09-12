@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { WORLD_GEO } from "../../data/world-geo";
+import { useTranslation } from "../../i18n/useTranslation";
 
 export type MapPin = {
   id: string;
@@ -39,6 +40,7 @@ export function WorldMap({
   pins: MapPin[];
   onSelect: (id: string) => void;
 }) {
+  const t = useTranslation();
   const [activeId, setActiveId] = useState<string | undefined>(pins[0]?.id);
   const active = pins.find((p) => p.id === activeId);
 
@@ -78,7 +80,7 @@ export function WorldMap({
               onClick={() => setActiveId(pin.id)}
               style={{ cursor: "pointer" }}
               role="button"
-              aria-label={`${pin.title}, rank ${pin.rank}`}
+              aria-label={t.common.pinAriaLabel(pin.title, pin.rank)}
             >
               {isTop && <circle r={r + 5} fill="var(--astravia-overall)" opacity={0.22} />}
               <circle
@@ -126,7 +128,7 @@ export function WorldMap({
               {active.subtitle}
             </span>
           </span>
-          <span style={{ font: "600 12px var(--font-body)", color: "var(--astravia-ink)" }}>View →</span>
+          <span style={{ font: "600 12px var(--font-body)", color: "var(--astravia-ink)" }}>{t.common.viewLabel}</span>
         </button>
       )}
     </div>

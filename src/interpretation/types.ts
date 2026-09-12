@@ -1,4 +1,5 @@
 import type { Angle, Body } from "../astro/types";
+import type { Language } from "../i18n/types";
 import type { Goal, Influence, StabilityLabel, Stars } from "../scoring/types";
 
 export type Tone = "outward" | "inward" | "relational" | "transformative" | "mixed";
@@ -39,6 +40,7 @@ export type InfluenceDetail = {
 export type CityResult = {
   city: string;
   country: string;
+  language: Language;
 
   goal: Goal;
   stars: Stars;

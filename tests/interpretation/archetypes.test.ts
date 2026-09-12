@@ -18,13 +18,13 @@ describe("getArchetypeCopy", () => {
       "BALANCED"
     ];
     for (const id of ids) {
-      const copy = getArchetypeCopy(id);
+      const copy = getArchetypeCopy(id, "en");
       expect(copy.name.length).toBeGreaterThan(0);
       expect(copy.description.length).toBeGreaterThan(0);
     }
   });
 
   it("falls back to UNCLASSIFIED copy for an unknown id", () => {
-    expect(getArchetypeCopy("NOT_A_REAL_ID")).toEqual(getArchetypeCopy("UNCLASSIFIED"));
+    expect(getArchetypeCopy("NOT_A_REAL_ID", "en")).toEqual(getArchetypeCopy("UNCLASSIFIED", "en"));
   });
 });

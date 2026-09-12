@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import { PillButton } from "../components/PillButton";
 import { StarRating } from "../components/StarRating";
 import { classifyDiscovery, getDiscoveryCopy } from "../components/discoveryLabel";
-import { ANGLES, PLANETS } from "../content/astroExplainer";
+import { anglesFor, planetsFor, type AngleEntry, type PlanetEntry } from "../content/astroExplainer";
 import { confidenceLabel } from "../../interpretation/display";
 import { useJourney } from "../journey/JourneyContext";
-import { GOAL_COLOR, GOAL_COLOR_BG, GOAL_LABEL } from "../journey/goalTheme";
+import { GOAL_COLOR, GOAL_COLOR_BG, goalLabelFor } from "../journey/goalTheme";
 import type { CalculateRequest, CalculateResponse, CalculateResult } from "../journey/types";
 import type { Goal, ScorableGoal } from "../../scoring/types";
 import { SCORABLE_GOALS } from "../../scoring/types";
+import { useLanguage } from "../../i18n/LanguageContext";
+import { useTranslation } from "../../i18n/useTranslation";
+import type { Language } from "../../i18n/types";
 
 // Goal sections render Career -> Love -> Home -> Growth -> All life areas
 // last (docs/DECISIONS.md, 2026-09-09 "All life areas" reorder): it's a
@@ -23,6 +26,8 @@ const MAX_COUNTRIES = 3;
 export default function ReportPage() {
   const router = useRouter();
   const { journey, hydrated } = useJourney();
+  const { language } = useLanguage();
+  const t = useTranslation();
   const [byGoal, setByGoal] = useState<Partial<Record<Goal, CalculateResponse>> | null>(null);
   const [error, setError] = useState(false);
 
@@ -34,12 +39,21 @@ export default function ReportPage() {
     }
 
     let cancelled = false;
-    const known = journey.results;
-    const missing = REPORT_GOALS.filter((g) => g !== known.goal);
+    // Reuse the already-fetched goal only when it was composed in the
+    // currently active language -- a language switch mid-session (rare on
+    // this page, since it's normally entered fresh right after unlocking)
+    // otherwise re-fetches all 5 goals instead of mixing languages.
+    const known = journey.results.language === language ? journey.results : undefined;
+    const missing = known ? REPORT_GOALS.filter((g) => g !== known.goal) : REPORT_GOALS;
 
     Promise.all(
       missing.map((goal) => {
-        const request: CalculateRequest = { birth: journey.birth!, uncertaintyMinutes: journey.uncertaintyMinutes, goal };
+        const request: CalculateRequest = {
+          birth: journey.birth!,
+          uncertaintyMinutes: journey.uncertaintyMinutes,
+          goal,
+          language
+        };
         return fetch("/api/calculate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -49,7 +63,7 @@ export default function ReportPage() {
     )
       .then((fetched) => {
         if (cancelled) return;
-        const merged: Partial<Record<Goal, CalculateResponse>> = { [known.goal]: known };
+        const merged: Partial<Record<Goal, CalculateResponse>> = known ? { [known.goal]: known } : {};
         missing.forEach((goal, i) => {
           const data = fetched[i];
           if (data) merged[goal] = data;
@@ -62,13 +76,13 @@ export default function ReportPage() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated]);
+  }, [hydrated, language]);
 
   if (!hydrated || (!byGoal && !error)) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ font: "400 15px var(--font-body)", color: "var(--astravia-text-secondary)" }}>
-          Assembling your full report…
+          {t.report.assembling}
         </p>
       </div>
     );
@@ -78,7 +92,7 @@ export default function ReportPage() {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ font: "400 15px var(--font-body)", color: "var(--astravia-text-secondary)" }}>
-          We couldn't assemble your report. <button onClick={() => router.push("/results")}>Back to results</button>
+          {t.report.assembleError} <button onClick={() => router.push("/results")}>{t.report.backToResults}</button>
         </p>
       </div>
     );
@@ -107,10 +121,10 @@ export default function ReportPage() {
           onClick={() => router.push("/results")}
           style={{ border: "none", background: "none", color: "var(--astravia-ink)", font: "600 13px var(--font-body)", cursor: "pointer" }}
         >
-          ← Back
+          {t.report.backButton}
         </button>
         <PillButton fullWidth={false} onClick={() => window.print()}>
-          Print / Save as PDF
+          {t.report.printSave}
         </PillButton>
       </div>
 
@@ -133,6 +147,13 @@ function ReportSheet({ children }: { children: React.ReactNode }) {
 }
 
 function CoverPage({ birthDate, birthTime, birthPlace }: { birthDate: string; birthTime: string; birthPlace: string }) {
+  const { language } = useLanguage();
+  const t = useTranslation();
+  const preparedDate = new Date().toLocaleDateString(language === "vi" ? "vi-VN" : "en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
   return (
     <ReportSheet>
       <div style={{ padding: "80px 0", textAlign: "center" }}>
@@ -147,16 +168,15 @@ function CoverPage({ birthDate, birthTime, birthPlace }: { birthDate: string; bi
             marginBottom: 14
           }}
         >
-          Your full report
+          {t.report.coverEyebrow}
         </div>
         <h1 style={{ font: "600 38px/1.25 var(--font-display)", color: "var(--astravia-ink)", margin: "0 0 18px" }}>
-          Where in the world
+          {t.report.coverTitleLine1}
           <br />
-          you might thrive
+          {t.report.coverTitleLine2}
         </h1>
         <p style={{ font: "400 14px var(--font-body)", color: "var(--astravia-text-secondary)", marginBottom: 44 }}>
-          A complete look across Career, Love &amp; Relationships, Home &amp; Family, Personal Growth, and how they
-          all balance together.
+          {t.report.coverSubtitle}
         </p>
         <div
           style={{
@@ -167,9 +187,9 @@ function CoverPage({ birthDate, birthTime, birthPlace }: { birthDate: string; bi
             padding: "18px 28px"
           }}
         >
-          <BirthField label="Born" value={birthDate} />
-          <BirthField label="Time" value={birthTime} />
-          <BirthField label="Place" value={birthPlace} />
+          <BirthField label={t.report.bornLabel} value={birthDate} />
+          <BirthField label={t.report.timeLabel} value={birthTime} />
+          <BirthField label={t.report.placeLabel} value={birthPlace} />
         </div>
         <div
           style={{
@@ -181,8 +201,7 @@ function CoverPage({ birthDate, birthTime, birthPlace }: { birthDate: string; bi
           }}
         />
         <p style={{ marginTop: 60, font: "400 11px var(--font-body)", color: "var(--astravia-text-subtle)" }}>
-          Prepared {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} ·
-          astravia.app
+          {t.report.preparedOn(preparedDate)}
         </p>
       </div>
     </ReportSheet>
@@ -209,19 +228,20 @@ function BirthField({ label, value }: { label: string; value: string }) {
 }
 
 function IntroPage() {
+  const { language } = useLanguage();
+  const t = useTranslation();
+  const angles = anglesFor(language);
+  const planets = planetsFor(language);
   return (
     <ReportSheet>
       <h2 style={{ font: "600 26px var(--font-display)", color: "var(--astravia-ink)", margin: "20px 0 10px" }}>
-        How astrocartography works
+        {t.report.introHeading}
       </h2>
       <p style={{ font: "500 15px/1.7 var(--font-display)", color: "var(--astravia-ink)", margin: "0 0 18px" }}>
-        Imagine the exact moment you were born, looking up at the sky: each planet sits at some position relative to
-        the horizon and the sky above you. Four points mark the most significant of these positions, and
-        astrocartography draws a line across the world for every planet that touches one of them. Where those lines
-        pass near a real city is where this report begins.
+        {t.report.introBody}
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
-        {ANGLES.map((a) => (
+        {angles.map((a) => (
           <div
             key={a.id}
             style={{ background: "var(--astravia-surface-alt)", borderRadius: 10, padding: "10px 14px" }}
@@ -237,10 +257,10 @@ function IntroPage() {
         ))}
       </div>
       <p style={{ font: "400 12.5px var(--font-body)", color: "var(--astravia-text-secondary)", margin: "0 0 12px" }}>
-        Astravia traces ten planets against these four points, each carrying its own traditional theme:
+        {t.report.introPlanetIntro}
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
-        {PLANETS.map((p) => (
+        {planets.map((p) => (
           <div
             key={p.name}
             style={{
@@ -265,21 +285,20 @@ function IntroPage() {
         ))}
       </div>
       <p style={{ font: "400 13px/1.65 var(--font-body)", color: "var(--astravia-text-secondary)", marginTop: 20 }}>
-        The pages that follow walk through what your own chart suggests, one life area at a time, then close with how
-        they all balance together.
+        {t.report.introClosing}
       </p>
     </ReportSheet>
   );
 }
 
 function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
+  const { language } = useLanguage();
+  const t = useTranslation();
   const isOverall = goal === "OVERALL";
-  const label = isOverall ? "all life areas" : GOAL_LABEL[goal as ScorableGoal];
+  const label = isOverall ? t.results.allLifeAreasInline : goalLabelFor(goal as ScorableGoal, language);
   const accentColor = isOverall ? "var(--astravia-overall)" : GOAL_COLOR[goal as ScorableGoal];
   const accentBg = isOverall ? "var(--astravia-overall-bg)" : GOAL_COLOR_BG[goal as ScorableGoal];
-  const title = isOverall
-    ? "The most balanced across all life areas"
-    : `Your strongest places for ${label}`;
+  const title = isOverall ? t.report.overallTitle : t.report.goalTitle(label);
   const topCities = data.results.slice(0, MAX_CITIES);
   const topCountries = data.countries.slice(0, MAX_COUNTRIES);
   const allKnown: CalculateResult[] = [...data.results, ...data.extraResults];
@@ -306,7 +325,7 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
         }}
       >
         <span style={{ width: 8, height: 8, borderRadius: "50%", background: accentColor }} />
-        {isOverall ? "All life areas" : label}
+        {isOverall ? t.report.allLifeAreasBadge : label}
       </div>
       <h2 style={{ font: "600 26px var(--font-display)", color: "var(--astravia-ink)", margin: "0 0 6px" }}>{title}</h2>
 
@@ -321,7 +340,7 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
               color: "var(--astravia-text-subtle)"
             }}
           >
-            {isOverall ? "The most balanced across all life areas" : `Your strongest place for ${label}`}
+            {isOverall ? t.report.heroOverallLabel : t.report.heroGoalLabel(label)}
           </div>
           <div style={{ font: "600 26px var(--font-display)", color: "var(--astravia-ink)", margin: "6px 0 10px" }}>
             {hero.city.name}, {hero.city.countryName}
@@ -329,7 +348,7 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
             <StarRating stars={hero.ranked.stars} score={hero.ranked.internalScore} showLabel />
             <span style={{ font: "600 12px var(--font-body)", color: "var(--astravia-text-secondary)" }}>
-              Confidence: {confidenceLabel(hero.ranked.stability)}
+              {t.report.confidence(confidenceLabel(hero.ranked.stability, language))}
             </span>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 16 }}>
@@ -360,7 +379,7 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
             {heroStory.opportunities.length > 0 && (
               <div style={{ background: "var(--astravia-surface-alt)", borderRadius: 12, padding: "14px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, font: "700 12px var(--font-body)", color: "var(--astravia-home)", marginBottom: 8 }}>
-                  <span aria-hidden="true">◇</span> What could grow here
+                  <span aria-hidden="true">◇</span> {t.report.whatCouldGrow}
                 </div>
                 <ul style={{ margin: 0, paddingLeft: 16 }}>
                   {heroStory.opportunities.map((o, i) => (
@@ -374,12 +393,12 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
             {heroStory.tradeOffs.length > 0 && (
               <div style={{ background: "var(--astravia-surface-alt)", borderRadius: 12, padding: "14px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, font: "700 12px var(--font-body)", color: "var(--astravia-love)", marginBottom: 8 }}>
-                  <span aria-hidden="true">◆</span> Where it may stretch you
+                  <span aria-hidden="true">◆</span> {t.report.whereItMayStretch}
                 </div>
                 <ul style={{ margin: 0, paddingLeft: 16 }}>
-                  {heroStory.tradeOffs.map((t, i) => (
+                  {heroStory.tradeOffs.map((item, i) => (
                     <li key={i} style={{ font: "400 12.5px/1.55 var(--font-body)", color: "var(--astravia-ink)" }}>
-                      {t}
+                      {item}
                     </li>
                   ))}
                 </ul>
@@ -398,7 +417,7 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
               }}
             >
               <div style={{ font: "600 10px var(--font-body)", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--astravia-text-subtle)", marginBottom: 4 }}>
-                What life here might feel like
+                {t.report.whatLifeMightFeel}
               </div>
               <div style={{ font: "600 16px var(--font-display)", color: "var(--astravia-ink)" }}>{heroStory.howItMayFeel}</div>
               {heroStory.howItMayFeelDetail && (
@@ -440,7 +459,7 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
               margin: "26px 0 10px"
             }}
           >
-            Also strong for {isOverall ? "all life areas" : label}
+            {t.report.alsoStrongFor(isOverall ? t.results.allLifeAreasInline : label)}
           </div>
           {topCities.slice(1).map((r, i) => {
             const story = data.stories[r.ranked.cityId];
@@ -474,12 +493,12 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
               margin: "26px 0 10px"
             }}
           >
-            Your strongest countries for {isOverall ? "all life areas" : label}
+            {t.report.strongestCountriesFor(isOverall ? t.results.allLifeAreasInline : label)}
           </div>
           {topCountries.map((co, i) => {
             const cityResults = co.topCityIds.map(findResult).filter((c): c is CalculateResult => c !== undefined);
             const discoveryType = classifyDiscovery(co.narrative, co.stars, cityResults[0]?.city.population);
-            const discoveryCopy = getDiscoveryCopy(discoveryType);
+            const discoveryCopy = getDiscoveryCopy(discoveryType, language);
             return (
               <div key={co.countryCode} style={{ background: "var(--astravia-surface-alt)", borderRadius: 12, padding: "12px 16px", marginBottom: 8 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -510,7 +529,7 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
               margin: "26px 0 8px"
             }}
           >
-            Your location story
+            {t.report.locationStoryLabel}
           </div>
           <p style={{ font: "500 14px/1.6 var(--font-display)", color: "var(--astravia-ink)", margin: "0 0 10px" }}>
             {data.pattern.sentence}
@@ -538,17 +557,16 @@ function GoalSection({ goal, data }: { goal: Goal; data: CalculateResponse }) {
 }
 
 function ClosingPage() {
+  const t = useTranslation();
   return (
     <ReportSheet>
       <div style={{ minHeight: 500, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
         <div style={{ fontSize: 26, color: "var(--astravia-overall)", marginBottom: 16 }}>✦</div>
         <p style={{ font: "italic 500 18px var(--font-display)", color: "var(--astravia-text-secondary)", margin: "0 0 40px", maxWidth: 420 }}>
-          "Your map is not a verdict. It is a place to begin."
+          {t.report.closingQuote}
         </p>
         <p style={{ font: "400 11px/1.6 var(--font-body)", color: "var(--astravia-text-subtle)", maxWidth: 480, borderTop: "1px solid var(--astravia-border)", paddingTop: 18 }}>
-          Astrocartography is an interpretive astrology practice, not a scientifically validated method for
-          predicting life outcomes. Use this report for reflection and exploration alongside practical factors.
-          Generated by Astravia from the birth details you provided. This report is for your personal use.
+          {t.report.closingDisclaimer}
         </p>
       </div>
     </ReportSheet>

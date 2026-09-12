@@ -9,10 +9,12 @@ import { ScreenShell } from "../../components/ScreenShell";
 import { StepProgress } from "../../components/StepProgress";
 import { useJourney } from "../../journey/JourneyContext";
 import type { PlaceSearchResult } from "../../api/place-search/route";
+import { useTranslation } from "../../../i18n/useTranslation";
 
 export default function BirthDetailsPage() {
   const router = useRouter();
   const { journey, setJourney } = useJourney();
+  const t = useTranslation();
 
   const [date, setDate] = useState(journey.birth?.birthDate ?? "");
   const [time, setTime] = useState(journey.birth?.birthLocalTime ?? "");
@@ -69,39 +71,39 @@ export default function BirthDetailsPage() {
 
   return (
     <ScreenShell>
-      <BackHeader stepLabel="Step 1 of 2" onBack={() => router.push("/")} />
+      <BackHeader stepLabel={t.birthDetails.stepLabel} onBack={() => router.push("/")} />
       <StepProgress step={1} total={2} />
       <div style={{ padding: "24px 24px 0" }}>
         <h2 style={{ margin: "0 0 8px", font: "600 26px var(--font-display)", color: "var(--astravia-ink)" }}>
-          Your birth details
+          {t.birthDetails.heading}
         </h2>
         <p style={{ margin: "0 0 24px", font: "400 15px/1.5 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
-          Birth time matters because astrocartography lines can move noticeably within a short time.
+          {t.birthDetails.subtitle}
         </p>
 
-        <FieldLabel>Date of birth</FieldLabel>
+        <FieldLabel>{t.birthDetails.dateLabel}</FieldLabel>
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           style={{ ...inputStyle, marginBottom: 20 }}
         />
-        {touched && !date && <p style={errorTextStyle}>Enter your date of birth.</p>}
+        {touched && !date && <p style={errorTextStyle}>{t.birthDetails.dateError}</p>}
 
-        <FieldLabel>Time of birth</FieldLabel>
+        <FieldLabel>{t.birthDetails.timeLabel}</FieldLabel>
         <input
           type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
           style={{ ...inputStyle, marginBottom: 20 }}
         />
-        {touched && !time && <p style={errorTextStyle}>Enter your birth time.</p>}
+        {touched && !time && <p style={errorTextStyle}>{t.birthDetails.timeError}</p>}
 
-        <FieldLabel>Place of birth</FieldLabel>
+        <FieldLabel>{t.birthDetails.placeLabel}</FieldLabel>
         <div style={{ position: "relative" }}>
           <input
             type="text"
-            placeholder="City, country"
+            placeholder={t.birthDetails.placePlaceholder}
             value={placeQuery}
             onChange={(e) => {
               setPlaceQuery(e.target.value);
@@ -153,11 +155,11 @@ export default function BirthDetailsPage() {
             </ul>
           )}
         </div>
-        {touched && !selectedPlace && <p style={errorTextStyle}>Choose a birth place from the results.</p>}
+        {touched && !selectedPlace && <p style={errorTextStyle}>{t.birthDetails.placeError}</p>}
 
         <div style={{ marginTop: 24 }}>
           <PillButton onClick={handleContinue} disabled={touched && !birthValid}>
-            Continue
+            {t.birthDetails.continueBtn}
           </PillButton>
         </div>
       </div>

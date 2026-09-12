@@ -10,8 +10,10 @@ import { ScreenShell } from "../../components/ScreenShell";
 import { matchLabel, StarRating } from "../../components/StarRating";
 import { useSavedPlaces } from "../../components/useSavedPlaces";
 import { useJourney } from "../../journey/JourneyContext";
-import { bodySymbol, confidenceLabel } from "../../../interpretation/display";
-import { capitalize, SHORT_GOAL_LABEL } from "../../../interpretation/voice";
+import { bodyName, bodySymbol, confidenceLabel } from "../../../interpretation/display";
+import { capitalize, voiceFor } from "../../../interpretation/voice";
+import { useLanguage } from "../../../i18n/LanguageContext";
+import { useTranslation } from "../../../i18n/useTranslation";
 
 // Detail-page order per product feedback 2026-09-07, §16, restructured
 // 2026-09-13 for a richer narrative: city+country,
@@ -22,6 +24,9 @@ export default function CityStoryPage() {
   const router = useRouter();
   const params = useParams<{ cityId: string }>();
   const { journey, hydrated } = useJourney();
+  const { language } = useLanguage();
+  const t = useTranslation();
+  const SHORT_GOAL_LABEL = voiceFor(language).SHORT_GOAL_LABEL;
   const [techOpen, setTechOpen] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const { saved, toggle: toggleSaved } = useSavedPlaces();
@@ -39,13 +44,13 @@ export default function CityStoryPage() {
   if (!results || !story || !ranked) {
     return (
       <ScreenShell maxWidth={640}>
-        <BackHeader stepLabel="City story" onBack={() => router.push("/results")} />
+        <BackHeader stepLabel={t.place.stepLabel} onBack={() => router.push("/results")} />
         <div style={{ padding: "24px" }}>
           <p style={{ font: "400 15px var(--font-body)", color: "var(--astravia-text-secondary)" }}>
-            We couldn't find that result. It may have come from a different search. Head back to your places.
+            {t.place.notFound}
           </p>
           <PillButton onClick={() => router.push("/results")} style={{ marginTop: 16 }}>
-            Back to your places
+            {t.place.backToPlaces}
           </PillButton>
         </div>
       </ScreenShell>
@@ -63,7 +68,7 @@ export default function CityStoryPage() {
   if (!isFree) {
     return (
       <ScreenShell maxWidth={640}>
-        <BackHeader stepLabel="City story" onBack={() => router.push("/results")} />
+        <BackHeader stepLabel={t.place.stepLabel} onBack={() => router.push("/results")} />
         <div style={{ padding: "24px" }}>
           <div style={{ font: "600 12px var(--font-body)", letterSpacing: "0.04em", color: "var(--astravia-text-subtle)" }}>
             {story.country}
@@ -88,16 +93,16 @@ export default function CityStoryPage() {
             }}
           >
             <p style={{ margin: "0 0 14px", font: "500 15px/1.5 var(--font-display)", color: "var(--astravia-ink)" }}>
-              The full story for {story.city} is part of the full report.
+              {t.place.fullStoryLocked(story.city)}
             </p>
             <PillButton className="astravia-btn-shine" onClick={() => setShowPaywall(true)}>
-              Unlock full report
+              {t.common.unlockFullReport}
             </PillButton>
           </div>
         </div>
         <PaywallModal
           open={showPaywall}
-          context={`See ${story.city}, ${story.country}`}
+          context={t.place.paywallContext(story.city, story.country)}
           onClose={() => setShowPaywall(false)}
         />
       </ScreenShell>
@@ -108,7 +113,7 @@ export default function CityStoryPage() {
     if (navigator.share) {
       navigator.share({ text: story!.shareText }).catch(() => {});
     } else if (navigator.clipboard) {
-      navigator.clipboard.writeText(story!.shareText).then(() => alert(`Copied: ${story!.shareText}`));
+      navigator.clipboard.writeText(story!.shareText).then(() => alert(t.place.copiedAlert(story!.shareText)));
     }
   }
 
@@ -131,7 +136,7 @@ export default function CityStoryPage() {
             score={ranked.internalScore}
             size={18}
             showLabel
-            label={matchLabel(story.stars, SHORT_GOAL_LABEL[story.goal])}
+            label={matchLabel(story.stars, SHORT_GOAL_LABEL[story.goal], language)}
           />
         </div>
 
@@ -164,21 +169,21 @@ export default function CityStoryPage() {
 
         <div style={{ marginTop: 18 }}>
           <div style={{ font: "600 13px var(--font-body)", color: "var(--astravia-ink)" }}>
-            Birth-time precision: {confidenceLabel(story.birthTimeConfidence)}
+            {t.place.birthTimePrecision(confidenceLabel(story.birthTimeConfidence, language))}
           </div>
           <p style={{ margin: "2px 0 0", font: "400 13px/1.5 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
             {story.confidenceExplanation}
           </p>
         </div>
 
-        <SectionHeading>Why {story.city} might fit you</SectionHeading>
+        <SectionHeading>{t.place.whyMightFit(story.city)}</SectionHeading>
         <div style={{ font: "400 16px/1.65 var(--font-body)", color: "var(--astravia-ink)", whiteSpace: "pre-line" }}>
           {story.whyItStandsOut}
         </div>
 
         {story.opportunities.length > 0 && (
           <>
-            <SectionHeading>What could grow here</SectionHeading>
+            <SectionHeading>{t.place.whatCouldGrow}</SectionHeading>
             <ul style={{ margin: 0, paddingLeft: 20 }}>
               {story.opportunities.map((o, i) => (
                 <li key={i} style={{ font: "400 15px/1.6 var(--font-body)", color: "var(--astravia-ink)", marginBottom: 4 }}>
@@ -191,18 +196,18 @@ export default function CityStoryPage() {
 
         {story.tradeOffs.length > 0 && (
           <>
-            <SectionHeading>Where it may stretch you</SectionHeading>
+            <SectionHeading>{t.place.whereItMayStretch}</SectionHeading>
             <ul style={{ margin: 0, paddingLeft: 20 }}>
-              {story.tradeOffs.map((t, i) => (
+              {story.tradeOffs.map((item, i) => (
                 <li key={i} style={{ font: "400 15px/1.6 var(--font-body)", color: "var(--astravia-ink)", marginBottom: 4 }}>
-                  {capitalize(t)}
+                  {capitalize(item)}
                 </li>
               ))}
             </ul>
           </>
         )}
 
-        <SectionHeading>What life here might feel like</SectionHeading>
+        <SectionHeading>{t.place.whatLifeMightFeel}</SectionHeading>
         <div
           style={{
             padding: "18px 20px",
@@ -224,7 +229,7 @@ export default function CityStoryPage() {
 
         {story.bestFor.length > 0 && (
           <>
-            <SectionHeading>Best for</SectionHeading>
+            <SectionHeading>{t.place.bestForHeading}</SectionHeading>
             <ul style={{ margin: 0, paddingLeft: 20 }}>
               {story.bestFor.map((b, i) => (
                 <li key={i} style={{ font: "400 15px/1.6 var(--font-body)", color: "var(--astravia-ink)", marginBottom: 4 }}>
@@ -237,9 +242,9 @@ export default function CityStoryPage() {
 
         {story.influenceDetails.length > 0 && (
           <>
-            <SectionHeading>The astrology behind this match</SectionHeading>
+            <SectionHeading>{t.place.astrologyBehind}</SectionHeading>
             <p style={{ margin: "0 0 14px", font: "400 13px/1.5 var(--font-body)", color: "var(--astravia-text-subtle)" }}>
-              These are the strongest influences shaping your {story.city} result:
+              {t.place.strongestInfluences(story.city)}
             </p>
             {story.influenceDetails.map((d) => (
               <div key={`${d.role}-${d.body}-${d.angle}`} style={{ padding: "10px 0", borderBottom: "1px solid var(--astravia-border)" }}>
@@ -247,7 +252,7 @@ export default function CityStoryPage() {
                   <span aria-hidden="true" style={{ marginRight: 6 }}>
                     {bodySymbol(d.body)}
                   </span>
-                  {d.body}–{d.angle}
+                  {bodyName(d.body, language)}–{d.angle}
                   <span
                     style={{
                       marginLeft: 8,
@@ -257,7 +262,7 @@ export default function CityStoryPage() {
                       color: "var(--astravia-text-subtle)"
                     }}
                   >
-                    · {d.role} influence
+                    · {t.place.influenceRole[d.role]}
                   </span>
                 </div>
                 <p style={{ margin: "3px 0 0", font: "400 13px/1.5 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
@@ -284,13 +289,13 @@ export default function CityStoryPage() {
                     textUnderlineOffset: 3
                   }}
                 >
-                  {techOpen ? "Hide the astrology ↑" : "Explore the astrology ↓"}
+                  {techOpen ? t.place.hideAstrology : t.place.exploreAstrology}
                 </button>
                 {techOpen && (
                   <div style={{ marginTop: 12 }}>
-                    {story.technicalDetails.map((t) => (
-                      <div key={t.line} style={{ marginBottom: 10 }}>
-                        <div style={{ font: "600 13px var(--font-body)", color: "var(--astravia-ink)" }}>{t.line}</div>
+                    {story.technicalDetails.map((tech) => (
+                      <div key={tech.line} style={{ marginBottom: 10 }}>
+                        <div style={{ font: "600 13px var(--font-body)", color: "var(--astravia-ink)" }}>{tech.line}</div>
                         <div
                           style={{
                             font: "400 12px ui-monospace, monospace",
@@ -298,8 +303,8 @@ export default function CityStoryPage() {
                             marginTop: 2
                           }}
                         >
-                          Closest distance: {Math.round(t.distanceKm)} km · Birth-time scenarios:{" "}
-                          {t.scenarioDistancesKm.map((d) => Math.round(d)).join(" / ")} km
+                          {t.place.closestDistance(Math.round(tech.distanceKm))} ·{" "}
+                          {t.place.birthTimeScenarios(tech.scenarioDistancesKm.map((d) => Math.round(d)).join(" / "))}
                         </div>
                       </div>
                     ))}
@@ -312,16 +317,15 @@ export default function CityStoryPage() {
 
         <div style={{ display: "flex", gap: 10, marginTop: 32 }}>
           <PillButton fullWidth={false} style={{ flex: 1 }} onClick={() => router.push("/results")}>
-            Explore another place
+            {t.place.exploreAnotherPlace}
           </PillButton>
           <PillButton variant="secondary" fullWidth={false} onClick={share} style={{ padding: "0 20px" }}>
-            Share
+            {t.place.share}
           </PillButton>
         </div>
 
         <p style={{ marginTop: 28, font: "400 12px/1.6 var(--font-body)", color: "var(--astravia-text-subtle)" }}>
-          Astrocartography is an interpretive astrology practice, not a scientifically validated method for
-          predicting life outcomes. Use these results for reflection and exploration alongside practical factors.
+          {t.home.explainerDisclaimer}
         </p>
       </div>
     </ScreenShell>

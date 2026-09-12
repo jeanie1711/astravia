@@ -40,7 +40,7 @@ const distances: InfluenceDistance[] = [
 
 describe("composeCityStory", () => {
   it("I001: primary influence is introduced before any secondary content", () => {
-    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
+    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances, "en");
     const primaryIndex = result.whyItStandsOut.indexOf("☉ Sun–MC influence");
     const secondaryIndex = result.whyItStandsOut.indexOf("Neptune");
     expect(primaryIndex).toBeGreaterThanOrEqual(0);
@@ -51,29 +51,29 @@ describe("composeCityStory", () => {
     // Sun (Personal) + Neptune (Transformative) is a mixed pair -> Layered
     // tier (04-scoring-ranking-spec.md v0.2 §6), primary (Sun) is the
     // easeful side here so the reinforcement is what "adds" weight.
-    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
+    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances, "en");
     expect(result.whyItStandsOut).toContain("not simply a straightforward Sun story");
     expect(result.whyItStandsOut).toContain("visibility, professional identity, recognition");
     expect(result.whyItStandsOut).toContain("intuition and art");
   });
 
   it("I003: a 5-star result still has a non-empty trade-off", () => {
-    const result = composeCityStory(baseRankedCity({ stars: 5 }), "Stockholm", "Sweden", distances);
+    const result = composeCityStory(baseRankedCity({ stars: 5 }), "Stockholm", "Sweden", distances, "en");
     expect(result.tradeOffs.length).toBeGreaterThan(0);
   });
 
   it("I004: composed output contains no prohibited language", () => {
-    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
-    expect(findProhibitedPhrases(allText(result))).toEqual([]);
+    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances, "en");
+    expect(findProhibitedPhrases(allText(result), "en")).toEqual([]);
   });
 
   it("I005: composed output makes no practical-domain claims", () => {
-    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
-    expect(findPracticalDomainClaims(allText(result))).toEqual([]);
+    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances, "en");
+    expect(findPracticalDomainClaims(allText(result), "en")).toEqual([]);
   });
 
   it("includes technical details sourced directly from calculation output", () => {
-    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
+    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances, "en");
     const sunDetail = result.technicalDetails.find((d) => d.line.includes("Sun"));
     expect(sunDetail).toBeDefined();
     expect(sunDetail!.distanceKm).toBe(38);
@@ -81,7 +81,7 @@ describe("composeCityStory", () => {
   });
 
   it("confidence explanation matches the stability label", () => {
-    const result = composeCityStory(baseRankedCity({ stability: "TIME_SENSITIVE" }), "Lisbon", "Portugal", []);
+    const result = composeCityStory(baseRankedCity({ stability: "TIME_SENSITIVE" }), "Lisbon", "Portugal", [], "en");
     expect(result.confidenceExplanation).toBe("This recommendation depends significantly on your exact birth time.");
   });
 
@@ -90,7 +90,8 @@ describe("composeCityStory", () => {
       baseRankedCity({ secondaryInfluences: [], paranInfluence: { body: "Jupiter", angle: "ASC" } }),
       "Stockholm",
       "Sweden",
-      distances
+      distances,
+      "en"
     );
     expect(result.paranInfluence).toEqual({ body: "Jupiter", angle: "ASC" });
     expect(result.whyItStandsOut).toContain("Sun–Jupiter paran");
@@ -99,20 +100,20 @@ describe("composeCityStory", () => {
   });
 
   it("composes a one-line tagline synthesizing the primary and its reinforcement", () => {
-    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
+    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances, "en");
     expect(result.tagline.length).toBeGreaterThan(0);
     expect(result.tagline).toContain("presence");
     expect(result.tagline).toContain("recognition");
   });
 
   it("expands howItMayFeel with a second paragraph when a reinforcement exists", () => {
-    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
+    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances, "en");
     expect(result.howItMayFeel).toBe("Like staying in the background becomes harder.");
     expect(result.howItMayFeelDetail.length).toBeGreaterThan(0);
   });
 
   it("lists every influence's plain-language theme for the astrology reference section", () => {
-    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances);
+    const result = composeCityStory(baseRankedCity({}), "Stockholm", "Sweden", distances, "en");
     expect(result.influenceDetails).toEqual([
       { role: "Primary", body: "Sun", angle: "MC", description: "Visibility, professional identity, recognition." },
       { role: "Secondary", body: "Neptune", angle: "ASC", description: "Sensitivity, imagination, porous identity." }
@@ -124,7 +125,8 @@ describe("composeCityStory", () => {
       baseRankedCity({ primaryInfluence: undefined, secondaryInfluences: [], stars: 1, coherence: "NONE", archetypeId: "UNCLASSIFIED" }),
       "Nowhere",
       "Nowhereland",
-      []
+      [],
+      "en"
     );
     expect(result.whyItStandsOut).toContain("Your map is more mixed for this goal.");
     expect(result.primaryInfluence).toBeUndefined();

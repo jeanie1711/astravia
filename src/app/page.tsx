@@ -5,20 +5,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PillButton } from "./components/PillButton";
 import { Wordmark } from "./components/Wordmark";
-import { ANGLES, PLANETS } from "./content/astroExplainer";
+import { anglesFor, planetsFor } from "./content/astroExplainer";
 import { useJourney } from "./journey/JourneyContext";
+import { useLanguage } from "../i18n/LanguageContext";
+import { useTranslation } from "../i18n/useTranslation";
 import type { ScorableGoal } from "../scoring/types";
-
-// Home screen redesign (2026-09-11 handoff): the four life-area pills use
-// the app's real ScorableGoal identifiers, but their labels/accents here
-// are this screen's own approved copy/colors -- distinct from GOAL_LABEL/
-// GOAL_COLOR (goalTheme.ts), which stay unchanged for results/report pages.
-const HOME_GOAL_LABEL: Record<ScorableGoal, string> = {
-  CAREER: "Career",
-  LOVE: "Relationships",
-  HOME: "Home & belonging",
-  GROWTH: "Personal growth"
-};
 
 const HOME_GOAL_ACCENT: Record<ScorableGoal, string> = {
   CAREER: "var(--astravia-career-blue)",
@@ -29,42 +20,15 @@ const HOME_GOAL_ACCENT: Record<ScorableGoal, string> = {
 
 const GOAL_ORDER: ScorableGoal[] = ["CAREER", "LOVE", "HOME", "GROWTH"];
 
-// Illustrative-only preview content (README: "The HTML reference contains
-// illustrative city names and example copy only... The demo data must not
-// replace real application logic"). Real per-city results require birth
-// details, which this screen deliberately doesn't ask for yet -- the
-// "EXAMPLE DISCOVERY" label makes that explicit rather than implying these
-// are the user's own results.
-type PreviewCity = { city: string; copy?: string; stars: string };
-const HOME_PREVIEW: Record<ScorableGoal, PreviewCity[]> = {
-  CAREER: [
-    { city: "Amsterdam", copy: "Momentum, visibility and connections that move your work forward.", stars: "★★★★★" },
-    { city: "Copenhagen", copy: "Steady progress with room for a more balanced rhythm.", stars: "★★★★☆" },
-    { city: "Melbourne", stars: "★★★★☆" }
-  ],
-  LOVE: [
-    { city: "Lisbon", copy: "Warmth, openness and space for meaningful connection.", stars: "★★★★★" },
-    { city: "Barcelona", copy: "A vivid social rhythm that invites you outward.", stars: "★★★★☆" },
-    { city: "Montréal", stars: "★★★★☆" }
-  ],
-  HOME: [
-    { city: "Helsinki", copy: "Calm structure, nature and a stronger sense of grounding.", stars: "★★★★★" },
-    { city: "Vienna", copy: "Beauty, stability and an everyday rhythm that settles.", stars: "★★★★☆" },
-    { city: "Tallinn", stars: "★★★★☆" }
-  ],
-  GROWTH: [
-    { city: "Berlin", copy: "Fresh perspectives that challenge how you see yourself.", stars: "★★★★★" },
-    { city: "Porto", copy: "A softer pace that makes room for inner change.", stars: "★★★★☆" },
-    { city: "Stockholm", stars: "★★★★☆" }
-  ]
-};
-
 const CARD_POSITIONS = ["one", "two", "three"] as const;
-const CARD_RANKS = ["01 · TOP MATCH", "02", "03"];
 
 export default function LandingPage() {
   const router = useRouter();
   const { resetJourney } = useJourney();
+  const { language } = useLanguage();
+  const t = useTranslation();
+  const angles = anglesFor(language);
+  const planets = planetsFor(language);
   const [activeGoal, setActiveGoal] = useState<ScorableGoal>("CAREER");
   const [showHowItWorks, setShowHowItWorks] = useState(false);
 
@@ -79,12 +43,12 @@ export default function LandingPage() {
   }
 
   const accent = HOME_GOAL_ACCENT[activeGoal];
-  const previewCities = HOME_PREVIEW[activeGoal];
+  const previewCities = t.home.previewCities[activeGoal];
 
   return (
     <div className="astravia-home">
       <header className="astravia-home-shell astravia-home-nav">
-        <a href="#astravia-top" aria-label="Astravia home" style={{ textDecoration: "none" }}>
+        <a href="#astravia-top" aria-label={t.home.navHomeAriaLabel} style={{ textDecoration: "none" }}>
           <Wordmark size={17} />
         </a>
         <a
@@ -95,27 +59,22 @@ export default function LandingPage() {
             openHowItWorks();
           }}
         >
-          How it works
+          {t.home.navMethodLink}
         </a>
       </header>
 
       <main id="astravia-top">
         <section className="astravia-home-shell astravia-home-hero">
           <div>
-            <span className="astravia-home-eyebrow">
-              Have you ever wondered whether the place you live truly fits you, or whether somewhere else in the
-              world might?
-            </span>
+            <span className="astravia-home-eyebrow">{t.home.heroEyebrow}</span>
             <h1 className="astravia-home-h1">
-              Somewhere in the world, a place may fit you <em>better.</em>
+              {t.home.heroH1Before}
+              <em>{t.home.heroH1Em}</em>
             </h1>
-            <p className="astravia-home-lede">
-              Explore the cities connected to your birth map, and discover where career, relationships, belonging or
-              personal growth may feel more supported.
-            </p>
+            <p className="astravia-home-lede">{t.home.heroLede}</p>
 
-            <span className="astravia-home-area-label">What would you like to explore?</span>
-            <div className="astravia-home-area-pills" role="group" aria-label="Choose a life area">
+            <span className="astravia-home-area-label">{t.home.areaLabel}</span>
+            <div className="astravia-home-area-pills" role="group" aria-label={t.home.areaGroupAriaLabel}>
               {GOAL_ORDER.map((goal) => {
                 const isActive = goal === activeGoal;
                 return (
@@ -127,7 +86,7 @@ export default function LandingPage() {
                     aria-pressed={isActive}
                     onClick={() => setActiveGoal(goal)}
                   >
-                    {HOME_GOAL_LABEL[goal]}
+                    {t.home.goalLabels[goal]}
                   </button>
                 );
               })}
@@ -136,7 +95,7 @@ export default function LandingPage() {
             <div className="astravia-home-cta-row">
               <PillButton className="astravia-home-primary-cta" fullWidth={false} onClick={start}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 22 }}>
-                  Find my places
+                  {t.home.cta}
                   <span className="astravia-home-arrow-bubble" aria-hidden="true">
                     ↗
                   </span>
@@ -145,7 +104,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="astravia-home-visual" aria-label="Example Astravia city discovery">
+          <div className="astravia-home-visual" aria-label={t.home.visualAriaLabel}>
             <div className="astravia-home-sun-disc" aria-hidden="true" />
             <div className="astravia-home-orbit" aria-hidden="true" />
             <div className="astravia-home-landscape" aria-hidden="true">
@@ -156,7 +115,7 @@ export default function LandingPage() {
                 style={{ objectFit: "cover", objectPosition: "center bottom" }}
                 priority
               />
-              <span className="astravia-home-landscape-label">EXAMPLE DISCOVERY</span>
+              <span className="astravia-home-landscape-label">{t.home.previewLabel}</span>
             </div>
 
             {previewCities.map((preview, i) => (
@@ -165,14 +124,14 @@ export default function LandingPage() {
                 className={`astravia-home-city-card ${CARD_POSITIONS[i]} astravia-stagger`}
                 style={{ ["--stagger-index" as string]: i }}
               >
-                <div className="rank">{CARD_RANKS[i]}</div>
+                <div className="rank">{t.home.cardRanks[i]}</div>
                 <h3>{preview.city}</h3>
                 {preview.copy && <p>{preview.copy}</p>}
                 <div className="astravia-home-scoreline">
                   <span className="astravia-home-stars" style={{ color: accent }}>
                     {preview.stars}
                   </span>
-                  <span className="astravia-home-area-name">{HOME_GOAL_LABEL[activeGoal]}</span>
+                  <span className="astravia-home-area-name">{t.home.goalLabels[activeGoal]}</span>
                 </div>
               </article>
             ))}
@@ -182,11 +141,8 @@ export default function LandingPage() {
         <section className="astravia-home-shell astravia-home-methodology" id="astravia-method">
           <div className="astravia-home-method-note">
             <div>
-              <strong>From your birth moment to places worth exploring.</strong>
-              <p>
-                Astravia translates astrocartography patterns into clear possibilities for reflection and
-                exploration, not prediction.
-              </p>
+              <strong>{t.home.methodologyTitle}</strong>
+              <p>{t.home.methodologyBlurb}</p>
             </div>
             <a
               href="#astravia-method"
@@ -195,7 +151,7 @@ export default function LandingPage() {
                 setShowHowItWorks((v) => !v);
               }}
             >
-              {showHowItWorks ? "Hide how astrocartography works ↑" : "How astrocartography works →"}
+              {showHowItWorks ? t.home.methodologyHide : t.home.methodologyShow}
             </a>
           </div>
 
@@ -209,13 +165,11 @@ export default function LandingPage() {
                   margin: "0 auto 24px"
                 }}
               >
-                Imagine the exact moment you were born, looking up at the sky: each planet sits at some position
-                relative to the horizon and the sky above you. Four points mark the most significant of these
-                positions.
+                {t.home.explainerIntro}
               </p>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-                {ANGLES.map((a) => (
+                {angles.map((a) => (
                   <div
                     key={a.id}
                     style={{
@@ -251,13 +205,11 @@ export default function LandingPage() {
                   margin: "28px auto 16px"
                 }}
               >
-                Astrocartography draws one line on the world map for every planet-and-angle pair: everywhere on
-                Earth where, at your exact birth moment, that planet sat at that exact position. Astravia traces
-                ten planets against these four points, each carrying its own traditional theme:
+                {t.home.explainerMid}
               </p>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
-                {PLANETS.map((p) => (
+                {planets.map((p) => (
                   <div
                     key={p.name}
                     style={{
@@ -291,9 +243,7 @@ export default function LandingPage() {
                   margin: "28px auto 0"
                 }}
               >
-                Astrocartography is an interpretive astrology practice, not a scientifically validated method for
-                predicting life outcomes. Use these results for reflection and exploration alongside practical
-                factors.
+                {t.home.explainerDisclaimer}
               </p>
             </div>
           )}

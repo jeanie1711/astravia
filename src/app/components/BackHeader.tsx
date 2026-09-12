@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { Wordmark } from "./Wordmark";
+import { useTranslation } from "../../i18n/useTranslation";
 
 // The one shared compact header for every screen past the landing page
 // (product feedback 2026-09-07, §8): back navigation, a step/section
@@ -20,6 +21,7 @@ export function BackHeader({
   right?: ReactNode;
 }) {
   const router = useRouter();
+  const t = useTranslation();
   return (
     <div
       style={{
@@ -33,7 +35,7 @@ export function BackHeader({
       <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
         <button
           type="button"
-          aria-label="Back"
+          aria-label={t.common.backAriaLabel}
           onClick={onBack ?? (() => router.back())}
           style={{
             width: 40,

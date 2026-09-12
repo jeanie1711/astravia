@@ -1,16 +1,27 @@
 import { scoreToDisplayValue } from "../../scoring/score-city";
 import type { Stars } from "../../scoring/types";
+import { useLanguage } from "../../i18n/LanguageContext";
+import type { Language } from "../../i18n/types";
 
 // Product feedback 2026-09-07 (§13): avoid a label that reads as a poor
 // result when the real meaning is "opportunity alongside trade-off" --
 // the two lower tiers both read as "Worth exploring" rather than
 // "Challenging"/"Weak".
-const STAR_LABEL: Record<Stars, string> = {
-  5: "Strongest match",
-  4: "Strong match",
-  3: "Layered match",
-  2: "Worth exploring",
-  1: "Worth exploring"
+const STAR_LABEL: Record<Language, Record<Stars, string>> = {
+  en: {
+    5: "Strongest match",
+    4: "Strong match",
+    3: "Layered match",
+    2: "Worth exploring",
+    1: "Worth exploring"
+  },
+  vi: {
+    5: "Phù hợp nhất",
+    4: "Rất phù hợp",
+    3: "Phù hợp đan xen",
+    2: "Đáng để khám phá",
+    1: "Đáng để khám phá"
+  }
 };
 
 const GLYPHS = "★★★★★";
@@ -21,9 +32,11 @@ const GLYPHS = "★★★★★";
 // exploring") -- appending a goal name there ("Worth exploring career")
 // reads worse than the plain phrase, per the same 2026-09-07 §13 reasoning
 // STAR_LABEL itself follows.
-export function matchLabel(stars: Stars, goalName: string): string {
-  if (stars <= 2) return STAR_LABEL[stars];
-  const intensity = STAR_LABEL[stars].replace(/ match$/, "");
+export function matchLabel(stars: Stars, goalName: string, language: Language): string {
+  const label = STAR_LABEL[language][stars];
+  if (stars <= 2) return label;
+  if (language === "vi") return `${label} cho ${goalName}`;
+  const intensity = label.replace(/ match$/, "");
   return `${intensity} ${goalName} match`;
 }
 
@@ -57,9 +70,10 @@ export function StarRating({
   // rating needs its own name so the two don't read as one blended score.
   caption?: string;
 }) {
+  const { language } = useLanguage();
   const fillValue = score !== undefined ? scoreToDisplayValue(score, stars) : stars;
   const fillPercent = Math.min(100, Math.max(0, (fillValue / 5) * 100));
-  const wordLabel = label ?? STAR_LABEL[stars];
+  const wordLabel = label ?? STAR_LABEL[language][stars];
 
   const row = (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>

@@ -1,3 +1,4 @@
+import type { Language } from "../../i18n/types";
 import type { CountryNarrative, Stars } from "../../scoring/types";
 
 export type DiscoveryType = "STRONG_PATTERN" | "FAMILIAR" | "UNEXPECTED" | "WORTH_EXPLORING" | "WILDCARD";
@@ -35,37 +36,67 @@ export function classifyDiscovery(
   return "WORTH_EXPLORING";
 }
 
-const DISCOVERY_COPY: Record<DiscoveryType, DiscoveryCopy> = {
-  STRONG_PATTERN: {
-    label: "Strong regional pattern",
-    description: "Several cities here align consistently, not just one; the clustering itself is the signal.",
-    accent: false
+const DISCOVERY_COPY: Record<Language, Record<DiscoveryType, DiscoveryCopy>> = {
+  en: {
+    STRONG_PATTERN: {
+      label: "Strong regional pattern",
+      description: "Several cities here align consistently, not just one; the clustering itself is the signal.",
+      accent: false
+    },
+    FAMILIAR: {
+      label: "Familiar possibility",
+      description: "A widely recognized place that also carries a genuine signal here.",
+      accent: false
+    },
+    UNEXPECTED: {
+      label: "Unexpected match",
+      description:
+        "A less familiar place surfaced by a genuinely strong signal. This is an astrological match, not yet a practical relocation recommendation.",
+      accent: true
+    },
+    WORTH_EXPLORING: {
+      label: "Worth exploring",
+      description: "A moderately familiar place with a real, if less dominant, signal.",
+      accent: false
+    },
+    WILDCARD: {
+      label: "Wildcard",
+      description: "An unusual, less familiar result. Worth a curious look, not a strong recommendation.",
+      accent: true
+    }
   },
-  FAMILIAR: {
-    label: "Familiar possibility",
-    description: "A widely recognized place that also carries a genuine signal here.",
-    accent: false
-  },
-  UNEXPECTED: {
-    label: "Unexpected match",
-    description:
-      "A less familiar place surfaced by a genuinely strong signal. This is an astrological match, not yet a practical relocation recommendation.",
-    accent: true
-  },
-  WORTH_EXPLORING: {
-    label: "Worth exploring",
-    description: "A moderately familiar place with a real, if less dominant, signal.",
-    accent: false
-  },
-  WILDCARD: {
-    label: "Wildcard",
-    description: "An unusual, less familiar result. Worth a curious look, not a strong recommendation.",
-    accent: true
+  vi: {
+    STRONG_PATTERN: {
+      label: "Mô hình khu vực mạnh",
+      description: "Nhiều thành phố ở đây cùng có tín hiệu nhất quán, không chỉ riêng một nơi; sự tập trung này chính là tín hiệu.",
+      accent: false
+    },
+    FAMILIAR: {
+      label: "Lựa chọn quen thuộc",
+      description: "Một nơi được biết đến rộng rãi, đồng thời cũng mang một tín hiệu thực sự ở đây.",
+      accent: false
+    },
+    UNEXPECTED: {
+      label: "Phát hiện bất ngờ",
+      description:
+        "Một nơi ít quen thuộc hơn nổi lên nhờ một tín hiệu thực sự mạnh. Đây là một sự phù hợp chiêm tinh, chưa phải một gợi ý chuyển nơi ở thực tế.",
+      accent: true
+    },
+    WORTH_EXPLORING: {
+      label: "Đáng để khám phá",
+      description: "Một nơi khá quen thuộc với tín hiệu thực, dù không nổi bật bằng những nơi khác.",
+      accent: false
+    },
+    WILDCARD: {
+      label: "Lá bài bất ngờ",
+      description: "Một kết quả khác thường, ít quen thuộc. Đáng để tò mò xem qua, chứ chưa phải một gợi ý mạnh.",
+      accent: true
+    }
   }
 };
 
-export function getDiscoveryCopy(type: DiscoveryType): DiscoveryCopy {
-  return DISCOVERY_COPY[type];
+export function getDiscoveryCopy(type: DiscoveryType, language: Language): DiscoveryCopy {
+  return DISCOVERY_COPY[language][type];
 }
 
 // A single neutral pale-sky/teal treatment for every discovery badge

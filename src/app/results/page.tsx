@@ -16,10 +16,12 @@ import { WorldMap, type MapPin } from "../components/WorldMap";
 import { confidenceLabel } from "../../interpretation/display";
 import { PENDING_CHECKOUT_STORAGE_KEY } from "../../config/payments";
 import { useJourney } from "../journey/JourneyContext";
-import { GOAL_COLOR, GOAL_LABEL } from "../journey/goalTheme";
+import { GOAL_COLOR, goalLabelFor } from "../journey/goalTheme";
 import type { CalculateRequest, CalculateResponse, CalculateResult } from "../journey/types";
 import { SCORABLE_GOALS, type Goal, type Stars } from "../../scoring/types";
 import { getArchetypeCopy } from "../../interpretation/archetypes";
+import { useLanguage } from "../../i18n/LanguageContext";
+import { useTranslation } from "../../i18n/useTranslation";
 
 // Kept deliberately small: a focused, convincing shortlist beats a long,
 // noisy one.
@@ -29,6 +31,8 @@ const MAX_COUNTRIES_SHOWN = 3;
 export default function ResultsPage() {
   const router = useRouter();
   const { journey, hydrated, setJourney } = useJourney();
+  const { language } = useLanguage();
+  const t = useTranslation();
   const [loading, setLoading] = useState(false);
   const { saved, toggle: toggleSaved } = useSavedPlaces();
   const [paywall, setPaywall] = useState<{ open: boolean; context?: string }>({ open: false });
@@ -91,7 +95,7 @@ export default function ResultsPage() {
       return;
     }
     setLoading(true);
-    const request: CalculateRequest = { birth: journey.birth, uncertaintyMinutes: journey.uncertaintyMinutes, goal };
+    const request: CalculateRequest = { birth: journey.birth, uncertaintyMinutes: journey.uncertaintyMinutes, goal, language };
     const res = await fetch("/api/calculate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -101,6 +105,41 @@ export default function ResultsPage() {
     setJourney((prev) => ({ ...prev, goal, results: data }));
     setLoading(false);
   }
+
+  // Switching the site language while a chart is already loaded recomposes
+  // the same goal's content in the new language instead of requiring a
+  // fresh calculation -- astronomical inputs are unchanged, only the
+  // interpretation-layer language parameter is. Skipped on first mount
+  // (that initial fetch already used the language current at request time
+  // from explore/calculating) and whenever loading is already in flight.
+  const resultsGoal = journey.results?.goal;
+  useEffect(() => {
+    if (!hydrated || !journey.birth || !resultsGoal) return;
+    if (journey.results && journey.results.language === language) return;
+    let cancelled = false;
+    setLoading(true);
+    const request: CalculateRequest = {
+      birth: journey.birth,
+      uncertaintyMinutes: journey.uncertaintyMinutes,
+      goal: resultsGoal,
+      language
+    };
+    fetch("/api/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request)
+    })
+      .then((res) => res.json() as Promise<CalculateResponse>)
+      .then((data) => {
+        if (cancelled) return;
+        setJourney((prev) => ({ ...prev, results: data }));
+      })
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language, hydrated]);
 
   function switchView(mode: "city" | "country") {
     if (mode === "country" && !journey.unlocked) {
@@ -138,7 +177,7 @@ export default function ResultsPage() {
   const orderedGoals = journey.initialGoal
     ? [journey.initialGoal, ...SCORABLE_GOALS.filter((g) => g !== journey.initialGoal)]
     : SCORABLE_GOALS;
-  const goalName = results.goal === "OVERALL" ? "all life areas" : GOAL_LABEL[results.goal];
+  const goalName = results.goal === "OVERALL" ? t.results.allLifeAreasInline : goalLabelFor(results.goal, language);
   const topCities = results.results.slice(0, MAX_CITIES_SHOWN);
   const topCountries = results.countries.slice(0, MAX_COUNTRIES_SHOWN);
   // Freemium gate (docs/DECISIONS.md, 2026-09-09): only city #1 of
@@ -157,8 +196,8 @@ export default function ResultsPage() {
   return (
     <ScreenShell maxWidth={680}>
       <BackHeader
-        stepLabel="Your places"
-        onBack={() => router.push("/explore/goal")}
+        stepLabel={t.results.backLabel}
+        onBack={() => router.push("/")}
         right={
           <button
             type="button"
@@ -172,7 +211,7 @@ export default function ResultsPage() {
               padding: 0
             }}
           >
-            Edit details
+            {t.results.editDetails}
           </button>
         }
       />
@@ -204,7 +243,7 @@ export default function ResultsPage() {
               cursor: "pointer"
             }}
           >
-            Places
+            {t.results.tabPlaces}
           </button>
           <button
             type="button"
@@ -222,42 +261,37 @@ export default function ResultsPage() {
               cursor: "pointer"
             }}
           >
-            Countries
+            {t.results.tabCountries}
           </button>
         </div>
 
         <h2 style={{ margin: "0 0 6px", font: "600 28px var(--font-display)", color: "var(--astravia-ink)" }}>
           {results.goal === "OVERALL"
             ? viewMode === "city"
-              ? "The most balanced places across all life areas"
-              : "The most balanced countries across all life areas"
+              ? t.results.headingOverallCity
+              : t.results.headingOverallCountry
             : viewMode === "city"
-              ? `Your strongest places for ${goalName}`
-              : `Your strongest countries for ${goalName}`}
+              ? t.results.headingGoalCity(goalName)
+              : t.results.headingGoalCountry(goalName)}
         </h2>
         {isMixed ? (
           <p style={{ margin: "0 0 8px", font: "400 14px/1.5 var(--font-body)", color: "var(--astravia-text-secondary)" }}>
-            <strong style={{ color: "var(--astravia-ink)" }}>Your map is more mixed for this goal.</strong> These
-            are the {viewMode === "city" ? "locations" : "countries"} with the clearest signals, even though none
-            are exceptionally strong in the current model.
+            <strong style={{ color: "var(--astravia-ink)" }}>{t.results.mixedNoteBold}</strong>
+            {t.results.mixedNoteRest(viewMode === "city" ? t.results.kindLocations : t.results.kindCountries)}
           </p>
         ) : (
           <p style={{ margin: "0 0 8px", font: "400 14px var(--font-body)", color: "var(--astravia-text-secondary)" }}>
-            Based on the birth details and time range you entered.
+            {t.results.basedOnBirthDetails}
           </p>
         )}
         <p style={{ margin: "0 0 20px", font: "400 13px/1.5 var(--font-body)", color: "var(--astravia-text-subtle)" }}>
           {results.goal === "OVERALL"
             ? viewMode === "city"
-              ? "Match strength shows how strongly a place supports all four goals together. Open a place to see the breakdown."
-              : "Match strength shows how strongly a country supports all four goals together, based on the consistency of its strongest cities, not the country as a single point on the map."
+              ? t.results.matchStrengthOverallCity
+              : t.results.matchStrengthOverallCountry
             : viewMode === "city"
-              ? "Match strength shows how strongly a place fits " +
-                goalName +
-                ". Open a place to see how much that could shift if your birth time isn't exact."
-              : "Match strength shows how strongly a country fits " +
-                goalName +
-                " overall, based on the consistency and strength of its matching cities, not the country as a single astrological point."}
+              ? t.results.matchStrengthGoalCity(goalName)
+              : t.results.matchStrengthGoalCountry(goalName)}
         </p>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
@@ -286,7 +320,7 @@ export default function ResultsPage() {
                 cursor: "pointer"
               }}
             >
-              By life area
+              {t.results.byLifeArea}
             </button>
             <button
               type="button"
@@ -310,7 +344,7 @@ export default function ResultsPage() {
               <span aria-hidden="true" style={{ color: "var(--astravia-overall)" }}>
                 ✦
               </span>
-              All life areas
+              {t.results.allLifeAreasTab}
             </button>
           </div>
         </div>
@@ -346,7 +380,7 @@ export default function ResultsPage() {
                     background: GOAL_COLOR[g]
                   }}
                 />
-                {GOAL_LABEL[g]}
+                {goalLabelFor(g, language)}
               </button>
             ))}
           </div>
@@ -354,13 +388,13 @@ export default function ResultsPage() {
 
         {loading && (
           <p style={{ font: "400 13px var(--font-body)", color: "var(--astravia-text-secondary)" }}>
-            Recalculating…
+            {t.results.recalculating}
           </p>
         )}
 
         {verifyingCheckout && (
           <p style={{ font: "400 13px var(--font-body)", color: "var(--astravia-text-secondary)" }}>
-            Confirming your payment…
+            {t.results.confirmingPayment}
           </p>
         )}
 
@@ -379,10 +413,10 @@ export default function ResultsPage() {
             }}
           >
             <div style={{ font: "600 13px/1.4 var(--font-body)", color: "var(--astravia-ink)" }}>
-              Your full report is unlocked for this chart.
+              {t.results.fullReportUnlocked}
             </div>
             <PillButton fullWidth={false} onClick={() => router.push("/report")}>
-              Get your PDF report →
+              {t.results.getPdfReport}
             </PillButton>
           </div>
         )}
@@ -407,7 +441,7 @@ export default function ResultsPage() {
                 marginBottom: 6
               }}
             >
-              Your location story
+              {t.results.locationStoryLabel}
             </div>
             <div style={{ font: "500 15px/1.5 var(--font-display)", color: "var(--astravia-ink)" }}>
               {results.pattern.sentence}
@@ -442,7 +476,7 @@ export default function ResultsPage() {
                 marginBottom: 14
               }}
             >
-              Your top places
+              {t.results.yourTopPlaces}
             </div>
 
             {topCities.length > 0 && (
@@ -464,7 +498,7 @@ export default function ResultsPage() {
             {topCities.map((r, i) => {
               const story = results.stories[r.ranked.cityId];
               if (i === 0) {
-                const archetypeCopy = getArchetypeCopy(r.ranked.archetypeId);
+                const archetypeCopy = getArchetypeCopy(r.ranked.archetypeId, language);
                 return (
                   <div
                     key={r.ranked.cityId}
@@ -490,8 +524,8 @@ export default function ResultsPage() {
                           }}
                         >
                           {results.goal === "OVERALL"
-                            ? "The most balanced across all life areas"
-                            : `Your strongest place for ${goalName}`}
+                            ? t.results.heroLabelOverall
+                            : t.results.heroLabelGoal(goalName)}
                         </div>
                         <SaveButton saved={saved.has(r.ranked.cityId)} onToggle={() => toggleSaved(r.ranked.cityId)} />
                       </div>
@@ -512,7 +546,7 @@ export default function ResultsPage() {
                             color: "var(--astravia-text-secondary)"
                           }}
                         >
-                          Confidence: {confidenceLabel(r.ranked.stability)}
+                          {t.results.confidence(confidenceLabel(r.ranked.stability, language))}
                         </span>
                       </div>
                       <p
@@ -550,7 +584,7 @@ export default function ResultsPage() {
                         style={{ marginTop: 18 }}
                         onClick={() => router.push(`/place/${r.ranked.cityId}`)}
                       >
-                        Why {r.city.name}? →
+                        {t.results.whyCity(r.city.name)}
                       </PillButton>
                     </div>
                   </div>
@@ -621,7 +655,7 @@ export default function ResultsPage() {
                           fontStyle: "italic"
                         }}
                       >
-                        Locked. Unlock the full report to see why.
+                        {t.results.lockedHint}
                       </p>
                     )}
                     <button
@@ -641,7 +675,7 @@ export default function ResultsPage() {
                         textUnderlineOffset: 3
                       }}
                     >
-                      {unlocked ? "Explore this place →" : "Unlock to explore →"}
+                      {unlocked ? t.results.exploreThisPlace : t.results.unlockToExplore}
                     </button>
                   </div>
                 );
@@ -659,10 +693,10 @@ export default function ResultsPage() {
             }}
           >
             <p style={{ margin: "0 0 14px", font: "500 15px/1.5 var(--font-display)", color: "var(--astravia-ink)" }}>
-              Country results are part of the full report.
+              {t.results.countryResultsLocked}
             </p>
             <PillButton className="astravia-btn-shine" fullWidth={false} onClick={() => setPaywall({ open: true })}>
-              Unlock full report
+              {t.common.unlockFullReport}
             </PillButton>
           </div>
         ) : (
@@ -676,13 +710,13 @@ export default function ResultsPage() {
                 marginBottom: 14
               }}
             >
-              Your top countries
+              {t.results.yourTopCountries}
             </div>
 
             {topCountries.map((co, i) => {
               const cityResults = co.topCityIds.map(findResult).filter((c): c is CalculateResult => c !== undefined);
               const discoveryType = classifyDiscovery(co.narrative, co.stars, cityResults[0]?.city.population);
-              const discoveryCopy = getDiscoveryCopy(discoveryType);
+              const discoveryCopy = getDiscoveryCopy(discoveryType, language);
               const discoveryColors = getDiscoveryColors();
 
               return (
@@ -765,7 +799,7 @@ export default function ResultsPage() {
                       marginBottom: 8
                     }}
                   >
-                    Best matches
+                    {t.results.bestMatches}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {co.topCityIds.map((id) => {

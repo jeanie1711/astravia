@@ -6,6 +6,16 @@
    centralized here -- components reference these tokens, never literal
    hex values. */
 :root {
+  /* The app has no dark theme -- without this, some mobile browsers
+     (notably in-app WebViews like Instagram's, and iOS in dark mode)
+     render native form-control chrome (the <input type="date">/
+     type="time"> placeholder text, calendar/clock icon, and internal
+     picker layout) assuming a dark surface while our CSS keeps the
+     input itself light, making the text render invisible and the
+     control's intrinsic sizing balloon. Forcing light here keeps native
+     controls consistent with the rest of the page everywhere. */
+  color-scheme: light;
+
   /* Brand and neutral. */
   --astravia-ink: #123f4b;
   --astravia-ink-strong: #0d3441;

@@ -20,7 +20,14 @@ export const inputStyle: React.CSSProperties = {
   border: "1px solid var(--astravia-border-strong)",
   background: "var(--astravia-surface)",
   font: "15px var(--font-body)",
+  // Set after "font" -- that shorthand implicitly resets line-height to
+  // "normal", and some mobile browsers size a native <input type="date">/
+  // type="time">'s internal picker chrome off the computed line-height,
+  // where "normal" can resolve much taller than this input's own padding
+  // implies, especially in in-app WebViews (Instagram, etc).
+  lineHeight: 1.4,
   color: "var(--astravia-ink)",
+  colorScheme: "light",
   boxSizing: "border-box"
 };
 

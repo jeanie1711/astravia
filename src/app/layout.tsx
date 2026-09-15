@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Fraunces, Inter, Lora } from "next/font/google";
 import type { ReactNode } from "react";
 import { JourneyProvider } from "./journey/JourneyContext";
@@ -33,6 +33,16 @@ const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"
 export const metadata: Metadata = {
   title: "Astravia",
   description: "Discover the places that stand out in your astrocartography, and understand why."
+};
+
+// The app has no dark theme -- emits <meta name="color-scheme"
+// content="light">, which stops mobile browsers (in-app WebViews
+// especially) from rendering native form-control chrome (date/time
+// picker text and icons) in a dark palette that goes invisible against
+// this app's always-light surfaces. Belt-and-suspenders alongside the
+// same declaration in globals.css's :root.
+export const viewport: Viewport = {
+  colorScheme: "light"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -197,7 +197,7 @@ export const vi: Dictionary = {
     bornLabel: "Sinh",
     timeLabel: "Giờ",
     placeLabel: "Nơi sinh",
-    preparedOn: (date) => `Chuẩn bị vào ${date} · astravia.app`,
+    preparedOn: (date) => `Chuẩn bị vào ${date} · astravia.online`,
     introHeading: "Astrocartography hoạt động như thế nào",
     introBody:
       "Hãy hình dung đúng khoảnh khắc bạn chào đời, khi nhìn lên bầu trời: mỗi hành tinh nằm ở một vị trí nào đó so với đường chân trời và bầu trời phía trên bạn. Bốn điểm đánh dấu những vị trí quan trọng nhất trong số đó, và astrocartography vẽ một đường trên khắp thế giới cho mỗi hành tinh chạm đến một trong các điểm ấy. Nơi những đường này đi qua gần một thành phố thực tế chính là nơi báo cáo này bắt đầu.",

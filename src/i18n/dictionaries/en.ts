@@ -202,7 +202,7 @@ export const en = {
     bornLabel: "Born",
     timeLabel: "Time",
     placeLabel: "Place",
-    preparedOn: (date: string) => `Prepared ${date} · astravia.app`,
+    preparedOn: (date: string) => `Prepared ${date} · astravia.online`,
     introHeading: "How astrocartography works",
     introBody:
       "Imagine the exact moment you were born, looking up at the sky: each planet sits at some position relative to the horizon and the sky above you. Four points mark the most significant of these positions, and astrocartography draws a line across the world for every planet that touches one of them. Where those lines pass near a real city is where this report begins.",

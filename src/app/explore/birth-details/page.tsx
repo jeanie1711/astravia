@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BackHeader } from "../../components/BackHeader";
+import { DateSelect, TimeSelect } from "../../components/DateTimeSelect";
 import { errorTextStyle, FieldLabel, inputStyle } from "../../components/FieldLabel";
 import { PillButton } from "../../components/PillButton";
 import { ScreenShell } from "../../components/ScreenShell";
@@ -82,21 +83,26 @@ export default function BirthDetailsPage() {
         </p>
 
         <FieldLabel>{t.birthDetails.dateLabel}</FieldLabel>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          style={{ ...inputStyle, marginBottom: 20 }}
-        />
+        <div style={{ marginBottom: 20 }}>
+          <DateSelect
+            value={date}
+            onChange={setDate}
+            dayLabel={t.birthDetails.dayPlaceholder}
+            monthLabel={t.birthDetails.monthPlaceholder}
+            yearLabel={t.birthDetails.yearPlaceholder}
+          />
+        </div>
         {touched && !date && <p style={errorTextStyle}>{t.birthDetails.dateError}</p>}
 
         <FieldLabel>{t.birthDetails.timeLabel}</FieldLabel>
-        <input
-          type="time"
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-          style={{ ...inputStyle, marginBottom: 20 }}
-        />
+        <div style={{ marginBottom: 20 }}>
+          <TimeSelect
+            value={time}
+            onChange={setTime}
+            hourLabel={t.birthDetails.hourPlaceholder}
+            minuteLabel={t.birthDetails.minutePlaceholder}
+          />
+        </div>
         {touched && !time && <p style={errorTextStyle}>{t.birthDetails.timeError}</p>}
 
         <FieldLabel>{t.birthDetails.placeLabel}</FieldLabel>

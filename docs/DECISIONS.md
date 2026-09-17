@@ -489,6 +489,27 @@ About a 5.9x overall speedup. Measured locally via `tsx` (not the compiled Next.
 
 ---
 
+## 2026-09-17 — Anonymous funnel analytics (Vercel Web Analytics)
+
+**Decision needed:** how to answer "how many people visit but don't buy" without adding accounts, a database, or any birth/personal data to a third-party analytics service (CLAUDE.md §14).
+
+**Context:** Product Owner request while doing a small friends-only rollout. No analytics existed at all. `02-user-flow-screen-spec.md` §"Analytics events" pre-approved a page/funnel event list (in scope, previously unimplemented) but didn't cover the paywall specifically, since payment was added later as its own approved carve-out.
+
+**Options considered:** (1) Vercel Web Analytics -- free on the Hobby plan, zero-config page views, `track()` for custom events, no cookies; (2) a heavier product-analytics SDK (PostHog, Mixpanel, etc.) -- more powerful funnels/dashboards, but a new paid-tier risk, a new vendor relationship, and cross-references sessions in ways that need a fresh privacy read; (3) roll a custom event endpoint -- full control, but new infra (a place to store/aggregate events) for something an existing zero-cost tool already does.
+
+**Recommended/chosen option:** (1) Vercel Web Analytics. It's already the hosting provider, the free tier covers this traffic level, and it requires exactly one new dependency.
+
+**What changed:**
+- Added `@vercel/analytics` (installed with `--legacy-peer-deps` -- its `@sveltejs/kit` peer is `peerOptional` and unrelated to this Next.js app; the conflict was Vitest's own transitive Svelte tooling, not this package).
+- `src/app/layout.tsx` mounts `<Analytics />` once, which auto-tracks anonymous page views for every route -- this alone answers "how many people visit."
+- `src/app/components/PaywallModal.tsx` fires two custom events, no birth details or any other personal data attached: `paywall_shown` (once per modal open, via a `useEffect` keyed on the `open` prop so it doesn't refire on every re-render) and `unlock_clicked` (when the unlock button is pressed, before checkout starts or the dev-skip-payment bypass runs). "Visited but didn't buy" reads as `paywall_shown` count minus Dodo Payments' own completed-transaction count (already visible in the Dodo dashboard -- no need to also track a `purchase_completed` event client-side).
+
+**Impact:** One new small dependency (MIT-licensed, maintained by Vercel, zero marginal cost at this traffic level). No new PII surface -- events carry no birth data, no session identifiers tying a visitor to a specific chart.
+
+**Status:** IMPLEMENTED.
+
+---
+
 ## 2026-09-12 — Vietnamese/English language switcher
 
 **Decision needed:** none for methodology (calculation/scoring/interpretation meaning is unchanged) -- direct Product Owner request to fully localize the product into Vietnamese, with a toggle between English and Vietnamese.

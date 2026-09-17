@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, Fraunces, Inter, Lora } from "next/font/google";
 import type { ReactNode } from "react";
@@ -52,6 +53,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <LanguageProvider>
           <JourneyProvider>{children}</JourneyProvider>
         </LanguageProvider>
+        {/* Vercel Web Analytics (docs/DECISIONS.md, 2026-09-17): anonymous
+            page-view counts plus the paywall_shown/unlock_clicked events
+            fired from PaywallModal.tsx -- no birth details or any other
+            personal data is ever included (CLAUDE.md §14). */}
+        <Analytics />
       </body>
     </html>
   );

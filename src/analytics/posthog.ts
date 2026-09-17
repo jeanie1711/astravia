@@ -35,6 +35,16 @@ export function trackEvent(name: string): void {
   posthog.capture(name);
 }
 
+// For an event fired immediately before a full-page navigation (e.g.
+// window.location.href = checkoutUrl) -- posthog.capture() may queue the
+// request rather than sending it synchronously, and a navigation started
+// right after can abandon it mid-flight before it ever leaves the
+// browser. A short, fixed wait gives it a real window to dispatch first.
+export async function trackEventBeforeNavigate(name: string): Promise<void> {
+  trackEvent(name);
+  await new Promise((resolve) => setTimeout(resolve, 250));
+}
+
 export function trackPageview(): void {
   if (typeof window === "undefined") return;
   posthog.capture("$pageview");

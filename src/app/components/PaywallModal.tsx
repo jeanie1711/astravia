@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { trackEvent } from "../../analytics/posthog";
+import { trackEvent, trackEventBeforeNavigate } from "../../analytics/posthog";
 import { PENDING_CHECKOUT_STORAGE_KEY } from "../../config/payments";
 import { useJourney } from "../journey/JourneyContext";
 import { PillButton } from "./PillButton";
@@ -46,7 +46,10 @@ export function PaywallModal({
   if (!open) return null;
 
   async function startCheckout() {
-    trackEvent("unlock_clicked");
+    // Both branches below either navigate away (real checkout) or close
+    // this modal right after (dev-skip-payment) -- wait for the event to
+    // actually leave the browser first in either case.
+    await trackEventBeforeNavigate("unlock_clicked");
     setLoading(true);
     setError(null);
 

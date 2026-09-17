@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { track } from "@vercel/analytics";
+import { trackEvent } from "../../analytics/posthog";
 import { PENDING_CHECKOUT_STORAGE_KEY } from "../../config/payments";
 import { useJourney } from "../journey/JourneyContext";
 import { PillButton } from "./PillButton";
@@ -40,13 +40,13 @@ export function PaywallModal({
   // only, no birth details or any other personal data (CLAUDE.md §14).
   // Fires once per open, not once per re-render while it's open.
   useEffect(() => {
-    if (open) track("paywall_shown");
+    if (open) trackEvent("paywall_shown");
   }, [open]);
 
   if (!open) return null;
 
   async function startCheckout() {
-    track("unlock_clicked");
+    trackEvent("unlock_clicked");
     setLoading(true);
     setError(null);
 

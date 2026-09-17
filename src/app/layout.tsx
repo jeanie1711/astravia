@@ -2,6 +2,7 @@ import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, Fraunces, Inter, Lora } from "next/font/google";
 import type { ReactNode } from "react";
+import { PostHogPageview } from "./components/PostHogPageview";
 import { JourneyProvider } from "./journey/JourneyContext";
 import { LanguageProvider } from "../i18n/LanguageContext";
 import "./globals.css";
@@ -53,11 +54,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <LanguageProvider>
           <JourneyProvider>{children}</JourneyProvider>
         </LanguageProvider>
-        {/* Vercel Web Analytics (docs/DECISIONS.md, 2026-09-17): anonymous
-            page-view counts plus the paywall_shown/unlock_clicked events
-            fired from PaywallModal.tsx -- no birth details or any other
-            personal data is ever included (CLAUDE.md §14). */}
+        {/* Vercel Web Analytics: anonymous page-view counts (its Hobby-
+            plan dashboard can't show custom events at all -- see
+            docs/DECISIONS.md, 2026-09-17 -- so it's kept only for this).
+            PostHogPageview mirrors the same page views into PostHog,
+            which also carries paywall_shown/unlock_clicked from
+            PaywallModal.tsx. No birth details or other personal data is
+            ever included in either (CLAUDE.md §14). */}
         <Analytics />
+        <PostHogPageview />
       </body>
     </html>
   );

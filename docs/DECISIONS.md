@@ -506,7 +506,29 @@ About a 5.9x overall speedup. Measured locally via `tsx` (not the compiled Next.
 
 **Impact:** One new small dependency (MIT-licensed, maintained by Vercel, zero marginal cost at this traffic level). No new PII surface -- events carry no birth data, no session identifiers tying a visitor to a specific chart.
 
-**Status:** IMPLEMENTED.
+**Status:** SUPERSEDED for custom events -- see the entry directly below. `<Analytics />` and its automatic page views stay in place; only the two custom events moved.
+
+---
+
+## 2026-09-17 — Custom events moved to PostHog (Vercel Hobby can't show them)
+
+**Decision needed:** none new -- a corrected implementation of the entry directly above, found wrong within the same day.
+
+**Context:** After shipping `paywall_shown`/`unlock_clicked` via `@vercel/analytics`, the events never appeared in the Vercel dashboard. Vercel's Custom Events feature (both the dashboard view and, as far as could be determined, any way to query the underlying data) is gated behind a **Pro team plan** -- the Hobby plan's `track()` calls succeed and presumably reach Vercel, but there is no free-tier way to read them back. This wasn't caught before recommending Vercel Web Analytics for this; it should have been checked against the plan tier first.
+
+**What changed:**
+- Added `posthog-js` (installed with `--legacy-peer-deps`, same unrelated Vitest/Svelte peer-dependency noise as `@vercel/analytics`).
+- New `src/analytics/posthog.ts`: `initPostHog()` (no-ops if `NEXT_PUBLIC_POSTHOG_KEY` is unset), `trackEvent(name)`, `trackPageview()`. `person_profiles: "identified_only"` so an anonymous visitor never gets a full PostHog "person" record (this app never calls `identify()`) -- keeps the same anonymous-only posture as CLAUDE.md §14 and avoids the free tier's separate identified-user allowance entirely.
+- New `src/app/components/PostHogPageview.tsx`, mounted in `layout.tsx` alongside (not instead of) `<Analytics />`: calls `initPostHog()` once, then fires a PostHog pageview on every `usePathname()` change -- PostHog's own automatic pageview capture only sees full page loads and browser back/forward, not Next.js's client-side `router.push()` navigations, so this is the standard recommended integration for the App Router.
+- `PaywallModal.tsx`'s two `track()` calls became `trackEvent()` calls against this new module instead.
+- `.env.example` documents `NEXT_PUBLIC_POSTHOG_KEY` (the public/write-only Project API Key -- safe client-side) and `NEXT_PUBLIC_POSTHOG_HOST` (region-dependent: US cloud by default, EU cloud is a different host).
+- Kept `@vercel/analytics`'s `<Analytics />` mounted -- its automatic page views work fine on Hobby and cost nothing extra to leave running alongside PostHog.
+
+**Why PostHog specifically:** free tier is 1M events/month, comfortably above this app's traffic; it exposes both a dashboard *and* a queryable API using a separately-issued Personal API Key, so results can be pulled and reported on demand rather than requiring someone to check a dashboard.
+
+**Impact:** One new small dependency (MIT-licensed). `/results` and `/place/[cityId]` (both render `PaywallModal`) grew by roughly 95kB of first-load JS from bundling `posthog-js` -- worth revisiting with a dynamic import if that ever matters at this traffic scale, not done now since it isn't yet.
+
+**Status:** IMPLEMENTED. Requires a `NEXT_PUBLIC_POSTHOG_KEY` (and `NEXT_PUBLIC_POSTHOG_HOST` if not on PostHog's US cloud) added to Vercel before it does anything in production.
 
 ---
 

@@ -700,7 +700,7 @@ input {
 
   .astravia-home-cta-row button {
     width: 100%;
-    justify-content: space-between;
+    justify-content: center;
   }
 
   .astravia-home-visual {
